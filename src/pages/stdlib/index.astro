@@ -1,0 +1,79 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import LinkRows from "../../components/sections/LinkRows.astro";
+import Section from "../../components/sections/Section.astro";
+import Text from "../../components/ui/Text.astro";
+import { getSection } from "../../data/navigation";
+import { stdlibModules } from "../../data/stdlib";
+
+const section = getSection("stdlib");
+const lead =
+    "The standard library is the set of ready-made tools that come with Turf, so common jobs (printing, text, lists, files, JSON, a web server) need nothing extra. This page lists every module and what you write to use it.";
+
+const groups = [
+    {
+        id: "prelude",
+        index: "01",
+        title: "Always there",
+        description: "These modules are loaded into every program. You never write an `import` for them.",
+        modules: stdlibModules.filter((m) => m.import === null),
+    },
+    {
+        id: "import",
+        index: "02",
+        title: "Import first",
+        description: "These sit on the shelf until you ask for them with the `import` line shown. Each file that uses one needs its own `import`.",
+        modules: stdlibModules.filter((m) => m.import !== null),
+    },
+];
+
+const span = (n: number, total: number) => {
+    if (n !== total - 1) return "";
+    return [total % 2 === 1 && "md:max-lg:col-span-2", total % 3 === 1 && "lg:col-span-3", total % 3 === 2 && "lg:col-span-2"];
+};
+
+const after = [
+    { title: "Conventions", description: "How the library names things, reports failure, handles resources and what 2.x promises.", href: "/stdlib/conventions/" },
+    { title: "Learn", description: "New to Turf? The guides start from nothing installed.", href: "/learn/" },
+];
+---
+
+<BaseLayout title={section.heading} description={lead}>
+    <PageHeader crumbs={[{ label: section.label }]} title={section.heading} lead={lead} />
+
+    {
+        groups.map((group, i) => (
+            <Section
+                id={group.id}
+                index={group.index}
+                title={group.title}
+                description={group.description}
+                layout="stacked"
+                class={i === 0 ? "border-t-0! py-16! md:py-20!" : "bg-surface-raised"}
+            >
+                <ul class="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-2 lg:grid-cols-3">
+                    {group.modules.map((m, n) => (
+                        <li class:list={["flex", span(n, group.modules.length)]}>
+                            <a
+                                href={m.href}
+                                class="group flex flex-1 flex-col gap-3 bg-surface p-6 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:p-8"
+                            >
+                                <span class="font-mono text-lg text-fg">
+                                    {m.name}
+                                    <span aria-hidden="true" class="text-fg-faint transition-colors group-hover:text-accent"> →</span>
+                                </span>
+                                <Text as="span" text={m.purpose} class="block leading-7 text-fg-muted" />
+                                {m.import && <code class="mt-auto w-fit">{m.import}</code>}
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            </Section>
+        ))
+    }
+
+    <Section id="more" index="03" title="Keep reading">
+        <LinkRows items={after} />
+    </Section>
+</BaseLayout>

@@ -1,0 +1,522 @@
+---
+title: "I/O and networking"
+description: "Printing, reading input, files, ending a program, and TCP sockets."
+lead: "A program that cannot talk to anything is not much use. This page covers printing to the screen, asking the user a question, reading and writing files, stopping a program, and sending messages over a network."
+outcomes:
+  - "Print values, and read a line typed by the user."
+  - "Read and write whole files, and handle a missing one."
+  - "Stop a program with `exit`, or because of a bug with `panic`."
+  - "Open a TCP connection, and run a tiny server."
+---
+
+## Three jobs, three modules
+
+**I/O** stands for *input and output*: things going into your program and coming out of it.
+
+<Flow>
+<FlowStep label="io">Print text, read what the user types, read and write files.</FlowStep>
+<FlowStep label="sys">End the program: politely, loudly, or at once.</FlowStep>
+<FlowStep label="net">Send and receive messages with another computer.</FlowStep>
+</Flow>
+
+`io` and `sys` are always there. `net` needs `import net;`.
+
+Three modules for talking to the outside world:
+
+| Module | For | Import |
+|---|---|---|
+| `io` | printing, reading a line of input, reading and writing whole files | none (prelude) |
+| `sys` | ending the program: `exit`, `abort`, `panic` | none (prelude) |
+| `net` | TCP client and server sockets | `import net;` |
+
+`io` and `sys` are part of the [prelude](/stdlib/conventions/#the-prelude): their functions
+are callable bare (`printline("hi")`, `exit(1)`) or qualified (`io::printline`,
+`sys::exit`), with no `import`. `net` needs `import net;`. The conventions that
+every function below follows (which failures return `!T`, which panic, how
+`defer` closes a resource) are on the [standard library overview](/stdlib/conventions/).
+
+## `io`
+
+### Printing
+
+```turf
+print(val: int): void          printline(val: int): void
+print(val: double): void       printline(val: double): void
+print(val: bool): void         printline(val: bool): void
+print(val: char): void         printline(val: char): void
+print(val: string): void       printline(val: string): void
+```
+
+`print` writes `val` to standard output; `printline` writes it and a newline.
+The overload is chosen by the argument's type:
+
+| Type | Output |
+|---|---|
+| `int` | the decimal digits: `-7` |
+| `double` | the shortest `%g`-style form: `3.5`, `0.333333`, `1e+08`. A NaN is always `nan` |
+| `bool` | `true` or `false`, the same text as `flag to string` |
+| `char` | the character |
+| `string` | the text |
+
+<Program file="io_and_net_printing.tr">
+```turf
+fn main(): int {
+    print(42);
+    print(" ");
+    print(3.5);
+    print(" ");
+    print(true);
+    print(" ");
+    print('x');
+    printline("!");
+    printline(1.0 / 3.0);
+    printline(false);
+    printline(true to string);
+    return 0;
+}
+```
+```text
+42 3.5 true x!
+0.333333
+false
+true
+```
+</Program>
+
+```text
+42 3.5 true x!
+0.333333
+false
+true
+```
+
+Any other type has no overload: `printline(some_struct)` is [E025](/docs/errors/e025/) ("No matching
+overload!"). Convert it to a `string` first. To print several values, build one
+string with `+` and `to string`.
+
+### Buffering: `flush(): void`
+
+<Callout tone="note" title="In plain words">
+
+**Buffered** means Turf collects what you print and sends it out in batches, because that is faster. `flush()` forces everything out now. You mainly need it before asking the user a question, so the prompt shows up before the program waits. The buffer is also emptied automatically when `main` returns, on `exit`, and before a panic message.
+
+</Callout>
+
+Standard output is buffered. `flush()` pushes out everything printed so far;
+call it before a prompt that waits for input.
+
+- The buffer is written out when `main` returns, when the program calls
+  `sys::exit` or `sys::abort`, and when it panics, before the panic message.
+  A panic message itself goes to standard error, which is not buffered.
+
+### Standard error: `eprint(val: string): void`, `eprintline(val: string): void`
+
+<Callout tone="note" title="In plain words">
+
+A program has two output channels. **Standard output** is for its results; **standard error** is for messages about problems. They look the same on screen, but they can be sent to different places (for example, saving results to a file while still seeing the warnings).
+
+</Callout>
+
+Like `print` and `printline` for a `string`, but to standard error, and
+unbuffered: the text appears at once, in order with any panic message. Only
+`string` is accepted; convert other values with `to string`.
+
+<Code title="io_and_net_standard_error.tr">
+```turf
+fn main(): int {
+    eprint("warning: ");
+    eprintline("using the default configuration");
+    return 0;
+}
+```
+</Code>
+
+### `input(): string`, `input(msg: string): string`
+
+Reads one line from standard input and returns it **without** its newline.
+`input(msg)` first prints `msg` and flushes standard output, so the prompt is
+on screen before the program waits.
+
+- A line can be any length; the string grows to fit it.
+- At end of input (no more lines, or no input at all) it returns `""`, so an
+  empty result means either an empty line or no input; it cannot tell you
+  which. A last line with no newline is returned as it is.
+- It does not trim anything: a line from a file with Windows line endings keeps
+  its `\r`.
+- The result is always a `string`. To get a number, convert it yourself, for
+  example with `strings::parse_int`; assigning it to an `int` is [E066](/docs/errors/e066/).
+
+<Code title="io_and_net_input.tr">
+```turf
+fn main(): int {
+    immut name: string = input("Your name: ");
+    if name == "" {
+        printline("no name given");
+        return 1;
+    }
+    printline("Hello, " + name + "!");
+    return 0;
+}
+```
+</Code>
+
+### Files: `FileError`, `read_to_string`, `read_lines`, `write_string`, `exists`
+
+<Callout tone="note" title="In plain words">
+
+Files here are read and written **whole**: `read_to_string(path)` gives you all the text at once, and `write_string(path, text)` creates the file or **overwrites** it. Both can fail (no such file, no permission), so they return a `!T` you handle with `recover`. There is nothing to close.
+
+</Callout>
+
+`io` reads and writes **whole files**. There is no file handle: each call opens
+the file, does its work and closes it before returning, so there is nothing to
+`close()` and no `defer` is needed. For a file you read or write piece by piece,
+use `extern fn` ([FFI and unsafe](/docs/language/ffi-and-unsafe/)).
+
+<Code title="io_and_net_files_fileerror.tr">
+```turf
+error FileError {
+    NotFound(path: string),
+    ReadFailed(path: string),
+    WriteFailed(path: string),
+}
+```
+</Code>
+
+Each variant carries the path it failed on. Read it with a pattern inside a
+`compare` (`matches io::FileError::NotFound(path):`); `err == io::FileError::NotFound`
+compares the variant alone; `err.message` says what failed, such as
+`file not found: 'notes.txt'` ([Error handling](/docs/language/error-handling/)).
+
+| Function | Returns | Behaviour |
+|---|---|---|
+| `read_to_string(path: string): !string` | the whole file as one `string` | `FileError::NotFound(path)` if the file cannot be opened for reading, whatever the reason (missing, no permission); `FileError::ReadFailed(path)` if fewer bytes were read than the file's size. |
+| `read_lines(path: string): !List<string>` | the file split at `\n` | The same error cases as `read_to_string`, except that every failure is reported as `NotFound(path)`. A final newline does not produce a final empty element: `"a\nb\n"` is `["a", "b"]`. A blank line before the end is kept: `"a\n\n"` is `["a", ""]`. An empty file is an empty list. `\r` is kept: `"a\r\nb"` is `["a\r", "b"]`. |
+| `write_string(path: string, content: string): !void` | nothing | Creates the file or **overwrites** it. `FileError::WriteFailed(path)` if it cannot be opened for writing (missing directory, no permission) or the write is short. |
+| `exists(path: string): bool` | whether the path can be opened for reading | A question, so a `bool`. It is also `true` for a directory on Linux; use [`fs::is_dir`](/stdlib/fs/) to tell the two apart. |
+
+Files are read and written as bytes, with no newline translation on any
+platform. A `string` ends at its first NUL byte, so a binary file that contains
+NULs reads in full but its `length()` stops at the first one; `write_string`
+likewise writes up to the first NUL.
+
+<Program file="io_and_net_files_fileerror_2.tr">
+```turf
+import list::List;
+
+fn main(): int {
+    io::write_string("notes.txt", "first\nsecond\n") recover as err run {
+        compare err {
+            matches io::FileError::WriteFailed(path):
+            eprintline("cannot write " + path);
+            done
+            otherwise:
+            eprintline("write failed");
+        }
+        return 1;
+    };
+
+    immut lines: List<string> = io::read_lines("notes.txt") recover run {
+        eprintline("cannot read notes.txt");
+        return 1;
+    };
+    mut i: int = 0;
+    while i < lines.length() {
+        printline((i + 1 to string) + ": " + lines.get(i));
+        i = i + 1;
+    }
+
+    immut text: string = io::read_to_string("missing.txt") recover produce "(none)";
+    printline(text);
+    printline(io::exists("notes.txt"));
+    return 0;
+}
+```
+```text
+1: first
+2: second
+(none)
+true
+```
+</Program>
+
+```text
+1: first
+2: second
+(none)
+true
+```
+
+## `sys`
+
+Ending the program, and the primitive every library panic is built on.
+
+### `exit(code: int): void`
+
+Ends the program at once with status `code`. It never returns, and it does not
+run pending `defer` statements. Standard output is flushed first.
+
+### `abort(): void`
+
+Ends the program at once as an abnormal termination. On Linux and macOS the
+process dies with `SIGABRT`, which a shell reports as status 134; on Windows the
+status is `0xE0545254`. Standard output is flushed first.
+
+### `panic(msg: string): void`
+
+Writes `msg` and a newline to standard error, then calls `abort`. It never
+returns. Unlike a library panic, it adds no `file:line:` prefix: include your
+own context in `msg`. Use it for a condition that no caller can recover from;
+for one a caller might want to handle, return a `!T` instead.
+
+### `STDERR_FD: int`
+
+The constant `2`, the standard error descriptor, for code that calls a C
+function such as `write` through `extern fn`.
+
+<Program file="io_and_net_stderr_fd.tr">
+```turf
+fn parse_port(text: string): int {
+    return strings::parse_int(text) recover as err run {
+        eprintline("bad port: " + text);
+        exit(2);
+        return 0;
+    };
+}
+
+fn main(): int {
+    immut port: int = parse_port("8080");
+    if port < 1024 {
+        panic("refusing to use a privileged port");
+    }
+    printline("port " + (port to string));
+    return 0;
+}
+```
+```text
+port 8080
+```
+</Program>
+
+## `net`
+
+<Callout tone="note" title="In plain words">
+
+**TCP** is a reliable way for two programs, usually on different computers, to talk: it carries a steady stream of bytes in order. A **listener** waits for incoming connections on a **port** (a numbered door on the computer); a **connection** is one open conversation. An address here is four numbers, so `127.0.0.1` (the computer itself) is written `connect(127, 0, 0, 1, 8080)`. Every call **blocks**: the program waits until it completes. Close a connection with `defer conn.close()`.
+
+</Callout>
+
+TCP over IPv4, in two types: `TcpListener` (a server's listening socket) and
+`TcpConnection` (one connected socket, whether the program dialed it or
+accepted it; both ends read and write the same way). All calls block, and there
+is no timeout.
+
+An address is four `int` octets, not a `"127.0.0.1"` string:
+`connect(127, 0, 0, 1, 8080)`. To dial a host name, resolve it first with
+`resolve_hostname` and split the dotted text, or dial an address you already
+know. A listener always binds every local interface.
+
+<Program file="io_and_net_net.tr">
+```turf
+import net;
+
+fn main(): int {
+    immut ip: string = net::resolve_hostname("localhost") recover produce "127.0.0.1";
+    printline(ip);
+    return 0;
+}
+```
+```text
+127.0.0.1
+```
+</Program>
+
+### `error NetworkError`
+
+<Code title="io_and_net_error_networkerror.tr">
+```turf
+error NetworkError {
+    SocketCreationFailed,
+    ConnectionRefused,
+    BindFailed,
+    ListenFailed,
+    AcceptFailed,
+    ResolutionFailed,
+}
+```
+</Code>
+
+The variants carry no fields. Which call produces which:
+
+| Call | Failure variants |
+|---|---|
+| `TcpConnection::connect` | `SocketCreationFailed`, `ConnectionRefused` (the connection could not be made for any reason: nothing listening, no route, unreachable) |
+| `TcpListener::bind` | `SocketCreationFailed`, `BindFailed` (the port is in use, or needs privileges), `ListenFailed` |
+| `TcpListener.accept` | `AcceptFailed` |
+| `resolve_hostname` | `ResolutionFailed` |
+
+`read`, `write` and `close` do not report failure: `read` returns `""` when the
+peer has closed the connection or the read failed, and a `write` that fails is
+silent.
+
+### `resolve_hostname(host: string): !string`
+
+Looks `host` up and returns its first IPv4 address as dotted text:
+`resolve_hostname("localhost")` is `"127.0.0.1"`. A name that is already a
+dotted address resolves to itself. `NetworkError::ResolutionFailed` if the name
+does not resolve (a typo, no DNS record, no network) or is empty. IPv6 addresses
+are not returned.
+
+### `TcpConnection::connect(a: int, b: int, c: int, d: int, port: int) static: !TcpConnection`
+
+Dials `a.b.c.d:port`. See the table above for the errors. Each octet is taken
+modulo 256.
+
+### `TcpConnection.read(max_bytes: int): string`
+
+Waits until the peer sends something, then returns what arrived from **one**
+receive: at most `max_bytes` characters, and often fewer, because a TCP message
+can arrive in several pieces. It returns `""` if the peer closed the connection.
+To read until a known end, call it in a loop. The text ends at the first NUL
+byte, so `read` is for text protocols.
+
+### `TcpConnection.write(data: string): void`
+
+Sends `data` in one call. Like `read`, it moves bytes, not messages: the peer
+may receive them in several reads.
+
+### `TcpConnection.close(): void`
+
+Closes the socket. It is **idempotent**: a second call does nothing, so
+`defer conn.close();` and an explicit early close together are safe. (Closing
+the same descriptor number twice is dangerous in general, because the system may
+have given that number to a different file in between.)
+
+### `TcpConnection.raw_fd(): int`
+
+The underlying descriptor, for passing to FFI; `-1` once the connection is
+closed.
+
+### `TcpConnection::new(fd: int)`
+
+Wraps a descriptor you already own, so that `read`, `write` and `close` work on
+it. The connection takes responsibility for closing it.
+
+### `TcpListener::bind(port: int) static: !TcpListener`
+
+Listens on every local interface at `port`, with a backlog of 128. It sets
+`SO_REUSEADDR` first, so restarting a server does not fail with "address in use"
+while the previous socket lingers. Errors: see the table above.
+
+### `TcpListener.accept(): !TcpConnection`
+
+Waits for a client and returns the new connection. `AcceptFailed` is usually
+transient, so a serve loop recovers with `continue`, as below.
+
+### `TcpListener.close(): void`, `TcpListener.raw_fd(): int`, `TcpListener::new(fd: int)`
+
+As for `TcpConnection`: `close` is idempotent, `raw_fd` is `-1` once closed, and
+`new` wraps a descriptor you own.
+
+### Constants
+
+`AF_INET` (`2`), `SOCK_STREAM` (`1`), `SOL_SOCKET` (`1`) and `SO_REUSEADDR`
+(`2`) are the Linux values of the C constants, for a program that makes its own
+socket calls with `extern fn`. The first two are the same on every platform;
+`SOL_SOCKET` and `SO_REUSEADDR` differ on Windows and macOS, where a program
+calling `setsockopt` itself must use its platform's numbers. `net` itself does
+not use these constants.
+
+### Platform notes
+
+The same Turf source works on Linux, macOS and Windows. The runtime handles the
+differences:
+
+- **Windows:** Winsock is started automatically on the first socket call and
+  shut down when the program exits. A socket is closed with `closesocket`, which
+  `close()` does for you. `raw_fd()` returns the Winsock `SOCKET` handle, which is
+  **not** a C runtime file descriptor: pass it to Winsock calls, never to
+  `read`, `write` or `close`.
+- **macOS and BSD:** the address structure has a length byte that Linux's does
+  not; the runtime builds it for the platform.
+- **Everywhere:** only IPv4 and TCP. `resolve_hostname` returns the first IPv4
+  address.
+
+### Example: an echo server and its client
+
+The server answers each connection with its message prefixed by `echo: `, and
+stops when it receives `quit`. `defer conn.close();` closes each connection on
+every path out of `serve`, and `defer listener.close();` closes the listener when
+`main` returns.
+
+<Code title="io_and_net_example_an.tr">
+```turf
+import net;
+
+fn serve(conn: net::TcpConnection): bool {
+    defer conn.close();
+    immut request: string = conn.read(1024);
+    if request == "quit" {
+        conn.write("bye");
+        return false;
+    }
+    if request.length() > 0 {
+        conn.write("echo: " + request);
+    }
+    return true;
+}
+
+fn main(): int {
+    mut listener: net::TcpListener = net::TcpListener::bind(9091) recover run {
+        eprintline("cannot listen on port 9091");
+        return 1;
+    };
+    defer listener.close();
+    printline("listening on port 9091");
+    flush();
+
+    mut running: bool = true;
+    while running {
+        mut conn: net::TcpConnection = listener.accept() recover run {
+            continue;
+        };
+        running = serve(conn);
+    }
+    return 0;
+}
+```
+</Code>
+
+The client tells apart a server that is not running from a local failure:
+
+<Program file="io_and_net_example_an_2.tr">
+```turf
+import net;
+
+fn main(): int {
+    mut conn: net::TcpConnection = net::TcpConnection::connect(127, 0, 0, 1, 9091) recover as err run {
+        if err == net::NetworkError::ConnectionRefused {
+            eprintline("nothing is listening on 127.0.0.1:9091");
+        } else {
+            eprintline("could not create a socket");
+        }
+        return 1;
+    };
+    defer conn.close();
+
+    conn.write("hello");
+    printline(conn.read(1024));
+    return 0;
+}
+```
+```text
+echo: hello
+```
+</Program>
+
+With the server running, the client prints `echo: hello`. Without it, the
+client prints `nothing is listening on 127.0.0.1:9091` to standard error and
+exits with status 1.
+
+For an HTTP layer over `net`, see [HTTP](/stdlib/http/).
+
