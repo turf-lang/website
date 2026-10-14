@@ -19,6 +19,12 @@ Turf runs on four kinds of computer. Find yours in the table:
 | Windows x86-64 | Runs natively. No MSYS2 or other toolchain to install. |
 | macOS arm64 | Macs with Apple Silicon. Intel Macs are not supported. |
 
+<Callout tone="tip" title="Not sure which one you have?">
+
+Most Windows and Linux PCs are **x86-64**. Phones, Raspberry Pis and Macs with Apple Silicon (M1 and later) are **arm64**. **glibc** is a library every Linux system has; if your Linux is as new as the versions listed, you're fine.
+
+</Callout>
+
 <Callout tone="note" title="Everything comes in one box">
 
 Each Turf download carries the compiler, everything it needs to build programs, and the standard library. You don't need to install anything else first. And the programs you build with Turf don't need Turf to run.
@@ -127,6 +133,8 @@ There are two version numbers because Turf is really two programs working as a t
 If you ever report a bug, paste the output of `turf version` into the report. It says exactly which Turf you have.
 </Callout>
 
+If `turf version` printed its versions, you're ready: in the next guide you'll write your first program and run it.
+
 ## If something goes wrong
 
 ### “turf: command not found”
@@ -209,7 +217,3 @@ cd turf-lang
 </Command>
 
 The last line links `turf` into `~/.local/bin`. The [README](https://github.com/turf-lang/turf-lang#building-from-source) lists every option.
-
-## Next: write some Turf
-
-If `turf version` printed its versions, you're ready. In the next guide you'll write your first program and run it.
