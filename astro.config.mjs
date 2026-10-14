@@ -6,6 +6,8 @@ import { turfTheme } from "./src/lib/shiki/turf-theme.ts";
 import mdx from "@astrojs/mdx";
 
 export default defineConfig({
+  site: "https://turflang.org",
+
   markdown: {
     shikiConfig: {
       theme: turfTheme,
