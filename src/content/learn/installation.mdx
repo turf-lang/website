@@ -1,0 +1,215 @@
+---
+title: Installation
+description: Install Turf on Linux, macOS or Windows with one command.
+lead: Installing Turf takes one command. This page gives you the command for your computer, explains what it does, and helps if something goes wrong.
+outcomes:
+  - Have the `turf` command installed and working in your terminal.
+  - Understand what the installer did, and how to undo it.
+  - Know how to fix the most common problem, `turf` not being found.
+---
+
+## Check your computer
+
+Turf runs on four kinds of computer. Find yours in the table:
+
+| Computer | Notes |
+|---|---|
+| Linux x86-64 | Needs glibc 2.34 or newer: Ubuntu 22.04, Debian 12, RHEL 9, Amazon Linux 2023 and later. |
+| Linux arm64 | 64-bit ARM. Needs glibc 2.34 or newer, like x86-64. |
+| Windows x86-64 | Runs natively. No MSYS2 or other toolchain to install. |
+| macOS arm64 | Macs with Apple Silicon. Intel Macs are not supported. |
+
+<Callout tone="note" title="Everything comes in one box">
+
+Each Turf download carries the compiler, everything it needs to build programs, and the standard library. You don't need to install anything else first. And the programs you build with Turf don't need Turf to run.
+
+</Callout>
+
+## Run the installer
+
+Open a terminal and pick the tab for your computer. Copy the command (use the button in the corner), paste it into the terminal and press **Enter**.
+
+<Tabs labels={["Linux", "macOS", "Windows"]}>
+  <Tab>
+    <Command title="Linux" text="curl -fsSL https://turflang.org/install.sh | sh" />
+
+    This downloads the installer with `curl` and runs it with `sh`. Turf goes into a folder called `.turf` inside your home folder, written `~/.turf` for short.
+  </Tab>
+  <Tab>
+    <Command title="macOS" text="curl -fsSL https://turflang.org/install.sh | sh" />
+
+    The same command as on Linux. Open the **Terminal** app (press ⌘ + Space and type “Terminal”), paste the line and press Enter. Turf goes into `~/.turf`.
+  </Tab>
+  <Tab>
+    <Command title="Windows (PowerShell)" text="irm https://turflang.org/install.ps1 | iex" />
+
+    Run this in **PowerShell** (search for it in the Start menu). Turf goes into `%LOCALAPPDATA%\turf`.
+  </Tab>
+</Tabs>
+
+<Callout tone="tip" title="Pasting into a terminal">
+**Ctrl + Shift + V** pastes in most Linux terminals, **⌘ + V** on a Mac, and a **right-click** pastes in PowerShell.
+</Callout>
+
+## What the installer does
+
+It's a good habit to know what a command does before you run it. The installer prints each step as it goes. On Linux and macOS there are five:
+
+<Steps>
+  <Step title="Looks up the release">
+    Finds the newest version of Turf, and the download made for your kind of computer.
+  </Step>
+  <Step title="Downloads the archive">
+    An **archive** is lots of files packed into one, like a zip file.
+  </Step>
+  <Step title="Checks the download">
+    Compares the download's **SHA-256** fingerprint with the one the release lists. If they don't match, or the check can't run, it stops and installs nothing. This catches a broken or cut-short download.
+  </Step>
+  <Step title="Unpacks it">
+    Opens the archive into `~/.turf`.
+  </Step>
+  <Step title="Checks the compiler starts, and adds it to your PATH">
+    Makes sure `turf` really runs. Then it adds one clearly marked block to your shell's start-up file, so the `turf` command works in every **new** terminal.
+  </Step>
+</Steps>
+
+The Windows installer does the same job in four steps, and adds Turf to your user `PATH` instead of a start-up file. When they finish, both suggest something to try: `turf new hello`, then `cd hello`, then `turf run`.
+
+### What is PATH?
+
+When you type a command like `turf`, the terminal has to find the program with that name. It looks through a list of folders called the **PATH**, one after another, like checking the shelves of a library in order. The installer adds Turf's `bin` folder, where the `turf` program lives, to that list.
+
+<Flow>
+  <FlowStep label="you type turf" mono>in a terminal</FlowStep>
+  <FlowStep label="the terminal searches PATH">folder by folder</FlowStep>
+  <FlowStep label="~/.turf/bin/turf" mono>found it: run it</FlowStep>
+</Flow>
+
+<Callout tone="warn" title="Open a new terminal">
+
+A terminal reads its PATH once, when it opens. The terminal you ran the installer in may not know about `turf` yet. Close it and open a new one before you go on.
+
+</Callout>
+
+## Check it works
+
+In your new terminal, type:
+
+<Command text="turf version" />
+
+You should see something like this. Your version numbers and folders will be your own:
+
+<Terminal>
+```text
+$ turf version
+turf 1.0.0  (needs turfc interface 1.1+)
+turfc 2.0.0  (interface 1.7, /opt/turf/bin/turfc)
+  llvm 22.1.8
+  runtime turf_rt_abi_2_0
+  root /opt/turf
+  linker system-cc
+  smart built-in
+```
+</Terminal>
+
+There are two version numbers because Turf is really two programs working as a team:
+
+<Cards>
+  <Card title="turf">
+    The command you type. It understands projects, runs your tests and drives the compiler for you.
+  </Card>
+  <Card title="turfc">
+    The compiler itself, which does the translating. You never need to type it: `turf` finds it and runs it for you.
+  </Card>
+</Cards>
+
+<Callout tone="tip" title="Keep this command in mind">
+If you ever report a bug, paste the output of `turf version` into the report. It says exactly which Turf you have.
+</Callout>
+
+## If something goes wrong
+
+### “turf: command not found”
+
+The terminal can't find `turf` on its PATH. Try these, in order:
+
+1. Close the terminal and open a new one. This fixes it almost every time.
+2. On Linux or macOS, to use Turf in the terminal you already have open, run the line the installer printed at the end. For the usual folder it is `export PATH="$HOME/.turf/bin:$PATH"`.
+3. The installer knows the zsh, bash and fish shells. If you use a different one, it tells you which file it put the PATH line in. If your shell doesn't read that file, add `~/.turf/bin` to your PATH yourself.
+
+### Other problems
+
+| What you see | What it means |
+|---|---|
+| A SHA-256 mismatch | The download was damaged or cut short, and nothing was installed. Run the command again. |
+| An error about glibc on Linux | The Linux downloads need glibc 2.34 or newer. You can [build Turf from source](#from-source) instead. |
+| You have an Intel Mac | Intel Macs are not supported. Only Macs with Apple Silicon are. |
+
+## Installer options
+
+Most people never need these. The installer takes a few options:
+
+| Linux and macOS | Windows | What it does |
+|---|---|---|
+| `--version v2.0.0` | `-Version` | Installs a release other than the latest. |
+| `--prefix DIR` | `-Prefix` | Installs into another folder. |
+| `--smart` | `-Smart` | Installs the `-smart` build ([see below](#the--smart-build)). |
+| `--no-modify-path` | `-NoModifyPath` | Leaves start-up files alone, and prints the line to add yourself. |
+| `--uninstall` | `-Uninstall` | Removes Turf. |
+
+To use an option on Linux or macOS, save the installer to a file first, then run it with the options you want:
+
+<Command>
+```sh
+curl -fsSL https://turflang.org/install.sh -o install.sh
+sh install.sh --version v2.0.0 --prefix ~/tools/turf
+```
+</Command>
+
+A piped `irm | iex` on Windows can't take options either. Set the environment variables `TURF_INSTALL_VERSION`, `TURF_INSTALL_DIR` or `TURF_INSTALL_SMART=1` first, or save the script and run it with the options above.
+
+### Uninstalling
+
+Run the installer again with `--uninstall` (on Windows, `-Uninstall`). It removes exactly what it added, and never touches your projects, the package cache, or a model you put in `models/`.
+
+## Other ways to install
+
+### By hand
+
+Download the archive for your computer from the [Download page](/download/), unpack it anywhere, and run `bin/turf`, or put the `bin/` folder on your PATH. The archive is a single folder:
+
+<FileTree title="turf/">
+  <TreeItem name="bin/" dir>the programs: `turf` and `turfc`</TreeItem>
+  <TreeItem name="lib/" dir>the runtime and the standard library</TreeItem>
+  <TreeItem name="docs/" dir>the documentation</TreeItem>
+  <TreeItem name="share/turf/examples/" dir>example programs</TreeItem>
+</FileTree>
+
+There's nothing else to set up. The compiler finds `lib/` by looking next to itself, even through shortcuts (symlinks).
+
+### The -smart build
+
+Every release comes in two flavours: the plain one, and a `-smart` one. The smart build is the same compiler plus what `--smart` needs. `--smart` is an optional helper: when the compiler finds an error it can't fix by itself, it asks a small language model (a kind of AI) running **on your own computer** to suggest a fix. Turf only shows a suggestion after checking that it really removes the error. No model is included or downloaded: you choose one and put it in the `models/` folder of your install.
+
+<Callout tone="tip" title="Which one should I pick?">
+Pick the plain build. Turf's own error messages need nothing extra, and you can switch to the smart build later.
+</Callout>
+
+### From source
+
+You can also build Turf from its source code. You need LLVM 22, CMake 3.20 or newer and a C++20 compiler (Clang is recommended), plus Go 1.26 or newer for the `turf` command.
+
+<Command>
+```sh
+git clone --recursive https://github.com/turf-lang/turf-lang
+cd turf-lang
+./scripts/cmake_build.sh --release
+./scripts/install/dev_install.sh
+```
+</Command>
+
+The last line links `turf` into `~/.local/bin`. The [README](https://github.com/turf-lang/turf-lang#building-from-source) lists every option.
+
+## Next: write some Turf
+
+If `turf version` printed its versions, you're ready. In the next guide you'll write your first program and run it.

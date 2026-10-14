@@ -1,0 +1,876 @@
+---
+title: Language Basics
+description: Variables, types, maths, choices, loops, functions, arrays and text.
+lead: Every program, however big, is built from a handful of small pieces. This guide shows you each one, with a small program you can run and change.
+outcomes:
+  - Store values in variables, and know when to use `mut` or `immut`.
+  - Work with numbers, text and true-or-false values, and convert between them.
+  - Make choices with `if`, and repeat things with `while` and `for`.
+  - Write your own functions, and use arrays and strings.
+---
+
+## Before you start
+
+Every example on this page is a whole program. Save it as the file name shown in its title bar, and run it with the command underneath, like you did in [Your First Program](/learn/first-program/). The last lines of each box show exactly what it prints.
+
+### Comments
+
+Anything after `//` on a line is a **comment**. Comments are notes for people reading the code; the compiler skips them completely.
+
+<Program file="comments.tr">
+```turf
+// This whole line is a comment. Turf skips it.
+fn main(): int {
+    printline("Comments are for people."); // so is this
+    return 0;
+}
+```
+```text
+Comments are for people.
+```
+</Program>
+
+### Printing
+
+`printline(...)` prints a value and then starts a new line. `print(...)` prints without starting a new line, so the next thing printed carries on from there. Both work with text, numbers, and the other kinds of value you'll meet below.
+
+## Variables
+
+A **variable** is a name with a value attached. Think of it as a labelled box: the label is the name, and the value is what's inside.
+
+<Cells
+  cells={[
+    { label: "score", value: "0" },
+    { label: "name", value: "\"Mia\"" },
+    { label: "likes_cats", value: "true" },
+  ]}
+  caption="Three variables: three labelled boxes, each holding one value."
+/>
+
+You make a variable with `mut` or `immut`, a name, `=` and a starting value:
+
+- **`mut`** (short for *mutable*, which means “changeable”) makes a box whose value you can replace later.
+- **`immut`** (short for *immutable*, which means “unchangeable”) makes a box that keeps its first value forever.
+
+<Program file="variables.tr">
+```turf
+fn main(): int {
+    mut score = 0;
+    printline(score);
+
+    score = 10;
+    printline(score);
+
+    score = score + 5;
+    printline(score);
+    return 0;
+}
+```
+```text
+0
+10
+15
+```
+</Program>
+
+Look at `score = score + 5;`. It doesn't mean “score equals score plus 5”, which would be impossible in maths. In code, `=` means **put into**: work out the right-hand side first (10 + 5 is 15), then put the answer in the box on the left.
+
+### Changing an immut is an error
+
+If you try to change an `immut` variable, the compiler stops you:
+
+<Diagnostic file="apples.tr">
+```turf
+fn main(): int {
+    immut apples = 3;
+    apples = 4;
+    return 0;
+}
+```
+```text
+apples.tr (1 error)
+
+── error at line 3, col 12 [E060 · declaration]
+
+  Oops! You can't change the value of 'apples' because it's immutable.
+  Note: declared immutable here (line 2, col 5)
+
+  Hint: If you need to change its value later, declare it with 'mutable' instead of 'immutable'.
+
+  3 │     apples = 4;
+    │            ^ Here!
+
+  Run `turf --explain E060` for more details.
+```
+</Diagnostic>
+
+<Callout tone="tip" title="Which one should I use?">
+
+Use `immut` unless you know the value needs to change. When a value can't change, you never have to wonder whether some other line changed it, and that makes programs easier to understand.
+
+</Callout>
+
+<Callout tone="note" title="Long names work too">
+`mutable` means exactly the same as `mut`, and `immutable` the same as `immut`. Use whichever you like.
+</Callout>
+
+## Types
+
+Every value in Turf has a **type**, which says what kind of value it is. These are the ones you'll use most:
+
+| Type | What it holds | Examples |
+|---|---|---|
+| `int` | A whole number (an *integer*), positive or negative. | `0`, `42`, `-7`, `1_000_000` |
+| `double` | A number with a decimal point. | `3.5`, `0.25`, `-1.0` |
+| `string` | Text: any number of characters, between double quotes. | `"hello"`, `"Mia"`, `""` |
+| `char` | A single character, between single quotes. | `'a'`, `'Z'`, `'7'` |
+| `bool` | One of only two values: true or false. Named after George Boole, a mathematician. | `true`, `false` |
+
+You can write a variable's type after its name, with a colon:
+
+<Program file="types.tr">
+```turf
+fn main(): int {
+    immut age: int = 9;
+    immut height: double = 1.32;
+    immut name: string = "Mia";
+    immut initial: char = 'M';
+    immut likes_cats: bool = true;
+
+    printline(age);
+    printline(height);
+    printline(name);
+    printline(initial);
+    printline(likes_cats);
+    return 0;
+}
+```
+```text
+9
+1.32
+Mia
+M
+true
+```
+</Program>
+
+<Callout tone="tip" title="Big numbers are easier to read with _">
+You can put `_` between the digits of a number, like `1_000_000`. Turf ignores it; it's there to help your eyes.
+</Callout>
+
+### Turf can work the type out
+
+You don't have to write the type: if you leave it out, Turf works it out from the starting value. `12` is a whole number, so `apples` is an `int`. This is called **type inference**. You can also write `guess` where the type would go, which means the same thing. `typeof` tells you what type Turf picked:
+
+<Program file="guess.tr">
+```turf
+fn main(): int {
+    immut apples = 12;
+    immut price = 0.5;
+    immut fruit = "apple";
+
+    printline(typeof(apples));
+    printline(typeof(price));
+    printline(typeof(fruit));
+    return 0;
+}
+```
+```text
+int
+double
+string
+```
+</Program>
+
+A variable's type is decided once, when it's made, and never changes. A box made for whole numbers only ever holds whole numbers:
+
+<Diagnostic file="mismatch.tr">
+```turf
+fn main(): int {
+    mut x = 5;
+    x = 5.5;
+    return 0;
+}
+```
+```text
+mismatch.tr (1 error)
+
+── error at line 3, col 7 [E066 · type mismatch]
+
+  Type mismatch!
+  Cannot assign value of type 'double' to variable of type 'int'.
+  Note: 'x' was inferred as 'int' here (line 2, col 5)
+
+  Hint: Check that both sides have compatible types.
+
+  3 │     x = 5.5;
+    │       ^ Here!
+
+  Run `turf --explain E066` for more details.
+```
+</Diagnostic>
+
+The note even tells you where Turf decided that `x` is an `int`: line 2, where it was given `5`.
+
+## Maths
+
+Turf does arithmetic with these **operators**:
+
+| Operator | Meaning | Example | Answer |
+|---|---|---|---|
+| `+` | add | `7 + 2` | `9` |
+| `-` | subtract | `7 - 2` | `5` |
+| `*` | multiply | `7 * 2` | `14` |
+| `/` | divide | `7 / 2` | `3` |
+| `%` | remainder | `7 % 2` | `1` |
+
+<Program file="maths.tr">
+```turf
+fn main(): int {
+    printline(7 + 2);
+    printline(7 - 2);
+    printline(7 * 2);
+    printline(7 / 2);
+    printline(7 % 2);
+    printline(7.0 / 2.0);
+    printline(2 + 3 * 4);
+    printline((2 + 3) * 4);
+    return 0;
+}
+```
+```text
+9
+5
+14
+3
+1
+3.5
+14
+20
+```
+</Program>
+
+Three things to notice:
+
+1. **`7 / 2` is `3`, not `3.5`.** Dividing two whole numbers gives a whole number, and the bit after the point is dropped. It's like sharing 7 sweets between 2 friends: each gets 3.
+2. **`%` gives the remainder**: the 1 sweet left over. It's handy for checking whether a number is even: `n % 2` is `0` for even numbers.
+3. **`*` and `/` happen before `+` and `-`**, just like in maths class, so `2 + 3 * 4` is `14`. Use brackets to choose the order yourself: `(2 + 3) * 4` is `20`.
+
+### Shortcuts for changing a number
+
+Adding to a variable is so common that there are shortcuts. All three of these lines add 1 to `steps`:
+
+<Program file="counting.tr">
+```turf
+fn main(): int {
+    mut steps = 0;
+    steps = steps + 1;
+    steps += 1;
+    steps++;
+    printline(steps);
+
+    steps -= 3;
+    printline(steps);
+    return 0;
+}
+```
+```text
+3
+0
+```
+</Program>
+
+`steps += 1` means “add 1 to `steps`”, and `steps++` means the same thing. `-=` and `--` take away in the same way, and there are `*=` and `/=` too.
+
+### Numbers that are too big
+
+An `int` can hold very big numbers, up to 9,223,372,036,854,775,807. If a sum goes past that, many languages quietly give a wrong answer. Turf stops the program instead and tells you where. This is called a **panic**:
+
+<Program file="big.tr">
+```turf
+fn main(): int {
+    mut big: int = 9223372036854775807;
+    big = big + 1;
+    printline(big);
+    return 0;
+}
+```
+```text
+panic: runtime check: Integer overflow (big.tr:3)
+```
+</Program>
+
+`(big.tr:3)` means file `big.tr`, line 3. Dividing by zero panics in the same way.
+
+## Converting with to
+
+Turf never changes a value from one type into another behind your back. When you want a conversion, you ask for it with **`to`**: `age to string` gives the text form of the number `age`.
+
+This matters most when you join text and numbers together, because `+` only joins text to text:
+
+<Diagnostic file="age.tr">
+```turf
+fn main(): int {
+    immut age = 9;
+    printline("I am " + age + " years old");
+    return 0;
+}
+```
+```text
+age.tr (1 error)
+
+── error at line 3, col 23 [E057 · arithmetic]
+
+  Operator applied to the wrong kind of value!
+  Type mismatch: cannot apply '+' to 'string' and 'int'.
+
+  Hint: String '+' is provided by an 'operator +' overload in lib/std/strings.tr -- make sure 'strings' is imported. To concatenate a non-string, convert it first with `<expr> to string`.
+
+  3 │     printline("I am " + age + " years old");
+    │                       ^ Here!
+
+  Run `turf --explain E057` for more details.
+```
+</Diagnostic>
+
+The end of the hint says what to do: convert it first with `to string`. Here's the fixed program, plus a few more conversions:
+
+<Program file="to.tr">
+```turf
+fn main(): int {
+    immut age = 9;
+    printline("I am " + (age to string) + " years old");
+
+    immut cookies = 7;
+    immut friends = 2;
+    printline(cookies / friends);
+    printline(cookies to double / 2.0);
+
+    immut typed = "42";
+    printline((typed to int) + 1);
+    return 0;
+}
+```
+```text
+I am 9 years old
+3
+3.5
+43
+```
+</Program>
+
+- `age to string` turns the number `9` into the text `"9"`, which `+` can join.
+- `cookies to double` turns `7` into `7.0`, so the division keeps its decimal part.
+- `typed to int` reads the text `"42"` as the number `42`. If the text isn't a whole number (say, `"hello"`), the program panics.
+
+<Callout tone="warn" title="Put brackets around a conversion">
+When a `to` is in the middle of other maths or text, put brackets around it, like `(age to string)`. Then there's no doubt about what is being converted.
+</Callout>
+
+## Making choices
+
+Programs often need to do different things in different situations. **`if`** runs a block of code only when a condition is true.
+
+<Program file="weather.tr">
+```turf
+fn main(): int {
+    immut temperature = 31;
+
+    if temperature > 30 {
+        printline("It's hot! Wear a hat.");
+    } elseif temperature < 10 {
+        printline("It's cold! Wear a coat.");
+    } else {
+        printline("It's a nice day.");
+    }
+    return 0;
+}
+```
+```text
+It's hot! Wear a hat.
+```
+</Program>
+
+Turf checks the conditions from top to bottom and runs the **first** block whose condition is true, then skips the rest:
+
+<Flow>
+  <FlowStep label="temperature > 30 ?">yes: “It's hot!”</FlowStep>
+  <FlowStep label="temperature < 10 ?">yes: “It's cold!”</FlowStep>
+  <FlowStep label="else">anything else: “a nice day”</FlowStep>
+</Flow>
+
+`elseif` and `else` are optional: an `if` can stand on its own. The curly braces `{ }` are always needed, even around a single line.
+
+<Callout tone="try" title="Change the weather">
+Change `31` to `5`, then to `20`, and run the program each time. Which message do you get?
+</Callout>
+
+### Comparing values
+
+A condition is anything that is `true` or `false`. These operators compare two values:
+
+| Operator | Means | Example that is true |
+|---|---|---|
+| `==` | is equal to | `3 == 3` |
+| `!=` | is not equal to | `3 != 4` |
+| `<` | is less than | `3 < 4` |
+| `>` | is greater than | `4 > 3` |
+| `<=` | is less than or equal to | `3 <= 3` |
+| `>=` | is greater than or equal to | `4 >= 3` |
+
+<Callout tone="warn" title="= and == are different">
+One `=` **puts** a value into a variable. Two, `==`, **asks** whether two values are equal. Mixing them up is one of the most common mistakes in programming.
+</Callout>
+
+### And, or, not
+
+To combine conditions, use `&&` (and), `||` (or) and `!` (not):
+
+<Program file="logic.tr">
+```turf
+fn main(): int {
+    immut age = 9;
+    immut has_ticket = true;
+
+    printline(age >= 8 && has_ticket);
+    printline(age < 5 || age > 60);
+    printline(!has_ticket);
+    return 0;
+}
+```
+```text
+true
+false
+false
+```
+</Program>
+
+- `a && b` is true only when **both** are true.
+- `a || b` is true when **at least one** is true.
+- `!a` flips true to false and false to true.
+
+### Choosing a value: give and otherwise
+
+Sometimes you don't want to run different code, you just want to pick one of two values. For that there's `give` and `otherwise`: `condition give this otherwise that`.
+
+<Program file="give.tr">
+```turf
+fn main(): int {
+    immut score = 72;
+    immut result = score >= 50 give "pass" otherwise "try again";
+    printline(result);
+    return 0;
+}
+```
+```text
+pass
+```
+</Program>
+
+Read it out loud: “score is at least 50? Then **give** `"pass"`, **otherwise** `"try again"`.”
+
+## Loops
+
+A **loop** repeats a block of code. Computers never get bored, so loops are where they really shine.
+
+### while
+
+`while` repeats its block for as long as a condition stays true. It checks the condition before each round:
+
+<Program file="countdown.tr">
+```turf
+fn main(): int {
+    mut count = 3;
+    while count > 0 {
+        printline(count);
+        count = count - 1;
+    }
+    printline("Go!");
+    return 0;
+}
+```
+```text
+3
+2
+1
+Go!
+```
+</Program>
+
+<Callout tone="warn" title="Make sure the loop can stop">
+If nothing inside a `while` loop ever makes its condition false, it runs forever. Here, `count = count - 1` makes sure `count` reaches `0`. If a program seems stuck, press **Ctrl + C** in the terminal to stop it.
+</Callout>
+
+### for
+
+`for` counts through a range of numbers for you. `for i in 1..5` runs the block with `i` set to 1, then 2, then 3, then 4:
+
+<Program file="for.tr">
+```turf
+fn main(): int {
+    for i in 1..5 {
+        printline(i);
+    }
+    return 0;
+}
+```
+```text
+1
+2
+3
+4
+```
+</Program>
+
+Notice that **5 isn't included**. A range starts at the first number and stops just before the last one:
+
+<Cells
+  cells={[
+    { label: "1st", value: "1", on: true },
+    { label: "2nd", value: "2", on: true },
+    { label: "3rd", value: "3", on: true },
+    { label: "4th", value: "4", on: true },
+    { label: "stop", value: "5", out: true },
+  ]}
+  caption="1..5 gives 1, 2, 3 and 4. To include 5, write 1..6."
+/>
+
+Add `step` to choose how `i` changes after each round. That lets you count in fives, or count backwards:
+
+<Program file="step.tr">
+```turf
+fn main(): int {
+    for i in 0..20 step i += 5 {
+        print(i);
+        print(" ");
+    }
+    printline("");
+
+    for i in 10..0 step i -= 2 {
+        print(i);
+        print(" ");
+    }
+    printline("");
+    return 0;
+}
+```
+```text
+0 5 10 15
+10 8 6 4 2
+```
+</Program>
+
+### Skipping and stopping: continue and break
+
+Inside a loop, `continue` skips the rest of this round and moves on to the next one. `break` leaves the loop completely:
+
+<Program file="odd.tr">
+```turf
+fn main(): int {
+    for i in 1..100 {
+        if i % 2 == 0 {
+            continue;
+        }
+        if i > 9 {
+            break;
+        }
+        print(i);
+        print(" ");
+    }
+    printline("");
+    return 0;
+}
+```
+```text
+1 3 5 7 9
+```
+</Program>
+
+Even numbers are skipped by `continue`, and once `i` passes 9, `break` ends the loop, long before it reaches 100.
+
+## Functions
+
+You've been using a function since your first program: `main`. A **function** is a named list of instructions you can run whenever you like, just by using its name. That's called **calling** it.
+
+Functions can take **inputs** (called *parameters*) and give back an **output** (called the *return value*):
+
+<Flow>
+  <FlowStep label="4" mono>the input</FlowStep>
+  <FlowStep label="double_it" mono>`return n * 2;`</FlowStep>
+  <FlowStep label="8" mono>the output</FlowStep>
+</Flow>
+
+<Program file="functions.tr">
+```turf
+fn double_it(n: int): int {
+    return n * 2;
+}
+
+fn greet(name: string): void {
+    printline("Hi, " + name + "!");
+}
+
+fn main(): int {
+    greet("Sam");
+    greet("Lee");
+    printline(double_it(4));
+    printline(double_it(double_it(4)));
+    return 0;
+}
+```
+```text
+Hi, Sam!
+Hi, Lee!
+8
+16
+```
+</Program>
+
+Here's how to read the first line of `double_it`:
+
+<Annotated file="functions.tr">
+  <Line n={1} code="fn double_it(n: int): int {">
+    A function called `double_it`. It takes one input, a whole number called `n`, and gives back a whole number (the `: int` after the brackets).
+  </Line>
+  <Line n={2} code="    return n * 2;">
+    `return` hands the answer back to whoever called the function.
+  </Line>
+  <Line n={3} code="}">
+    The end of the function.
+  </Line>
+</Annotated>
+
+`greet` gives back nothing at all: it just prints. Its return type is **`void`**, which means “nothing”. And `double_it(double_it(4))` works from the inside out: `double_it(4)` is `8`, and `double_it(8)` is `16`.
+
+Functions can take several inputs, separated by commas. Writing a function once and calling it many times saves you from repeating yourself:
+
+<Program file="area.tr">
+```turf
+fn area(width: int, height: int): int {
+    return width * height;
+}
+
+fn main(): int {
+    immut room = area(4, 3);
+    immut garden = area(10, 6);
+    printline("Room: " + (room to string));
+    printline("Garden: " + (garden to string));
+    printline("Both: " + (room + garden to string));
+    return 0;
+}
+```
+```text
+Room: 12
+Garden: 60
+Both: 72
+```
+</Program>
+
+<Callout tone="note" title="Order doesn't matter">
+A function can call another function written further down the file. Turf reads the whole file before it runs anything.
+</Callout>
+
+## Arrays
+
+An **array** holds several values of the same type, in a row. You write it with square brackets: `["cat", "dog", "fish"]`. Its type is written like `string[]`, which means “an array of strings”.
+
+Each value has a numbered position, called its **index**. Indexes start at **0**, not 1:
+
+<Cells
+  cells={[
+    { label: "pets[0]", value: "\"cat\"" },
+    { label: "pets[1]", value: "\"dog\"" },
+    { label: "pets[2]", value: "\"fish\"" },
+  ]}
+  caption="The first value is at index 0, so the last of 3 values is at index 2. pets[-1] counts back from the end: it's the last one."
+/>
+
+<Program file="pets.tr">
+```turf
+fn main(): int {
+    mut pets: string[] = ["cat", "dog", "fish"];
+
+    printline(pets[0]);
+    printline(pets[2]);
+    printline(pets[-1]);
+
+    pets[1] = "rabbit";
+    printline(pets[1]);
+    printline(pets.length());
+    return 0;
+}
+```
+```text
+cat
+fish
+fish
+rabbit
+3
+```
+</Program>
+
+`pets[1] = "rabbit";` replaces the value at index 1, and `pets.length()` tells you how many values there are. An array's length is fixed when it's made: it always has exactly 3 slots. (For a list that can grow, the standard library has `List`, which you'll meet in the [tour](/learn/tour/).)
+
+Asking for a slot that doesn't exist is a mistake the compiler catches:
+
+<Diagnostic file="nope.tr">
+```turf
+fn main(): int {
+    immut pets: string[] = ["cat", "dog", "fish"];
+    printline(pets[3]);
+    return 0;
+}
+```
+```text
+nope.tr (1 error)
+
+── error at line 3, col 19 [E001 · array error]
+
+  Array index out of bounds!
+  You tried to access 'pets[3]', but 'pets' only has 3 elements (indices 0 to 2, or -1 to -3 counting from the end).
+  Note: array declared here (line 2, col 11)
+
+  Hint: Array indices start at 0 and go up to size - 1; a negative index counts back from the end (-1 is the last element).
+
+  3 │     printline(pets[3]);
+    │                   ^ Here!
+
+  Run `turf --explain E001` for more details.
+```
+</Diagnostic>
+
+### Looping over an array
+
+`for value in array` visits every value in turn. Write `for (index, value) in array` to get each position as well:
+
+<Program file="scores.tr">
+```turf
+fn main(): int {
+    immut scores: int[] = [8, 5, 10, 7];
+
+    mut total = 0;
+    for score in scores {
+        total = total + score;
+    }
+    printline(total);
+
+    for (index, score) in scores {
+        printline((index to string) + ": " + (score to string));
+    }
+    return 0;
+}
+```
+```text
+30
+0: 8
+1: 5
+2: 10
+3: 7
+```
+</Program>
+
+## Strings
+
+A `string` is text. You've used strings since your first program, and Turf can do much more with them than print them. Here are a few of the things a string can do:
+
+<Program file="strings.tr">
+```turf
+fn main(): int {
+    immut word = "turtle";
+
+    printline(word.length());
+    printline(word[0]);
+    printline(word.to_upper());
+    printline(word.contains("turt"));
+    printline(word.replace("t", "T"));
+    printline(word + " " + word);
+    return 0;
+}
+```
+```text
+6
+t
+TURTLE
+true
+TurTle
+turtle turtle
+```
+</Program>
+
+| Code | What it does |
+|---|---|
+| `word.length()` | How many characters it has. |
+| `word[0]` | The character at an index. Like arrays, strings count from 0, and you get a `char`. |
+| `word.to_upper()` | A copy in capital letters. `to_lower()` does the opposite. |
+| `word.contains("turt")` | Whether one piece of text appears inside it: `true` or `false`. |
+| `word.replace("t", "T")` | A copy with every `"t"` replaced by `"T"`. |
+| `word + " " + word` | Joins strings together. |
+
+<Cells
+  cells={[
+    { label: "0", value: "t", on: true },
+    { label: "1", value: "u" },
+    { label: "2", value: "r" },
+    { label: "3", value: "t" },
+    { label: "4", value: "l" },
+    { label: "5", value: "e" },
+  ]}
+  caption="The characters of “turtle” and their indexes. word[0] is the first one."
+/>
+
+Notice that `to_upper` and `replace` give you a **new** string: `word` itself stays `"turtle"`. There are many more string tools, such as `trim`, `split` and `starts_with`, in the [standard library](/stdlib/).
+
+## Putting it all together
+
+Here's a classic programming puzzle called **FizzBuzz**. Count from 1 to 15, but for numbers divisible by 3 say “Fizz”, for numbers divisible by 5 say “Buzz”, and for numbers divisible by both say “FizzBuzz”. It uses a function, `if`, `%`, `to`, `return` and a `for` loop: almost everything from this page.
+
+<Program file="fizzbuzz.tr">
+```turf
+fn describe(n: int): string {
+    if n % 15 == 0 { return "FizzBuzz"; }
+    if n % 3 == 0 { return "Fizz"; }
+    if n % 5 == 0 { return "Buzz"; }
+    return n to string;
+}
+
+fn main(): int {
+    for n in 1..16 {
+        printline(describe(n));
+    }
+    return 0;
+}
+```
+```text
+1
+2
+Fizz
+4
+Buzz
+Fizz
+7
+8
+Fizz
+Buzz
+11
+Fizz
+13
+14
+FizzBuzz
+```
+</Program>
+
+`describe` hands back as soon as it hits a `return`, so for 15 it says “FizzBuzz” and never reaches the other checks. That's why the check for 15 comes first.
+
+<Callout tone="try" title="Make it your own">
+
+Change the loop to count to 30. Then add a new rule: numbers divisible by 7 say “Bang”. Where does the new check need to go?
+
+</Callout>
+
+## What you learned
+
+- `mut` makes a variable you can change; `immut` makes one you can't.
+- The main types are `int`, `double`, `string`, `char` and `bool`, and `to` converts between them.
+- `if`, `elseif` and `else` choose what to run; `give … otherwise` chooses a value.
+- `while` and `for` repeat things; `break` and `continue` control a loop.
+- Functions take inputs and `return` an output; arrays hold several values, counted from 0.

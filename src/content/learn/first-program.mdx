@@ -1,0 +1,420 @@
+---
+title: Your First Program
+description: Write hello.tr, understand every line, run it, and read the compiler's errors.
+lead: Time to write some Turf. You'll make a program that says hello, find out what every part of it means, and see what happens when something goes wrong.
+outcomes:
+  - Write a Turf program in a file and run it with `turf run`.
+  - Explain what every line of `hello.tr` does.
+  - Read an error from the compiler and fix it.
+  - Make a project with `turf new` and run a test with `turf test`.
+---
+
+## Make a file
+
+A Turf program lives in a plain text file whose name ends in **`.tr`**. That ending tells everyone, including the compiler, that the file holds Turf.
+
+<Steps>
+  <Step title="Make a folder for your code">
+    Somewhere easy to find, such as your home folder. Call it `turf-practice`.
+  </Step>
+  <Step title="Make a new file in it called hello.tr">
+    Use your text editor's **New File** and **Save As**. Check the name ends in `.tr` and not `.tr.txt`: some editors add `.txt` without asking.
+  </Step>
+  <Step title="Open a terminal in that folder">
+    In the terminal, `cd` means “change directory”, which means go into a folder. Type `cd turf-practice` and press Enter.
+  </Step>
+</Steps>
+
+<Command>
+```sh
+mkdir turf-practice
+cd turf-practice
+```
+</Command>
+
+The two commands above do steps 1 and 3 from the terminal: `mkdir` makes a folder, and `cd` goes into it.
+
+## Type the program
+
+Type this into `hello.tr`, or copy it with the button, and save the file:
+
+<Code title="hello.tr">
+```turf
+fn main(): int {
+    printline("Hello, world!");
+    return 0;
+}
+```
+</Code>
+
+Be careful to copy every symbol exactly: the brackets `( )`, the curly braces `{ }`, the quote marks `" "` and the semicolons `;`. To a compiler, every one of them matters.
+
+## Run it
+
+Back in the terminal, type:
+
+<Command text="turf run hello.tr" />
+
+and you should see this:
+
+<Terminal>
+```text
+$ turf run hello.tr
+Compiled to /tmp/turf-run-228119781/hello.o
+Successfully compiled to /tmp/turf-run-228119781/hello
+Hello, world!
+```
+</Terminal>
+
+**You just wrote and ran a program!**
+
+The first two lines are `turf` telling you it compiled your program and where it put it. The last line is your program running: that's your `Hello, world!`.
+
+<Callout tone="note" title="What turf run does">
+
+`turf run` does three things in a row: it compiles your file into a program, runs that program, and then deletes it again. It's perfect for trying things out. That's why the folder in the first two lines has a random number in it: it's a temporary place that `turf` cleans up afterwards.
+
+</Callout>
+
+## What each line means
+
+Here is `hello.tr` again, taken apart one line at a time:
+
+<Annotated file="hello.tr">
+  <Line n={1} code="fn main(): int {">
+    `fn` starts a **function**: a named list of instructions. This one is called `main`, and that name is special: `main` is where every Turf program starts. The empty `()` means it needs nothing to get going, `: int` says it gives back a whole number when it finishes, and `{` opens its body.
+  </Line>
+  <Line n={2} code={`    printline("Hello, world!");`}>
+    `printline` prints some text, then moves to a new line. The text goes between double quotes. The `;` at the end finishes the instruction, like a full stop finishes a sentence.
+  </Line>
+  <Line n={3} code="    return 0;">
+    `return` ends the function and hands back a value. For `main`, the number goes back to the computer, and `0` means “everything went well”.
+  </Line>
+  <Line n={4} code="}">
+    The closing `}` ends the body of `main`. Every `{` needs a matching `}`.
+  </Line>
+</Annotated>
+
+<Callout tone="tip" title="Why are lines 2 and 3 pushed in?">
+
+The spaces at the start of lines 2 and 3 are called **indentation**. They show at a glance that those lines are inside `main`. Turf doesn't need them, but people do: they make code much easier to read. `turf fmt` can fix indentation for you.
+
+</Callout>
+
+## Make it your own
+
+Programs get interesting when you change them. Here's `hello.tr` with a **variable**: a name that holds a value, so you can use it later. `immut name = "Turf";` makes a variable called `name` that holds the text `"Turf"`. Then `+` joins pieces of text together:
+
+<Program file="hello.tr">
+```turf
+fn main(): int {
+    immut name = "Turf";
+    printline("Hello, " + name + "!");
+
+    return 0;
+}
+```
+```text
+Hello, Turf!
+```
+</Program>
+
+Each `printline` prints its own line, so several of them print several lines, top to bottom, in order:
+
+<Program file="lines.tr">
+```turf
+fn main(): int {
+    printline("Roses are red,");
+    printline("violets are blue,");
+    printline("this program runs,");
+    printline("and so can you.");
+    return 0;
+}
+```
+```text
+Roses are red,
+violets are blue,
+this program runs,
+and so can you.
+```
+</Program>
+
+<Callout tone="try" title="Make it say your name">
+
+Change `"Turf"` to your own name, save the file and run `turf run hello.tr` again. Then add a third `printline` that says what you like to eat.
+
+</Callout>
+
+## When things go wrong
+
+Everybody makes mistakes when they program, including people who've done it for years. What matters is finding them quickly, and that's where the compiler helps. Let's make a mistake on purpose.
+
+### A misspelled name
+
+This program spells `name` as `nmae` on line 3. To see what's wrong without running anything, use `turf check`: it reads the program and reports every problem it finds.
+
+<Diagnostic file="oops.tr">
+```turf
+fn main(): int {
+    immut name = "Turf";
+    printline("Hello, " + nmae + "!");
+    return 0;
+}
+```
+```text
+oops.tr (1 error)
+
+── error at line 3, col 27 [E040 · undeclared variable]
+
+  I can't find anything named 'nmae'.
+
+  Hint: It may be from the current file: 'name'
+
+  3 │     printline("Hello, " + nmae + "!");
+    │                           ^~~~ Here!
+
+  Run `turf --explain E040` for more details.
+```
+</Diagnostic>
+
+That's a lot of text, but every part has a job. From top to bottom:
+
+<Steps>
+  <Step title="Which file, and how many problems">
+    `oops.tr (1 error)`: the file and the number of errors in it.
+  </Step>
+  <Step title="Where, and what kind">
+    `line 3, col 27` is the spot: line 3, 27 characters along. `E040` is the error's **code**, and `undeclared variable` is the kind of error.
+  </Step>
+  <Step title="The message">
+    What's wrong, in plain words: there is nothing called `nmae`.
+  </Step>
+  <Step title="The hint">
+    A suggestion for fixing it. Here the compiler noticed that `name` looks very similar, so you probably meant that.
+  </Step>
+  <Step title="The picture">
+    Your line of code, with `^~~~ Here!` underlining the exact problem.
+  </Step>
+  <Step title="Where to learn more">
+    A command that explains this kind of error in detail.
+  </Step>
+</Steps>
+
+Fix the spelling, run `turf check oops.tr` again, and it prints nothing at all. When `turf check` is silent, there are no errors.
+
+### Asking turf to explain
+
+Every error code has a longer explanation, with examples. Ask for it with `turf explain` and the code:
+
+<Terminal>
+```text
+$ turf explain E040
+E040  ReferenceError (UNDECLARED_VARIABLE)
+
+I can't find anything with that name
+
+Turf looked everywhere it knows to look -- the current block, any block around it, the whole file -- and couldn't find anything called by that name. No variable, no struct, no enum, nothing. This is the most common error you'll hit while learning, and it's almost always one of two very fixable things.
+
+The first is a plain typo:
+
+    mut count: int = 0;
+    count = coutn + 1;   // typo! should be "count"
+...
+```
+</Terminal>
+
+### A missing semicolon
+
+Here's another very common mistake: a `;` left off the end of line 2.
+
+<Diagnostic file="semi.tr">
+```turf
+fn main(): int {
+    printline("Hello, world!")
+    return 0;
+}
+```
+```text
+semi.tr (1 error)
+
+── error at line 3, col 5 [E102 · syntax error]
+
+  Expected ';' after statement.
+
+  3 │     return 0;
+    │     ^~~~~~ Here!
+
+  Run `turf --explain E102` for more details.
+```
+</Diagnostic>
+
+Notice that the error points at **line 3**, not line 2. That's because the compiler only knows the `;` is missing when it reaches `return` and finds something it didn't expect. When an error points at the start of a line, look at the end of the line before it too.
+
+<Callout tone="try" title="Break it on purpose">
+
+Take a working program and break it in different ways: delete a `"`, a `{` or a `}`, or change `printline` to `printlin`. Run `turf check` each time and read what it says. Knowing these messages makes real mistakes much easier to fix.
+
+</Callout>
+
+## A program you can keep
+
+`turf run` throws its program away when it's done. To keep a program, so you can run it again any time without Turf, compile it with `turf` and a file name. `-o hello` names the program it makes:
+
+<Terminal>
+```text
+$ turf hello.tr -o hello
+Compiled to hello.o
+Successfully compiled to hello
+$ ./hello
+Hello, world!
+```
+</Terminal>
+
+Now there's a program called `hello` in your folder, and `./hello` runs it. The `./` means “the one in this folder”. Along the way the compiler also made `hello.o`, a halfway step called an **object file**; you can ignore it.
+
+## Your first project
+
+One file is fine for practice. Bigger programs are split over many files, and they have tests and settings. For that, Turf has **projects**. `turf new` makes one for you, ready to run:
+
+<Terminal>
+```text
+$ turf new hello
+Created program package 'hello' in hello/
+  hello/turf.toml
+  hello/src/main.tr
+  hello/README.md
+  hello/.vscode/extensions.json
+  hello/.gitignore
+$ cd hello
+$ turf run
+Compiled to build/hello.o
+Successfully compiled to build/hello
+Hello, TurfLang! This is hello.
+```
+</Terminal>
+
+Inside a project you just type `turf run`, without a file name: `turf` knows where to start. Here's what it made:
+
+<FileTree title="hello/">
+  <TreeItem name="turf.toml">the **manifest**: the project's name, version and settings</TreeItem>
+  <TreeItem name="src/" dir>your code lives here</TreeItem>
+  <TreeItem name="main.tr" depth={1}>where the program starts: what `turf run` runs</TreeItem>
+  <TreeItem name="README.md">a short page about the project, with everyday commands</TreeItem>
+  <TreeItem name=".vscode/" dir>recommends the Turf extension to VS Code</TreeItem>
+  <TreeItem name=".gitignore">tells git not to save the `build/` folder</TreeItem>
+  <TreeItem name="build/" dir>appears when you build: the finished program goes here</TreeItem>
+</FileTree>
+
+`turf.toml` is short. TOML is a simple format for settings: names on the left, values on the right.
+
+```toml
+[package]
+name = "hello"
+version = "0.1.0"
+turf = "2.0"
+
+[dependencies]
+```
+
+`turf = "2.0"` says this project needs Turf 2.0 or newer. `[dependencies]` is where other people's code you use will be listed; it's empty for now.
+
+And this is `src/main.tr`:
+
+<Code title="src/main.tr">
+```turf
+// src/main.tr: this package's entry point. `turf run` builds and runs it.
+import io;
+
+fn main(): int {
+    io::printline("Hello, TurfLang! This is hello.");
+    return 0;
+}
+```
+</Code>
+
+Two things are new here:
+
+- The first line starts with `//`, so it's a **comment**: a note for people. The compiler skips everything from `//` to the end of the line.
+- `import io;` brings in the standard library's `io` module, where printing lives, and `io::printline` means “the `printline` from `io`”. You didn't need this in `hello.tr` because the most common modules, `io` among them, are always available. Writing `io::` just makes it clear where `printline` comes from.
+
+### Build without running
+
+`turf build` compiles the project without running it. The program is saved as `build/hello`:
+
+<Terminal>
+```text
+$ turf build
+Compiled to build/hello.o
+Successfully compiled to build/hello
+```
+</Terminal>
+
+## Your first test
+
+A **test** is a small program that checks your code does what you expect. In a project, tests live in a folder called `tests/`. Make that folder, and put this in `tests/basic.tr`:
+
+<Code title="tests/basic.tr">
+```turf
+import test;
+
+fn main(): int {
+    test::assert(1 + 1 == 2, "arithmetic still works");
+    return 0;
+}
+```
+</Code>
+
+`test::assert` checks that something is true. Here it checks that `1 + 1 == 2`; `==` means “is equal to”. If it weren't true, the test would fail and print the message. Now run every test in the project:
+
+<Terminal>
+```text
+$ turf test
+Running Turf Test Suites...
+
+[tests] basic.tr ... PASS
+
+=== Test Summary ===
+Total Tests: 1
+Passed:      1
+Failed:      0
+
+All tests passed successfully!
+```
+</Terminal>
+
+Every file in `tests/` runs as its own program, and a test **passes** when it finishes with `0`.
+
+<Callout tone="try" title="Watch a test fail">
+Change `1 + 1 == 2` to `1 + 1 == 3` and run `turf test` again. Then put it back.
+</Callout>
+
+A failing test looks like this. The details at the bottom name the file and the line (`basic.tr:4`), followed by your message:
+
+<Terminal>
+```text
+$ turf test
+Running Turf Test Suites...
+
+[tests] basic.tr ... RUNTIME FAILED (Exit code 134)
+
+=== Test Summary ===
+Total Tests: 1
+Passed:      0
+Failed:      1
+
+Failed Tests Details:
+
+--- tests/basic.tr (Runtime Error exit 134):
+basic.tr:4: arithmetic still works
+ ---
+```
+</Terminal>
+
+## What you learned
+
+- A Turf program is a `.tr` file, and it starts at `fn main()`.
+- `turf run file.tr` compiles a program and runs it; `turf file.tr -o name` makes a program you can keep.
+- `turf check` finds mistakes, and `turf explain` explains an error code.
+- `turf new` makes a project; `turf run`, `turf build` and `turf test` work inside it.
+
+Next, you'll learn the building blocks every program is made of: values, variables, maths, choices and loops.

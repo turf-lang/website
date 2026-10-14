@@ -1,0 +1,16 @@
+---
+import { tokenClass, tokenize } from "../../lib/turf-tokens";
+
+interface Props {
+    n: number;
+    code: string;
+}
+
+const { n, code } = Astro.props;
+const lines = tokenize(code);
+---
+
+<li data-code={code} class="grid grid-cols-1 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+    <pre class="overflow-x-auto px-5 py-4 font-mono text-sm leading-7 sm:text-[15px]"><code>{lines.map((tokens, i) => <span class="block min-h-7"><span class="mr-4 inline-block w-5 select-none text-right text-fg-faint">{n + i}</span>{tokens.map(([kind, text]) => <span class={tokenClass[kind]}>{text}</span>)}</span>)}</code></pre>
+    <div class="learn-slot border-t border-dashed border-line bg-tint px-5 py-4 md:border-l md:border-t-0 md:border-solid"><slot /></div>
+</li>

@@ -1,0 +1,28 @@
+---
+interface Props {
+    title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<li class="step relative grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 pb-8 last:pb-0">
+    <span aria-hidden="true" class="line absolute bottom-0 left-[1.25rem] top-11 w-px bg-line"></span>
+    <span class="number grid size-10 place-items-center rounded-full border border-line-strong bg-surface-raised font-mono text-sm text-accent"></span>
+    <div class="min-w-0 pt-1.5">
+        <p class="font-bold text-fg">{title}</p>
+        <div class="learn-slot mt-1.5"><slot /></div>
+    </div>
+</li>
+
+<style>
+    .step {
+        counter-increment: step;
+    }
+    .number::before {
+        content: counter(step);
+    }
+    .step:last-child .line {
+        display: none;
+    }
+</style>

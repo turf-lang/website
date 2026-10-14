@@ -1,0 +1,153 @@
+---
+title: Getting Started
+description: What Turf is, what you need, and where to go next.
+lead: New to Turf, or new to programming? Start here. This page explains what Turf is, what you need, and the route through the rest of the guides.
+outcomes:
+  - Know what a programming language and a compiler are, in plain words.
+  - Know what Turf is good at, and what makes it different.
+  - Have everything ready to install Turf and write your first program.
+---
+
+## What is a program?
+
+A **program** is a list of instructions for a computer. A computer is very fast, but it takes everything literally: it does exactly what it is told, in exactly the order it is told, and nothing else.
+
+Computers don't understand English. Deep down they only understand **machine code**: long runs of numbers that are very hard for people to read or write. So we write instructions in a **programming language** instead. A programming language is a way of writing instructions that people can read, but that is exact enough for a computer to follow.
+
+**Turf** is one of these languages. Here is a complete Turf program. It tells the computer to show the words `Hello, world!` on the screen:
+
+<Program file="hello.tr">
+```turf
+fn main(): int {
+    printline("Hello, world!");
+    return 0;
+}
+```
+```text
+Hello, world!
+```
+</Program>
+
+The top part is the program. The bottom part shows the command that runs it (`turf run hello.tr`) and what appeared on the screen.
+
+Don't worry if it looks strange. You'll write this exact program yourself in [Your First Program](/learn/first-program/), and we'll go through it one line at a time.
+
+## What is a compiler?
+
+Something has to turn your Turf into the machine code the computer understands. That something is a program called a **compiler**. Think of it as a translator who reads your whole story in one language and writes it out again in another.
+
+<Flow caption="You write a .tr file. The turf command translates it into a program the computer runs directly.">
+  <FlowStep label="hello.tr" mono>the instructions you write, in Turf</FlowStep>
+  <FlowStep label="turf" mono>the compiler reads and checks them</FlowStep>
+  <FlowStep label="hello" mono>a program your computer runs by itself</FlowStep>
+</Flow>
+
+A compiler has a second, very useful job: it **checks your work**. Before it translates anything, it reads the whole program looking for mistakes, such as a misspelled name, or a number where words were expected. If it finds one, it stops and tells you what is wrong and where, so you can fix it before the program ever runs.
+
+<Callout tone="note" title="The compiler is the authority">
+
+One of Turf's founding rules is that the compiler decides, by itself, whether a program is correct. It needs no internet connection, and the same program always gets the same answer.
+
+</Callout>
+
+## What is Turf?
+
+Turf describes itself as *a statically typed language that compiles ahead of time to native executables through LLVM*. That's a mouthful, so here it is piece by piece:
+
+| Turf is… | What that means |
+|---|---|
+| **statically typed** | Every value has a **type**: a whole number, a decimal number, some text, true-or-false, and so on. The compiler checks that you never mix them up, before the program runs. |
+| **compiled ahead of time** | Your program is translated once, in advance. After that it runs on its own, quickly, without Turf being involved. |
+| **to native executables** | The result is a real program for your computer, just like the apps you already use. |
+| **through LLVM** | LLVM is a well-known toolkit that does the very last step: turning the program into machine code. |
+
+Turf also has a **garbage-collected heap**: you don't have to clean up memory yourself, because Turf notices when something is no longer used and tidies it away. And it comes with a **standard library**: ready-made building blocks for text, lists, files, JSON, the web and more.
+
+### What makes Turf different
+
+<Cards>
+  <Card tag="Safe" title="Mistakes are caught, not hidden">
+    If a number gets too big to store, or you divide by zero, a Turf program stops with a clear message. It never quietly carries on with a wrong answer.
+  </Card>
+  <Card tag="Fast" title="Real programs, not scripts">
+    Turf compiles to native code, so your programs start quickly and run at full speed.
+  </Card>
+  <Card tag="Friendly" title="Error messages that teach">
+    When something is wrong, `turf` explains it in plain words, points at the exact spot and often suggests the fix.
+  </Card>
+  <Card tag="Ready" title="It works when you install it">
+    One download has everything: the compiler, its tools and the standard library. Nothing else to set up.
+  </Card>
+</Cards>
+
+## What you need
+
+You need three things. You probably have all of them already.
+
+<Steps>
+  <Step title="A computer Turf supports">
+    Linux (x86-64 or arm64, with glibc 2.34 or newer, such as Ubuntu 22.04 and later), Windows (x86-64), or a Mac with Apple Silicon. Intel Macs are not supported.
+  </Step>
+  <Step title="A terminal">
+    A **terminal** is a window where you type commands instead of clicking buttons. On a Mac it's the **Terminal** app; on Windows, use **PowerShell**; on Linux it's usually called **Terminal** too. Every command in these guides is typed there.
+  </Step>
+  <Step title="A text editor">
+    Any editor that saves plain text will do. If you use VS Code, projects made with `turf new` recommend the Turf extension (`turflang.turf`) for you.
+  </Step>
+</Steps>
+
+### How to read the boxes in these guides
+
+In a terminal box, a line that starts with `$` is a command for you to type. You don't type the `$` itself: it only marks where a command begins. The lines below it are what the computer prints back.
+
+<Terminal>
+```text
+$ turf version
+turf 1.0.0  (needs turfc interface 1.1+)
+turfc 2.0.0  (interface 1.7, /opt/turf/bin/turfc)
+  llvm 22.1.8
+  runtime turf_rt_abi_2_0
+  root /opt/turf
+  linker system-cc
+  smart built-in
+```
+</Terminal>
+
+Here the command is `turf version`, and everything under it is Turf's answer. You'll also meet these boxes:
+
+<Callout tone="tip" title="Tips">
+Shortcuts and handy things to know.
+</Callout>
+
+<Callout tone="warn" title="Warnings">
+Common mistakes, so you can avoid them.
+</Callout>
+
+<Callout tone="try" title="Things to try">
+Small changes to make to a program, to see what happens. This is where most of the learning happens.
+</Callout>
+
+## Your route through the guides
+
+The Learn guides are meant to be read in order. Each one builds on the one before.
+
+<Cards>
+  <Card title="Installation" href="/learn/installation/">
+    Put the `turf` command on your computer with one line, and check it works.
+  </Card>
+  <Card title="Your First Program" href="/learn/first-program/">
+    Write `hello.tr`, run it, break it on purpose, and read what the compiler says.
+  </Card>
+  <Card title="Language Basics" href="/learn/basics/">
+    Values, variables, maths, choices, loops, functions, arrays and text.
+  </Card>
+  <Card title="Tour of Turf" href="/learn/tour/">
+    The bigger ideas: structs, patterns, errors, generics, state machines and modules.
+  </Card>
+</Cards>
+
+<Callout tone="try" title="Learn by doing">
+
+Every program in these guides was compiled and run, and the output shown is exactly what it printed. Type them in, run them, then change them. Breaking a program and reading the error is one of the fastest ways to learn.
+
+</Callout>

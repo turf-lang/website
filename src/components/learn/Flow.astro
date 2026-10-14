@@ -1,0 +1,12 @@
+---
+interface Props {
+    caption?: string;
+}
+
+const { caption } = Astro.props;
+---
+
+<figure class="learn-block">
+    <ol class="learn-flow flex flex-col gap-10 md:flex-row md:gap-12"><slot /></ol>
+    {caption && <figcaption class="mt-4 text-sm leading-6 text-fg-muted">{caption}</figcaption>}
+</figure>

@@ -1,0 +1,64 @@
+---
+interface Props {
+    labels: string[];
+}
+
+const { labels } = Astro.props;
+const id = `tabs-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div class="learn-block" data-learn-tabs={id}>
+    <div role="tablist" class="flex gap-2 overflow-x-auto pb-1">
+        {
+            labels.map((label, n) => (
+                <button
+                    type="button"
+                    role="tab"
+                    id={`${id}-tab-${n}`}
+                    aria-selected={n === 0 ? "true" : "false"}
+                    tabindex={n === 0 ? 0 : -1}
+                    class="shrink-0 rounded-full border border-line px-4 py-2 font-mono text-sm text-fg-muted transition-colors hover:border-line-strong hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent aria-selected:border-accent aria-selected:bg-accent-soft aria-selected:text-fg"
+                >
+                    {label}
+                </button>
+            ))
+        }
+    </div>
+    <div class="mt-6"><slot /></div>
+</div>
+
+<script>
+    for (const root of document.querySelectorAll<HTMLElement>("[data-learn-tabs]")) {
+        const id = root.dataset.learnTabs!;
+        const tabs = [...root.querySelectorAll<HTMLButtonElement>(':scope > [role="tablist"] > [role="tab"]')];
+        const panels = [...root.querySelectorAll<HTMLElement>(":scope > div > [data-tab]")];
+
+        panels.forEach((panel, n) => {
+            panel.id = `${id}-panel-${n}`;
+            panel.setAttribute("aria-labelledby", `${id}-tab-${n}`);
+            tabs[n]?.setAttribute("aria-controls", panel.id);
+            panel.hidden = n !== 0;
+        });
+
+        const select = (tab: HTMLButtonElement) => {
+            tabs.forEach((other, n) => {
+                const selected = other === tab;
+                other.setAttribute("aria-selected", String(selected));
+                other.tabIndex = selected ? 0 : -1;
+                if (panels[n]) panels[n].hidden = !selected;
+            });
+        };
+
+        tabs.forEach((tab, i) => {
+            tab.addEventListener("click", () => select(tab));
+            tab.addEventListener("keydown", (event) => {
+                const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+                if (!step) return;
+                event.preventDefault();
+                const next = tabs[(i + step + tabs.length) % tabs.length];
+                select(next);
+                next.focus();
+            });
+        });
+    }
+</script>

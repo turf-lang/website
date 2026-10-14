@@ -1,0 +1,86 @@
+---
+import checkIcon from "@phosphor-icons/core/assets/regular/check-circle.svg?raw";
+import { getPrevNext, getSection } from "../../data/navigation";
+import type { Heading } from "../../lib/docs";
+import "../../styles/learn.css";
+import DocsToc from "../docs/DocsToc.astro";
+import BaseLayout from "../layout/BaseLayout.astro";
+import PrevNext from "../page/PrevNext.astro";
+import SectionNav from "../page/SectionNav.astro";
+import Text from "../ui/Text.astro";
+
+interface Props {
+    href: string;
+    title: string;
+    description: string;
+    lead: string;
+    outcomes: string[];
+    headings: Heading[];
+    sectionKey?: string;
+    menuLabel?: string;
+}
+
+const { href, title, description, lead, outcomes, headings, sectionKey = "learn", menuLabel = "Learn menu" } = Astro.props;
+const section = getSection(sectionKey);
+const index = section.links.findIndex((l) => l.href === href);
+if (index < 0) throw new Error(`No nav link for ${href}`);
+const { prev, next } = getPrevNext(sectionKey, href);
+---
+
+<BaseLayout title={title} description={description}>
+    <div class="container-page grid grid-cols-1 gap-x-12 lg:grid-cols-[13rem_minmax(0,1fr)] xl:grid-cols-[13rem_minmax(0,1fr)_13rem] 2xl:gap-x-20">
+        <details class="group/menu border-b border-line py-4 lg:hidden">
+            <summary class="flex cursor-pointer list-none items-center justify-between font-mono text-sm text-fg-soft focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent [&::-webkit-details-marker]:hidden">
+                {menuLabel}
+                <span aria-hidden="true" class="text-fg-faint transition-transform group-open/menu:rotate-90 motion-reduce:transition-none">›</span>
+            </summary>
+            <div class="pb-2 pt-6">
+                <SectionNav section={section} current={href} />
+            </div>
+        </details>
+
+        <aside class="hidden lg:sticky lg:top-20 lg:block lg:self-start lg:py-14">
+            <SectionNav section={section} current={href} />
+        </aside>
+
+        <main class="min-w-0 py-10 md:py-14 xl:pb-24">
+            <div class="max-w-3xl">
+                <nav aria-label="Breadcrumb" class="font-mono text-sm">
+                    <a href="/" class="text-fg-muted transition-colors hover:text-fg">Turf</a>
+                    <span aria-hidden="true" class="mx-2 text-fg-faint">/</span>
+                    <a href={section.root} class="text-fg-muted transition-colors hover:text-fg">{section.label}</a>
+                    <span aria-hidden="true" class="mx-2 text-fg-faint">/</span>
+                    <span aria-current="page" class="text-fg-soft">{title}</span>
+                </nav>
+                <h1 class="mt-8 text-balance text-4xl leading-[1.02] tracking-[-0.05em] text-fg md:text-5xl">{title}</h1>
+                <Text text={lead} class="mt-5 text-lg leading-8 text-fg-soft" />
+
+                <div class="mt-10 rounded-2xl border border-line bg-surface-raised p-5 md:p-6">
+                    <p class="font-mono text-xs text-fg-muted">By the end of this page you will</p>
+                    <ul class="mt-4 grid gap-3">
+                        {
+                            outcomes.map((outcome) => (
+                                <li class="flex gap-3">
+                                    <span class="mt-1 size-5 shrink-0 text-term-hint [&>svg]:size-full" set:html={checkIcon} />
+                                    <Text as="span" text={outcome} class="leading-7 text-fg-soft" />
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </div>
+
+                <article class="learn-prose mt-4">
+                    <slot />
+                </article>
+
+                <div class="mt-24">
+                    <PrevNext prev={prev} next={next} />
+                </div>
+            </div>
+        </main>
+
+        <aside class="hidden xl:sticky xl:top-20 xl:block xl:max-h-[calc(100dvh-5rem)] xl:self-start xl:overflow-y-auto xl:py-14">
+            <DocsToc headings={headings} />
+        </aside>
+    </div>
+</BaseLayout>

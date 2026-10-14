@@ -1,0 +1,33 @@
+---
+import infoIcon from "@phosphor-icons/core/assets/regular/info.svg?raw";
+import lightbulbIcon from "@phosphor-icons/core/assets/regular/lightbulb.svg?raw";
+import playIcon from "@phosphor-icons/core/assets/regular/play.svg?raw";
+import warningIcon from "@phosphor-icons/core/assets/regular/warning.svg?raw";
+
+type Tone = "tip" | "note" | "warn" | "try";
+
+interface Props {
+    tone?: Tone;
+    title: string;
+}
+
+const { tone = "note", title } = Astro.props;
+const look: Record<Tone, { icon: string; color: string; label: string }> = {
+    tip: { icon: lightbulbIcon, color: "text-accent", label: "Tip" },
+    note: { icon: infoIcon, color: "text-fg-soft", label: "Good to know" },
+    warn: { icon: warningIcon, color: "text-code-string", label: "Watch out" },
+    try: { icon: playIcon, color: "text-term-hint", label: "Try it yourself" },
+};
+const { icon, color, label } = look[tone];
+---
+
+<aside class="learn-block rounded-2xl border border-line bg-surface-raised p-5 md:p-6" aria-label={label}>
+    <div class="flex items-center gap-3">
+        <span class:list={["grid size-8 shrink-0 place-items-center rounded-lg bg-tint-strong [&>svg]:size-4.5", color]} set:html={icon} />
+        <p class="min-w-0 leading-6">
+            <span class:list={["block font-mono text-xs", color]}>{label}</span>
+            <span class="block font-bold text-fg">{title}</span>
+        </p>
+    </div>
+    <div class="learn-slot mt-3"><slot /></div>
+</aside>

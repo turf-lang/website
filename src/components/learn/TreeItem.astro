@@ -1,0 +1,20 @@
+---
+import fileIcon from "@phosphor-icons/core/assets/regular/file.svg?raw";
+import folderIcon from "@phosphor-icons/core/assets/regular/folder.svg?raw";
+
+interface Props {
+    name: string;
+    depth?: number;
+    dir?: boolean;
+}
+
+const { name, depth = 0, dir = false } = Astro.props;
+---
+
+<li style={`--indent: ${depth * 1.25}rem`} class="grid grid-cols-1 gap-x-6 gap-y-1 px-5 py-3 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
+    <span class="flex min-w-0 items-center gap-2 pl-(--indent) font-mono text-sm">
+        <span class:list={["size-4 shrink-0 [&>svg]:size-full", dir ? "text-accent" : "text-fg-faint"]} set:html={dir ? folderIcon : fileIcon} />
+        <span class:list={["truncate", dir ? "text-fg" : "text-fg-soft"]}>{name}</span>
+    </span>
+    <span class="learn-slot pl-[calc(var(--indent)+1.5rem)] text-sm! leading-6! sm:pl-0"><slot /></span>
+</li>

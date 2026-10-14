@@ -1,0 +1,482 @@
+---
+title: Tour of Turf
+description: A guided walk through Turf's bigger ideas.
+lead: You know the basics. This tour visits the bigger ideas that make Turf what it is, one stop at a time. Each stop explains the idea in plain words first, then shows a complete program.
+outcomes:
+  - Build your own types with `struct` and `enum`, and give them methods.
+  - Take values apart with `compare`, and handle failures with `recover` and `try`.
+  - Know what references, generics, state machines and modules are for.
+  - Know where to read more about each one.
+---
+
+## How to take the tour
+
+Every stop is a complete program you can save and run. You don't need to master each one before moving on: the aim is to know what's there. Each stop ends with a link to the full reference page for when you need the details.
+
+Programs on this page use the **prelude**: a set of standard modules that are always available without an `import`. That's why `printline` works on its own.
+
+## Structs: your own types
+
+So far every value has been a single thing: one number, one piece of text. But real things have several parts. A pet has a name **and** an age. A **struct** groups named values, called **fields**, into one new type.
+
+<Cells
+  cells={[
+    { label: "name", value: "\"Rex\"" },
+    { label: "age", value: "3" },
+  ]}
+  caption="A Pet value holds two fields: a string called name and an int called age."
+/>
+
+A struct can also have **methods**: functions that belong to it. Inside a method, `self` means “the value this method was called on”.
+
+<Program file="pets.tr">
+```turf
+struct Pet {
+    name: string,
+    age: int
+}
+
+fn Pet.new(name: string, age: int): void {
+    self.name = name;
+    self.age = age;
+}
+
+fn Pet.birthday(): void {
+    self.age = self.age + 1;
+}
+
+fn Pet.describe(): string {
+    return self.name + " is " + (self.age to string);
+}
+
+fn main(): int {
+    mut rex: Pet = Pet::new("Rex", 3);
+    printline(rex.describe());
+    rex.birthday();
+    printline(rex.describe());
+
+    mut blank: Pet = Pet::default();
+    printline(blank.age);
+    return 0;
+}
+```
+```text
+Rex is 3
+Rex is 4
+0
+```
+</Program>
+
+There are two ways to make a struct value, and both use `::`:
+
+- **`Pet::new(...)`** calls a constructor you write yourself, `fn Pet.new(...)`, which fills in the fields.
+- **`Pet::default()`** exists for every struct. It fills every field with its zero value: `0` for numbers, `""` for text, `false` for a `bool`.
+
+Methods are called with a dot: `rex.birthday()`. Read more in [Structs and enums](/docs/language/structs-and-enums/).
+
+## Enums and compare
+
+An **enum** is a type with a fixed list of possible values, called **variants**. A traffic light is red, amber or green, and never anything else. `enum Color { Red, Green, Blue }` makes a type whose values are exactly `Color::Red`, `Color::Green` and `Color::Blue`.
+
+**`compare`** looks at a value and picks the first **arm** that matches it, like a sorting machine with several chutes. Each arm starts with `matches` and ends with `done`, and `otherwise` catches anything left over. A pattern can also look inside a struct:
+
+- `Point { x: 0, y: 0 }` matches only a point whose `x` and `y` are both 0.
+- `Point { x, y } if x == y` takes `x` and `y` out of the point, then the `if` (a **guard**) adds an extra check.
+- `Point { x: 0, .. }` checks `x` and ignores the rest (`..`).
+
+<Program file="patterns.tr">
+```turf
+struct Point { x: int, y: int }
+
+enum Color { Red, Green, Blue }
+
+fn describe(p: Point): string {
+    compare p {
+        matches Point { x: 0, y: 0 }:
+            return "origin";
+        done
+        matches Point { x, y } if x == y:
+            return "diagonal at " + (x to string);
+        done
+        matches Point { x: 0, .. }:
+            return "on the y axis";
+        done
+        otherwise:
+            return "somewhere else";
+    }
+}
+
+fn name(c: Color): string {
+    compare c {
+        matches Color::Red: return "red"; done
+        matches Color::Green: return "green"; done
+        matches Color::Blue: return "blue"; done
+    }
+}
+
+fn main(): int {
+    mut p: Point = Point::default();
+    printline(describe(p));
+    p.x = 3;
+    p.y = 3;
+    printline(describe(p));
+    p.y = 4;
+    printline(describe(p));
+    printline(name(Color::Green));
+    return 0;
+}
+```
+```text
+origin
+diagonal at 3
+somewhere else
+green
+```
+</Program>
+
+<Callout tone="tip" title="The compiler checks you covered everything">
+In `name`, every colour has an arm. If you add `Yellow` to the enum and forget to handle it, the compiler tells you (error E093), unless there's an `otherwise` arm to catch it.
+</Callout>
+
+More in [Control flow](/docs/language/control-flow/).
+
+## Errors: recover and try
+
+Some things can fail. Reading the number in `"4x"` can't work, because it isn't a number. In Turf, a function that might fail says so in its return type with a `!`: `!int` means “an `int`, **or** an error”.
+
+You can't use a `!int` as a plain `int` until you've decided what to do if it failed. That way a failure can never sneak past unnoticed. You have three choices:
+
+| You write | What happens on failure |
+|---|---|
+| `recover produce 0` | Use a backup value instead, here `0`. |
+| `recover as err run { ... }` | Run some code, with the error in `err` so you can look at it. |
+| `try` | Pass the failure on to whoever called you, unchanged. |
+
+An `error` type lists the ways something can fail, like an enum. A variant can carry extra information: `BadDigit(text: string)` remembers the text that wasn't a number.
+
+<Program file="errors.tr">
+```turf
+error ParseError {
+    Empty,
+    BadDigit(text: string)
+}
+
+fn parse(text: string): !int {
+    if text == "" {
+        return ParseError::Empty;
+    }
+    for i in 0..text.length() step i += 1 {
+        if !text[i].is_digit() {
+            return ParseError::BadDigit(text);
+        }
+    }
+    return text to int;
+}
+
+fn total(a: string, b: string): !int {
+    immut x: int = try parse(a);     // on failure, returns parse's error unchanged
+    immut y: int = try parse(b);
+    return x + y;
+}
+
+fn totalOrZero(a: string, b: string): int {
+    return total(a, b) recover as err run {
+        compare err {
+            matches ParseError::BadDigit(t):
+                printline("not a number: " + t);
+            done
+            otherwise:
+                printline("empty input");
+        }
+        return 0;
+    };
+}
+
+fn main(): int {
+    printline(totalOrZero("20", "22") to string);
+    printline(totalOrZero("20", "4x") to string);
+    printline(totalOrZero("", "1") to string);
+    return 0;
+}
+```
+```text
+42
+not a number: 4x
+0
+empty input
+0
+```
+</Program>
+
+Follow `"4x"` through the program: `parse` finds the `x` and returns `BadDigit`. In `total`, `try` passes that failure straight up. In `totalOrZero`, `recover` catches it, `compare` sees it's a `BadDigit`, prints the message and gives back `0`.
+
+<Callout tone="note" title="Not in main">
+`try` isn't allowed in `main`, because `main` returns a plain `int` and has nobody to pass the failure to. Handle errors there with `recover`.
+</Callout>
+
+More in [Error handling](/docs/language/error-handling/).
+
+## defer: clean up on the way out
+
+Sometimes you need to do something when you're finished, whatever happens: close a file, say goodbye. A `defer`red statement waits and runs when the block it's in ends, on every way out of it. If there are several, the last one deferred runs first.
+
+<Program file="defer.tr">
+```turf
+struct Log { text: string }
+
+fn work(log: &Log): void {
+    defer log.text = log.text + " cleanup";   // runs when work returns
+    log.text = log.text + " working";
+}
+
+fn main(): int {
+    mut log: Log = Log::default();
+    work(&log);
+    printline(log.text);
+    return 0;
+}
+```
+```text
+ working cleanup
+```
+</Program>
+
+The `defer` line comes first in `work`, but it runs last, which is why `cleanup` comes after `working`. Turf's garbage collector frees memory for you, but not files or network connections: `defer` is how you close those. (The `&` here is a reference, the next stop on the tour.)
+
+## References and the heap
+
+When you pass a value to a function, the function normally gets its own **copy**. Changing the copy doesn't change yours. A **reference** is different: it's like giving someone your address instead of a photo of your house. Through it, they reach the real thing.
+
+- `&T` is a reference that always points at something.
+- `&?T` is a reference that might be `null`, which means “points at nothing”. The compiler only lets you use it after checking it isn't `null`. Using one without checking is error E081.
+- `heap(value)` puts a copy of a value somewhere it can live for as long as it's needed, and gives you a reference to it. The garbage collector frees it once nothing refers to it any more.
+
+With these you can build a **linked list**: a chain of nodes where each one points to the next, and the last points at nothing.
+
+<Flow>
+  <FlowStep label="4" mono>next →</FlowStep>
+  <FlowStep label="3" mono>next →</FlowStep>
+  <FlowStep label="2" mono>next →</FlowStep>
+  <FlowStep label="1" mono>next: null</FlowStep>
+</Flow>
+
+<Program file="list.tr">
+```turf
+struct Node {
+    val: int,
+    next: &?Node       // a node, or nothing
+}
+
+fn push(head: &?Node, v: int): &Node {
+    mut n: Node = Node::default();
+    n.val = v;
+    n.next = head;
+    return heap(n);    // copy to the GC heap, get a &Node
+}
+
+fn sum(head: &?Node): int {
+    mut total = 0;
+    mut cur: &?Node = head;
+    while cur != null {
+        total = total + cur.val;   // legal: the check proves cur is not null
+        cur = cur.next;
+    }
+    return total;
+}
+
+fn main(): int {
+    mut list: &?Node = null;
+    for i in 1..5 step i += 1 {
+        list = push(list, i);
+    }
+    printline(sum(list) to string);
+    return 0;
+}
+```
+```text
+10
+```
+</Program>
+
+More in [Memory and safety](/docs/language/memory-and-safety/).
+
+## Generics: one recipe, many types
+
+Suppose you wrote a box that holds an `int`. Then you need one for a `string`, then one for a `double`… Writing the same thing over and over would be silly. **Generics** let you write it once, with a placeholder type `T` that's filled in when you use it. `Box<string>` is a box for strings; `Box<int>` is a box for whole numbers.
+
+The standard library's collections are generic too. A `List<int>` is a list of whole numbers that can grow, unlike an array. A `Map<string, int>` looks up an `int` by a `string` key, like a dictionary looks up a meaning by a word.
+
+<Program file="generics.tr">
+```turf
+import list::List;
+import map::Map;
+
+struct Box<T> {
+    val: T
+}
+
+fn<T> Box.new(v: T): void {
+    self.val = v;
+}
+
+fn<T> Box.get(): T {
+    return self.val;
+}
+
+fn<T> largest(items: List<T>, less: fn(T, T): bool): T {
+    mut best: T = items.get(0);
+    for i in 1..items.length() step i += 1 {
+        if less(best, items.get(i)) {
+            best = items.get(i);
+        }
+    }
+    return best;
+}
+
+fn lessInt(a: int, b: int): bool { return a < b; }
+
+fn main(): int {
+    mut b: Box<string> = Box::new("generic");
+    printline(b.get());
+
+    mut nums: List<int> = List::default();
+    nums.push(3);
+    nums.push(9);
+    nums.push(4);
+    printline(largest(nums, lessInt) to string);
+
+    mut ages: Map<string, int> = Map::default();
+    ages.put("ada", 36);
+    printline(ages.get("ada") to string);
+    return 0;
+}
+```
+```text
+generic
+9
+36
+```
+</Program>
+
+Look at `largest`: it takes a list of any type `T`, plus a function `less` that knows how to compare two `T`s. Yes, functions can be passed around like any other value!
+
+More in [Generics and operators](/docs/language/generics-and-operators/) and the [collections](/stdlib/).
+
+## State machines
+
+Some things can only change in certain ways. A door can go from closed to open and back, and a closed door can be locked. But a locked door can't swing open: you have to unlock it first. A **state machine** writes down those rules, and Turf makes sure they're followed.
+
+| The door is… | It can move to… |
+|---|---|
+| `Closed` | `Open` or `Locked` |
+| `Open` | `Closed` |
+| `Locked` | `Closed` |
+
+<Program file="door.tr">
+```turf
+machine Door {
+    Closed -> Open,
+    Open -> Closed,
+    Closed -> Locked,
+    Locked -> Closed
+}
+
+fn main(): int {
+    mut door: Door = Door::Closed;
+    door.transition(Door::Open);
+    door.transition(Door::Closed);
+    door.transition(Door::Locked);
+    printline(door == Door::Locked give "locked" otherwise "not locked");
+    return 0;
+}
+```
+```text
+locked
+```
+</Program>
+
+Each `A -> B` line is an allowed move, and `.transition(...)` makes one. If the program next tried `door.transition(Door::Open)` from `Locked`, it would stop with a panic: `Door::transition(Open) -- no such transition from the current state.`
+
+More in [State machines](/docs/language/state-machines/).
+
+## Modules: sharing code between files
+
+As programs grow, you split them over several files. Every file is a **module**. Things inside a module are **private** by default: other files can't see them. Mark something **`pub`** (short for *public*) to share it.
+
+Think of a module as a house: `pub` things are on the front porch for everyone, and the rest stays inside. This is a library module:
+
+<Code title="src/geometry.tr">
+```turf
+// src/geometry.tr: the root module of a library package
+pub struct Point {
+    pub x: int,
+    pub y: int
+}
+
+pub fn Point.new(x: int, y: int): void {
+    self.x = x;
+    self.y = y;
+}
+
+pub fn manhattan(a: Point, b: Point): int {
+    return (a.x - b.x).abs() + (a.y - b.y).abs();
+}
+```
+</Code>
+
+Another program can then write `import geometry;` and call `geometry::manhattan(...)`. The `::` means “the one from”. Notice that the fields `x` and `y` are marked `pub` too: a field is private unless it says otherwise, even inside a `pub struct`.
+
+More in [Functions and modules](/docs/language/functions-and-modules/), and in [Projects and packages](/docs/tooling/projects-and-packages/) for sharing code between projects.
+
+## Calling C
+
+A huge amount of useful code is written in another language, C. Turf can call it. `extern fn` describes a C function so Turf knows how to call it, and `extern from "m"` also says which library it's in (`m` is C's maths library).
+
+Raw pointers (`ptr`) are C's way of pointing at memory, and they aren't safe: the compiler can't check them. So Turf only lets you use them inside an **`unsafe { }`** block. That's a sign that says “careful: the compiler can't protect you in here”. Everywhere else keeps Turf's safety guarantees.
+
+<Program file="ffi.tr">
+```turf
+extern fn strlen(s: string): int;
+extern from "m" fn sqrt(x: double): double;
+extern fn malloc(size: int): ptr;
+extern fn free(p: ptr): void;
+
+fn main(): int {
+    unsafe {
+        mut buf: ptr = malloc(64);
+        free(buf);
+    }
+    printline(strlen("verify") to string);
+    printline(sqrt(2.0) to string);
+    return 0;
+}
+```
+```text
+6
+1.41421
+```
+</Program>
+
+More in [FFI and unsafe](/docs/language/ffi-and-unsafe/).
+
+## Where to go next
+
+That's the end of the tour, and of the Learn guides. Well done for making it this far!
+
+<Cards>
+  <Card title="Docs" href="/docs/">
+    The language, the compiler and the command line, in full detail.
+  </Card>
+  <Card title="Standard library" href="/stdlib/">
+    Everything that comes with Turf: strings, collections, files, JSON, the web and more.
+  </Card>
+  <Card title="The language reference" href="/docs/language/">
+    One page per topic, with every rule stated in full.
+  </Card>
+</Cards>
+
+<Callout tone="try" title="Build something">
+
+The best next step is a small project of your own. Some ideas: a times-table printer, a number-guessing game, a program that counts the vowels in a word. Start with `turf new`, keep it small, and use `turf check` and `turf explain` when you get stuck.
+
+</Callout>

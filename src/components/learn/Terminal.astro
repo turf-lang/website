@@ -1,0 +1,15 @@
+---
+import { fences } from "../../lib/fences";
+import { paintDiagnostic, paintSession } from "../../lib/terminal";
+import CodeWindow from "../ui/CodeWindow.astro";
+
+interface Props {
+    title?: string;
+    diagnostic?: boolean;
+}
+
+const { title = "Terminal", diagnostic = false } = Astro.props;
+const [session = ""] = fences(await Astro.slots.render("default"));
+---
+
+<CodeWindow class="learn-block" title={title} html={diagnostic ? paintDiagnostic(session) : paintSession(session)} copy={false} />

@@ -1,0 +1,18 @@
+---
+import { fences } from "../../lib/fences";
+import { paintDiagnostic } from "../../lib/terminal";
+import { tokenize } from "../../lib/turf-tokens";
+import CodeWindow from "../ui/CodeWindow.astro";
+
+interface Props {
+    file: string;
+}
+
+const { file } = Astro.props;
+const [source = "", output = ""] = fences(await Astro.slots.render("default"));
+---
+
+<div class="learn-block grid grid-cols-1 gap-3">
+    <CodeWindow title={file} code={tokenize(source)} />
+    <CodeWindow title="Terminal" html={paintDiagnostic(`$ turf check ${file}\n${output}`)} copy={false} />
+</div>

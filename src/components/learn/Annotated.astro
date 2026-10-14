@@ -1,0 +1,26 @@
+---
+import CopyButton from "../ui/CopyButton.astro";
+
+interface Props {
+    file: string;
+}
+
+const { file } = Astro.props;
+---
+
+<figure class="learn-block overflow-hidden rounded-2xl border border-line bg-surface-raised" data-annotated>
+    <div class="flex min-h-11 items-center gap-2 border-b border-line py-1.5 pl-5 pr-2.5">
+        <span class="font-mono text-xs text-fg-muted">{file}</span>
+        <span class="ml-auto font-mono text-xs text-fg-faint">line by line</span>
+        <CopyButton text=" " class="ml-2" />
+    </div>
+    <ol class="divide-y divide-line"><slot /></ol>
+</figure>
+
+<script>
+    for (const figure of document.querySelectorAll<HTMLElement>("[data-annotated]")) {
+        const button = figure.querySelector<HTMLButtonElement>("[data-copy]");
+        const code = [...figure.querySelectorAll<HTMLElement>("[data-code]")].map((el) => el.dataset.code).join("\n");
+        if (button) button.dataset.copy = code;
+    }
+</script>

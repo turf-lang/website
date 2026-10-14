@@ -1,0 +1,10 @@
+---
+const html = await Astro.slots.render("default");
+const labels = [...html.matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/g)].map((m) => m[1].replace(/<[^>]+>/g, "").replace(/"/g, "&quot;").trim());
+const labelled = html.replace(/<tr\b[^>]*>([\s\S]*?)<\/tr>/g, (row) => {
+    let i = 0;
+    return row.replace(/<td\b/g, () => `<td data-label="${labels[i++] ?? ""}"`);
+});
+---
+
+<div class="table-wrap"><table set:html={labelled} /></div>

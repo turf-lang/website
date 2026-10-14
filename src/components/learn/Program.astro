@@ -1,0 +1,14 @@
+---
+import { fences } from "../../lib/fences";
+import { tokenize } from "../../lib/turf-tokens";
+import CodeWindow from "../ui/CodeWindow.astro";
+
+interface Props {
+    file: string;
+}
+
+const { file } = Astro.props;
+const [source = "", output = ""] = fences(await Astro.slots.render("default"));
+---
+
+<CodeWindow class="learn-block" title={file} code={tokenize(source)} command={`turf run ${file}`} output={output} />

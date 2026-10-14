@@ -1,0 +1,27 @@
+---
+interface Props {
+    title: string;
+    href?: string;
+    tag?: string;
+}
+
+const { title, href, tag } = Astro.props;
+const Tag = href ? "a" : "div";
+---
+
+<li class="flex">
+    <Tag
+        href={href}
+        class:list={[
+            "group flex min-w-0 flex-1 flex-col bg-surface p-6",
+            href && "transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent",
+        ]}
+    >
+        {tag && <span class="mb-2 font-mono text-xs text-accent">{tag}</span>}
+        <span class="font-bold text-fg">
+            {title}
+            {href && <span aria-hidden="true" class="text-fg-faint transition-colors group-hover:text-accent"> →</span>}
+        </span>
+        <span class="learn-slot mt-1.5 block"><slot /></span>
+    </Tag>
+</li>

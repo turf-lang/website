@@ -1,0 +1,34 @@
+---
+interface Props {
+    label: string;
+    mono?: boolean;
+}
+
+const { label, mono = false } = Astro.props;
+---
+
+<li class="flow-step relative flex min-w-0 flex-1 flex-col justify-center rounded-2xl border border-line bg-surface-raised px-5 py-4 text-center">
+    <span class:list={["text-fg", mono ? "font-mono text-sm" : "font-bold"]}>{label}</span>
+    <span class="mt-1 block text-sm leading-6 text-fg-muted"><slot /></span>
+</li>
+
+<style>
+    .flow-step + .flow-step::before {
+        content: "↓";
+        position: absolute;
+        top: -2.25rem;
+        left: 50%;
+        transform: translateX(-50%);
+        color: var(--color-accent);
+        font-family: var(--font-mono);
+        font-size: 1.125rem;
+    }
+    @media (min-width: 48rem) {
+        .flow-step + .flow-step::before {
+            content: "→";
+            top: 50%;
+            left: -2rem;
+            transform: translateY(-50%);
+        }
+    }
+</style>

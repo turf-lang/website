@@ -1,0 +1,41 @@
+---
+interface Cell {
+    label?: string;
+    value: string;
+    out?: boolean;
+    on?: boolean;
+}
+
+interface Props {
+    cells: Cell[];
+    caption?: string;
+}
+
+const { cells, caption } = Astro.props;
+const hasLabels = cells.some((c) => c.label !== undefined);
+---
+
+<figure class="learn-block rounded-2xl border border-line bg-surface-raised p-5 md:p-6">
+    <ol class="flex flex-wrap gap-2">
+        {
+            cells.map((cell) => (
+                <li class="flex flex-col items-center gap-1.5">
+                    {hasLabels && <span class="font-mono text-xs text-fg-faint">{cell.label ?? ""}</span>}
+                    <span
+                        class:list={[
+                            "grid h-12 min-w-12 place-items-center whitespace-pre rounded-lg border px-3 font-mono text-base",
+                            cell.out
+                                ? "border-dashed border-line text-fg-faint line-through"
+                                : cell.on
+                                  ? "border-accent bg-accent-soft text-fg"
+                                  : "border-line-strong bg-surface text-fg",
+                        ]}
+                    >
+                        {cell.value}
+                    </span>
+                </li>
+            ))
+        }
+    </ol>
+    {caption && <figcaption class="mt-4 text-sm leading-6 text-fg-muted">{caption}</figcaption>}
+</figure>

@@ -1,0 +1,64 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import LinkRows from "../../components/sections/LinkRows.astro";
+import Section from "../../components/sections/Section.astro";
+import Text from "../../components/ui/Text.astro";
+import { getSection } from "../../data/navigation";
+
+const section = getSection("learn");
+const lead = "Five guides that take you from nothing installed to writing real programs. Written for complete beginners, and meant to be read in order.";
+
+const entries = await getCollection("learn");
+const guides = section.links.map((link) => {
+    const entry = entries.find((e) => `/learn/${e.id}/` === link.href);
+    if (!entry) throw new Error(`No guide for ${link.href}`);
+    return { href: link.href, ...entry.data };
+});
+
+const after = [
+    { title: "Docs", description: "The language, the compiler and the command line, in full detail.", href: "/docs/" },
+    { title: "Standard library", description: "Strings, collections, files, JSON, the web and more.", href: "/stdlib/" },
+];
+---
+
+<BaseLayout title={section.label} description={lead}>
+    <PageHeader crumbs={[{ label: section.label }]} title={section.label} lead={lead} />
+
+    <Section id="guides" index="01" title="The guides" layout="stacked" class="border-t-0! py-16! md:py-20!">
+        <ol class="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line">
+            {
+                guides.map((guide, i) => (
+                    <li class="flex">
+                        <a
+                            href={guide.href}
+                            class="group grid flex-1 grid-cols-1 gap-x-10 gap-y-4 bg-surface p-8 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:grid-cols-[4rem_minmax(0,1fr)_minmax(0,1fr)] md:p-10"
+                        >
+                            <span class="font-mono text-sm text-accent">{String(i + 1).padStart(2, "0")}</span>
+                            <span class="min-w-0">
+                                <span class="block text-2xl tracking-[-0.03em] text-fg [font-family:var(--font-pixel)]">
+                                    {guide.title}
+                                    <span aria-hidden="true" class="text-fg-faint transition-colors group-hover:text-accent"> →</span>
+                                </span>
+                                <Text as="span" text={guide.lead} class="mt-3 block leading-7 text-fg-muted" />
+                            </span>
+                            <ul class="grid content-start gap-2">
+                                {guide.outcomes.map((outcome) => (
+                                    <li class="grid grid-cols-[1.25rem_minmax(0,1fr)] text-sm leading-6 text-fg-soft">
+                                        <span aria-hidden="true" class="text-term-hint">✓</span>
+                                        <Text as="span" text={outcome} />
+                                    </li>
+                                ))}
+                            </ul>
+                        </a>
+                    </li>
+                ))
+            }
+        </ol>
+    </Section>
+
+    <Section id="after" index="02" title="After the guides" class="bg-surface-raised">
+        <LinkRows items={after} />
+    </Section>
+</BaseLayout>

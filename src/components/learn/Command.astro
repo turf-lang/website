@@ -1,0 +1,14 @@
+---
+import { fences } from "../../lib/fences";
+import CodeWindow from "../ui/CodeWindow.astro";
+
+interface Props {
+    text?: string;
+    title?: string;
+}
+
+const { title = "Terminal" } = Astro.props;
+const text = Astro.props.text ?? fences(await Astro.slots.render("default"))[0] ?? "";
+---
+
+<CodeWindow class="learn-block" title={title} code={text.split("\n").map((line) => [["plain", line]])} />
