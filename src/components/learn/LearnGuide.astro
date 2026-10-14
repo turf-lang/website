@@ -69,7 +69,7 @@ const { prev, next } = getPrevNext(sectionKey, href);
                     </ul>
                 </div>
 
-                <article class="learn-prose mt-4">
+                <article class:list={["learn-prose mt-4", sectionKey === "stdlib" && "quiet-callouts"]}>
                     <slot />
                 </article>
 

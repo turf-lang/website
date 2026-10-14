@@ -153,3 +153,54 @@
     text-align: justify;
     hyphens: auto;
 }
+
+.prose-turf table {
+    width: 100%;
+    margin-top: 2rem;
+    border: 1px solid var(--color-line);
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.5rem;
+}
+
+.prose-turf th {
+    background-color: var(--color-surface-raised);
+    color: var(--color-fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-align: left;
+}
+
+.prose-turf th:first-child {
+    border-top-left-radius: calc(1rem - 1px);
+}
+
+.prose-turf th:last-child {
+    border-top-right-radius: calc(1rem - 1px);
+}
+
+.prose-turf :is(th, td) {
+    padding: 0.75rem 1rem;
+    vertical-align: top;
+    text-align: left;
+    hyphens: manual;
+}
+
+.prose-turf td {
+    border-top: 1px solid var(--color-line);
+}
+
+.prose-turf td:first-child {
+    color: var(--color-fg);
+}
+
+.prose-turf table :not(pre) > code {
+    overflow-wrap: anywhere;
+}
+
+.prose-turf table + * {
+    margin-top: 2rem;
+}
