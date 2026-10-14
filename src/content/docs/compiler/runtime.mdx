@@ -9,6 +9,8 @@ outcomes:
   - "Know how it is built and distributed."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/architecture/runtime.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 Every compiled Turf program carries a small support library, called the **runtime** (`libturfrt`), inside it. It looks after jobs the program cannot do alone, such as managing the garbage-collected heap and reporting panics. This page explains what it is for and how the compiler connects to it.
@@ -19,19 +21,19 @@ doc comments are the line-level reference, and this document explains what the
 library is for and how it fits into the compiler.
 
 Related docs:
-- `docs/architecture/compiler_pipeline.md` for the pass order the two
+- [`docs/architecture/compiler_pipeline.md`](/docs/compiler/compiler-pipeline/) for the pass order the two
   compiler-side hooks (the `main` wrapper, panic lowering) attach to.
-- `docs/architecture/memory_model.md` for the storage model, the two heaps and
+- [`docs/architecture/memory_model.md`](/docs/compiler/memory-model/) for the storage model, the two heaps and
   the collector's root discovery (§2.6). This document covers the library
   around the collector, not the collector's algorithm.
-- `docs/architecture/boundary.md` for the compiler / standard library / runtime
+- [`docs/architecture/boundary.md`](/docs/compiler/boundary/) for the compiler / standard library / runtime
   boundary rules and the closed list of intrinsics.
 - `src/sema/Intrinsics.h`, the closed list of bare intrinsics; every runtime
   symbol Turf source can reach is named there (F-STD-2).
 
 ## 1. What the runtime owns
 
-Rule B2 (`docs/development/FREEZE.md` §6.8): the runtime owns anything that
+Rule B2 ([`docs/development/FREEZE.md`](https://github.com/turf-lang/turf-lang/blob/master/docs/development/FREEZE.md) §6.8): the runtime owns anything that
 must be true across the whole process and cannot be re-derived per translation
 unit. Turf never compiles modules separately (every `import` is parsed and
 code-generated into the same LLVM module), so "per translation unit" is not a

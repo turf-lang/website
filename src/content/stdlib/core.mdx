@@ -393,7 +393,7 @@ same separator rebuilds `"a,,b"`. Naming the result type needs `import
 list::List;` ([collections](/stdlib/collections/)); a method can also be called on
 the result directly, as in `s.split(d).length()`:
 
-<Program file="core_building_new.tr">
+<Program file="core_building_strings.tr">
 ```turf
 import list::List;
 
@@ -416,7 +416,7 @@ a;;b
 ```
 </Program>
 
-<Program file="core_building_new_2.tr">
+<Program file="core_building_strings_2.tr">
 ```turf
 fn main(): int {
     printline("hello world".contains("world"));      // true
@@ -487,7 +487,7 @@ the matching literal; past the `double` range it is `inf` or `-inf`.
 `parse_int` also fails with `InvalidInt` for a number outside `int`'s range;
 `"-9223372036854775808"` and `"9223372036854775807"` parse.
 
-<Program file="core_parsing_parse.tr">
+<Program file="core_parsing_numbers.tr">
 ```turf
 fn describe(text: string): void {
     immut n: int = strings::parse_int(text) recover as err run {
@@ -540,7 +540,7 @@ Use `parse_int` / `parse_double` when the text is input you do not control,
 since they report failure as a value; `s to int` is for text you know is a
 number.
 
-<Program file="core_converting_to.tr">
+<Program file="core_converting_types.tr">
 ```turf
 fn main(): int {
     printline(65 to string);       // 65

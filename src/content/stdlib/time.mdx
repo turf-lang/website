@@ -40,7 +40,11 @@ for a duration of seconds, subtract two `now_seconds()` readings.
 
 ## Wall clock
 
-### `now_seconds(): int`
+### `now_seconds`
+
+```turf
+now_seconds(): int
+```
 
 The current time as whole seconds since the Unix epoch (1970-01-01 00:00:00
 UTC). The value is the same on every platform. It is the only wall-clock
@@ -48,18 +52,30 @@ reading, so two calls less than a second apart can return the same number.
 
 ## CPU time
 
-### `clock_ticks(): int`
+### `clock_ticks`
+
+```turf
+clock_ticks(): int
+```
 
 The CPU time this process has consumed so far, in **microseconds**, on every
 platform. It is a reading to subtract from a later one, not a timestamp: its
 zero point means nothing.
 
-### `elapsed_ms(start_clock_ticks: int): int`
+### `elapsed_ms`
+
+```turf
+elapsed_ms(start_clock_ticks: int): int
+```
 
 The CPU milliseconds used since `start_clock_ticks`, a value that
 `clock_ticks()` returned earlier. It rounds down.
 
-### `elapsed_seconds(start_clock_ticks: int): int`
+### `elapsed_seconds`
+
+```turf
+elapsed_seconds(start_clock_ticks: int): int
+```
 
 The same in whole CPU seconds, rounded down.
 
@@ -96,12 +112,20 @@ machine.
 
 ## Sleeping
 
-### `sleep_seconds(n: int): void`
+### `sleep_seconds`
+
+```turf
+sleep_seconds(n: int): void
+```
 
 Suspends the program for `n` wall-clock seconds. `n` of zero or less returns at
 once.
 
-### `sleep_ms(n: int): void`
+### `sleep_ms`
+
+```turf
+sleep_ms(n: int): void
+```
 
 Suspends the program for `n` wall-clock milliseconds, with the same behaviour for
 zero or less. Waits longer than a second are done in one-second steps, so a large

@@ -9,6 +9,8 @@ outcomes:
   - "Follow how the compiler and runtime implement this (Part 2)."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/architecture/memory_model.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 Three places hold data while a program runs: the **stack** (a tidy pile of notes for the function that is running now, thrown away when it returns), the **heap** (a big shared pool for data that has to outlive a function), and **static data** (read-only values stored inside the program file itself). This page says which of your values go where, in ordinary computer-science terms, with no knowledge of the compiler's internal language needed.
@@ -25,19 +27,19 @@ allocations, static data, value versus reference semantics), not LLVM
 instruction names. Nothing here depends on knowing LLVM IR.
 
 Related docs:
-- `docs/architecture/pointers_and_references.md`: the full reference for `ptr`,
+- [`docs/architecture/pointers_and_references.md`](/docs/compiler/pointers-and-references/): the full reference for `ptr`,
   `T*`, `&T`, and `unsafe { }`. This document assumes its Part 1 and
   cross-references it.
-- `docs/architecture/modules_and_scope_resolution.md`: `::new`/`::default`
+- [`docs/architecture/modules_and_scope_resolution.md`](/docs/compiler/modules-and-scope-resolution/): `::new`/`::default`
   construction, which the struct section depends on.
-- `docs/architecture/runtime.md`: `libturfrt` as a library (entry points, type
+- [`docs/architecture/runtime.md`](/docs/compiler/runtime/): `libturfrt` as a library (entry points, type
   descriptors, build, the fault and OOM contract). This document covers the
   collector's design and root discovery.
-- `docs/architecture/boundary.md`: which heap a standard-library allocation may
+- [`docs/architecture/boundary.md`](/docs/compiler/boundary/): which heap a standard-library allocation may
   use, and how `mem::Pool` keeps GC pointers out of its manual storage.
-- `docs/architecture/compiler_pipeline.md` §7: the monomorphizer.
-- `docs/reference/arrays.md`: the user-facing array reference.
-- `docs/planning/FUTURE.md` §5: a proposed automatic-reference-counting design.
+- [`docs/architecture/compiler_pipeline.md`](/docs/compiler/compiler-pipeline/) §7: the monomorphizer.
+- [`docs/reference/arrays.md`](/docs/language/arrays/): the user-facing array reference.
+- [`docs/planning/FUTURE.md`](https://github.com/turf-lang/turf-lang/blob/master/docs/planning/FUTURE.md) §5: a proposed automatic-reference-counting design.
   It is not implemented and is not discussed further here.
 
 ## Part 1: The memory model as observed
@@ -108,7 +110,7 @@ variable to another copies the bits, and two variables never alias one `int`.
 
 A declared `int[5]` is a stack-allocated block of 5 contiguous `int`s, not a
 pointer and not a heap allocation. **Arrays are value types**
-(`docs/reference/arrays.md`; implementation in §2.3): assigning one array to
+([`docs/reference/arrays.md`](/docs/language/arrays/); implementation in §2.3): assigning one array to
 another copies every element, and passing one to a function or returning one
 from a function is a full independent copy.
 
@@ -212,7 +214,7 @@ pointer internally.
 
 ### 1.6 Pointers (`ptr`, `T*`) and safe references (`&T`)
 
-Covered in full in `docs/architecture/pointers_and_references.md`. The
+Covered in full in [`docs/architecture/pointers_and_references.md`](/docs/compiler/pointers-and-references/). The
 memory-model-relevant facts:
 
 - `ptr` (opaque) and `T*` (typed) are raw, unmanaged pointers: whatever address
@@ -857,6 +859,6 @@ another copies the *address*, and both then alias the same memory.
 | `lib/std/mem/mem.tr` | Manual-heap wrappers, `Pool`, `free()`'s `gc_checked_free` check, `root()`/`unroot()` (§1.7, §2.6) |
 | `lib/std/collections/list.tr` (and `stack`, `queue`, `set`, `map`) | The header-plus-buffer collection shape (§2.6.2, §2.7.3) |
 | `lib/std/core/strings.tr` | String operator overloads, `StringBuilder`, and their GC-heap allocations (§2.4) |
-| `docs/reference/arrays.md` | User-facing array semantics (§2.3) |
-| `docs/reference/stdlib/collections.md` | The shared collection design |
-| `docs/architecture/pointers_and_references.md` | The `ptr`/`T*`/`&T`/`unsafe` reference (§1.6, §2.8) |
+| [`docs/reference/arrays.md`](/docs/language/arrays/) | User-facing array semantics (§2.3) |
+| [`docs/reference/stdlib/collections.md`](/stdlib/collections/) | The shared collection design |
+| [`docs/architecture/pointers_and_references.md`](/docs/compiler/pointers-and-references/) | The `ptr`/`T*`/`&T`/`unsafe` reference (§1.6, §2.8) |

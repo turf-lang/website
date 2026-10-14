@@ -47,7 +47,7 @@ the collector: you free it, exactly once. A `string`, a `heap(...)` object or a
 collection's storage belongs to the collector and must never be passed to
 `mem::free`.
 
-<Program file="mem_which_storage.tr">
+<Program file="mem_choosing_storage.tr">
 ```turf
 import mem;
 import io;
@@ -140,37 +140,65 @@ returned pointer is never null. None of them returns `!T`: running out of memory
 is not a condition a program recovers from. Parameters are named `p`, not
 `ptr`, because `ptr` is a type keyword.
 
-### `alloc(size: int): void*`
+### `alloc`
+
+```turf
+alloc(size: int): void*
+```
 
 `size` bytes of uninitialised manual memory. Panics `mem.alloc: out of memory`.
 
-### `alloc_zeroed(count: int, elem_size: int): void*`
+### `alloc_zeroed`
+
+```turf
+alloc_zeroed(count: int, elem_size: int): void*
+```
 
 `count * elem_size` bytes, all zero. Panics `mem.alloc_zeroed: out of memory`.
 
-### `grow(p: void*, new_size: int): void*`
+### `grow`
+
+```turf
+grow(p: void*, new_size: int): void*
+```
 
 Resizes the block at `p` to `new_size` bytes, keeping the contents that fit, and
 returns the new address: use that, not `p`, afterwards. Panics
 `mem.grow: out of memory`.
 
-### `dup(src: void*, n: int): void*`
+### `dup`
+
+```turf
+dup(src: void*, n: int): void*
+```
 
 A new block of `n` bytes holding a copy of the `n` bytes at `src`. Panics
 `mem.alloc: out of memory`.
 
-### `zero(p: void*, n: int): void`
+### `zero`
+
+```turf
+zero(p: void*, n: int): void
+```
 
 Sets `n` bytes starting at `p` to zero.
 
-### `alloc_aligned(alignment: int, size: int): void*`
+### `alloc_aligned`
+
+```turf
+alloc_aligned(alignment: int, size: int): void*
+```
 
 `size` bytes whose address is a multiple of `alignment`. `alignment` must be a
 power of two and a multiple of the pointer size (8). Any failure, including a
 bad `alignment`, panics with
 `mem.alloc_aligned: allocation failed (bad alignment or out of memory)`.
 
-### `usable_size(p: void*): int`
+### `usable_size`
+
+```turf
+usable_size(p: void*): int
+```
 
 How many bytes are really usable at `p`: at least what was asked for, often
 more. Not available on every platform (it wraps `malloc_usable_size`, a glibc
@@ -209,7 +237,11 @@ fn main(): int {
 ```
 </Code>
 
-### `free(p: void*): void`
+### `free`
+
+```turf
+free(p: void*): void
+```
 
 Releases a block that came from `alloc`, `alloc_zeroed`, `alloc_aligned`,
 `grow`, `dup`, or any other pointer you own. Rules:
@@ -248,9 +280,17 @@ See [the cross-heap free panic](/docs/language/memory-and-safety/#the-cross-heap
 
 ## Pinning: `root` and `unroot`
 
-### `root(p: void*): void`
+### `root`
 
-### `unroot(p: void*): void`
+```turf
+root(p: void*): void
+```
+
+### `unroot`
+
+```turf
+unroot(p: void*): void
+```
 
 The collector finds objects by following pointers from the stack, registers and
 other GC objects. A GC pointer stored **only** in manual memory, or inside a C
@@ -309,17 +349,29 @@ of type arguments"), and `pool.track(s)` with a `string`, a collection or a
 struct is **[E056](/docs/errors/e056/)** ("No matching overload"). Any `T*` converts to `void*` on its
 own.
 
-### `Pool.track(item: void*): void`
+### `Pool.track`
+
+```turf
+Pool.track(item: void*): void
+```
 
 Registers `item`, normally a pointer you already got from `alloc`. It allocates
 nothing for the item itself. The pool's own storage is manual memory and grows
 by doubling, starting at 8.
 
-### `Pool.length(): int`
+### `Pool.length`
+
+```turf
+Pool.length(): int
+```
 
 The number of tracked items.
 
-### `free_pool(pool: Pool): void`
+### `free_pool`
+
+```turf
+free_pool(pool: Pool): void
+```
 
 Calls `mem::free` on every tracked pointer, then releases the pool's own storage.
 Every tracked pointer must therefore follow `free`'s rules: a GC pointer cast to

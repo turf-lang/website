@@ -9,6 +9,8 @@ outcomes:
   - "Describe the nullability and escape analyses."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/architecture/pointers_and_references.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 A **pointer** is a note saying *where* a value is, instead of the value itself. Turf has four kinds. Two (`&T` and `&?T`) are **references**, which the compiler keeps safe by checking they are never null when used and never outlive what they point to. The other two (`ptr` and `T*`) are **raw**, with no checks, and so only work inside `unsafe`. The language-level view is Part 1; how the compiler implements it, pass by pass, is Part 2.
@@ -17,19 +19,19 @@ How TurfLang's pointer system works: the four pointer-shaped types (`ptr`, `T*`,
 `&T`, `&?T`), the `unsafe { }` block, the `unsafe module;` capability
 declaration, and the two flow analyses that make the safe references safe
 (`NullabilityPass` and `EscapePass`). Like
-`docs/architecture/modules_and_scope_resolution.md`, this describes both **what
+[`docs/architecture/modules_and_scope_resolution.md`](/docs/compiler/modules-and-scope-resolution/), this describes both **what
 a TurfLang programmer observes** (Part 1) and **how the compiler implements it,
-pass by pass** (Part 2). Frozen decisions: `docs/development/FREEZE.md` §6.6
+pass by pass** (Part 2). Frozen decisions: [`docs/development/FREEZE.md`](https://github.com/turf-lang/turf-lang/blob/master/docs/development/FREEZE.md) §6.6
 (pointers and references), §6.12 (`heap()`), §6.13 (escape rules), §6.8 (the
 standard library holds no capability a user cannot request).
 
 Related docs:
-- `docs/reference/ffi_and_unsafe.md` — the user-facing version of Part 1.
-- `docs/architecture/memory_model.md` — where the memory behind a `&T` lives
+- [`docs/reference/ffi_and_unsafe.md`](/docs/language/ffi-and-unsafe/) — the user-facing version of Part 1.
+- [`docs/architecture/memory_model.md`](/docs/compiler/memory-model/) — where the memory behind a `&T` lives
   (stack, GC heap, manual heap) and how `heap()` allocates.
-- `docs/architecture/boundary.md` — which standard-library modules declare the
+- [`docs/architecture/boundary.md`](/docs/compiler/boundary/) — which standard-library modules declare the
   raw-pointer capability and why.
-- `docs/architecture/compiler_pipeline.md` — the pass order this document slots
+- [`docs/architecture/compiler_pipeline.md`](/docs/compiler/compiler-pipeline/) — the pass order this document slots
   into.
 
 ## Part 1 — Language semantics

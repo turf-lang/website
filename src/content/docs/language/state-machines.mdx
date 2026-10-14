@@ -9,6 +9,8 @@ outcomes:
   - "Know which illegal moves are caught while compiling, and which when the program runs."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/reference/state_machines.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 Think of a traffic light. It can be green, yellow or red, and it may only go green → yellow → red → green. It can never jump from green straight to red. A `machine` writes those rules into the type, so an illegal move is an error instead of a silent bug.

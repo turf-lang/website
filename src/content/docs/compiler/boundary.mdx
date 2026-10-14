@@ -9,23 +9,25 @@ outcomes:
   - "See which mechanical checks keep the boundary true."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/architecture/boundary.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 A language is built from layers: the **compiler** (turns your code into a program), the **standard library** (ready-made code written in Turf), and the **runtime** (support code in every program). If the layers blur, nobody knows who to blame or who may change what. This page lists the rules that keep them apart, and the scripts that check them.
 
 What "owns" a given piece of TurfLang's behavior, and how that ownership is
 enforced rather than merely claimed. The rules are frozen in
-`docs/development/FREEZE.md` §6.8 (F-STD-1, F-STD-2) and §6.5 (F-MEM-3); this
+[`docs/development/FREEZE.md`](https://github.com/turf-lang/turf-lang/blob/master/docs/development/FREEZE.md) §6.8 (F-STD-1, F-STD-2) and §6.5 (F-MEM-3); this
 document says how the compiler keeps them true, and
 `scripts/check/check_boundary.sh` checks the mechanical parts on every run. Run
 it; do not take this document's word for it.
 
 Related docs:
-- `docs/archive/ARCHITECTURE_OVERHAUL.md` §3 (the target boundary diagram and the
+- [`docs/archive/ARCHITECTURE_OVERHAUL.md`](https://github.com/turf-lang/turf-lang/blob/master/docs/archive/ARCHITECTURE_OVERHAUL.md) §3 (the target boundary diagram and the
   three rules) and §15 (the standard-library architecture).
-- `docs/architecture/pointers_and_references.md` §1.7 — the raw-pointer
+- [`docs/architecture/pointers_and_references.md`](/docs/compiler/pointers-and-references/) §1.7 — the raw-pointer
   capability mechanism §3 below summarizes.
-- `docs/architecture/runtime.md` — what `libturfrt` owns.
+- [`docs/architecture/runtime.md`](/docs/compiler/runtime/) — what `libturfrt` owns.
 - `src/sema/Intrinsics.h` — the closed intrinsic list and the prelude module
   list, authoritative in that header; this document explains the *why*, the
   header is the *what*.

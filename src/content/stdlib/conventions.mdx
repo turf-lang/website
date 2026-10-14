@@ -141,7 +141,7 @@ runs the block only on failure ([Error handling](/docs/language/error-handling/)
 Leaving the result unhandled discards the failure silently, so check anything
 whose failure matters.
 
-<Program file="conventions_2_failure.tr">
+<Program file="conventions_failure_shapes.tr">
 ```turf
 import fs;
 
@@ -168,7 +168,7 @@ value that owns an operating-system resource has an explicit `close()`, and the
 idiom is `defer`, which runs on every way out of the block, including each pass
 of a loop:
 
-<Code title="conventions_3_resources.tr">
+<Code title="conventions_resources_and_defer.tr">
 ```turf
 import net;
 

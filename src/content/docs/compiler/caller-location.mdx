@@ -9,6 +9,8 @@ outcomes:
   - "Follow its implementation pass by pass, and know its limits."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/architecture/caller_location.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 If you pop an empty list, the mistake is in *your* code, so the error message should point at your line, not at the library function that noticed. Caller location is the compiler feature that makes this possible.
@@ -21,7 +23,7 @@ line in the user's program that made the bad call, instead of a line inside the
 library.
 
 Related docs:
-- `docs/architecture/errors_and_recover.md`: the error-payload machinery, an
+- [`docs/architecture/errors_and_recover.md`](/docs/compiler/errors-and-recover/): the error-payload machinery, an
   unrelated mechanism.
 - `src/sema/Intrinsics.h` (category 1): the `caller_location` entry.
 - `docs/errors/codes/E084.txt`: the user-facing page for the one diagnostic.
@@ -164,7 +166,7 @@ copies it), so `List<T>.pop` and friends work for every instantiation.
 
 ### 3.4 TypeChecker: the sole enforcement point
 
-Mirrors the `unsafe { }` gate's shape (`docs/architecture/pointers_and_references.md`
+Mirrors the `unsafe { }` gate's shape ([`docs/architecture/pointers_and_references.md`](/docs/compiler/pointers-and-references/)
 §2.5). One bool, `InCallerLocationFunc_` (`src/sema/TypeChecker.h`), is
 saved and restored around `visitFuncDef()`'s body traversal. A `fn` may be
 declared lexically inside another function's body, so this has to be save and

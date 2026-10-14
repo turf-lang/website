@@ -10,6 +10,8 @@ outcomes:
   - "Decide between an array and a `List<T>`."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/reference/arrays.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 An array is an egg carton: a fixed number of slots, all holding the same kind of thing, numbered from **0**. An array of 3 things has slots 0, 1 and 2, and never a slot 3. The size is part of the type, so `int[5]` and `int[6]` are different types, and copying an array copies every slot.
@@ -337,7 +339,7 @@ fn main(): int {
 The valid range is `-N <= i < N`. It does not wrap: `a[4]` and `a[-5]` are both
 out of bounds on four elements. Strings follow the same rule
 ([indexing a string](/docs/language/variables-and-types/#indexing-a-string)) as do
-`List<T>` elements ([`List` indexing](/stdlib/collections/#operatort-l-listt-i-int-t--operatort-l-listt-i-int-value-t-void)).
+`List<T>` elements ([`List` indexing](/stdlib/collections/#li--li--v)).
 A raw pointer (`T*`) carries no length, so `p[-1]` there is plain pointer
 arithmetic and is not checked.
 
@@ -928,7 +930,7 @@ cannot be returned or stored in a struct ([`E140`](/docs/errors/e140/)), and it 
 `copy()` takes no arguments (`a.copy(1)` is [`E131`](/docs/errors/e131/)), and `length()` and `copy()`
 are the only methods an array has (`a.reverse()` is [`E131`](/docs/errors/e131/)). Strings and
 `List<T>` have no `copy()` in this sense; a `List` has its own
-[`List.copy()`](/stdlib/collections/#listcopy-listt).
+[`List.copy()`](/stdlib/collections/#listcopy).
 
 ## Iterating with `for`
 

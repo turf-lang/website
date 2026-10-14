@@ -9,6 +9,8 @@ outcomes:
   - "Find the source file for each stage."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/architecture/compiler_pipeline.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 A computer cannot run the text you type. The compiler is a factory line that turns that text into a native program in stages, and each stage does one job and hands its result to the next.
@@ -36,14 +38,14 @@ pass owns which decision.
 
 Related documents:
 
-- `docs/architecture/modules_and_scope_resolution.md`: the module/import
+- [`docs/architecture/modules_and_scope_resolution.md`](/docs/compiler/modules-and-scope-resolution/): the module/import
   system and the `::` operator, pass by pass. This document does not repeat
   it.
-- `docs/architecture/pointers_and_references.md`: `unsafe { }`, `&T`, raw
+- [`docs/architecture/pointers_and_references.md`](/docs/compiler/pointers-and-references/): `unsafe { }`, `&T`, raw
   pointers.
-- `docs/architecture/memory_model.md`: heap and stack layout, and the layout
+- [`docs/architecture/memory_model.md`](/docs/compiler/memory-model/): heap and stack layout, and the layout
   consequences of monomorphized generics (its section 2.7).
-- `docs/architecture/errors_and_recover.md`: the `!T` error-union design that
+- [`docs/architecture/errors_and_recover.md`](/docs/compiler/errors-and-recover/): the `!T` error-union design that
   sections 4 and 6 refer to.
 
 Each source file under `src/` opens with a header comment that points back to
@@ -714,7 +716,7 @@ There is no whole-program call-graph pass.
 
 ### Pattern matching through the passes
 
-`compare` with patterns (language rules in `docs/development/FREEZE.md`,
+`compare` with patterns (language rules in [`docs/development/FREEZE.md`](https://github.com/turf-lang/turf-lang/blob/master/docs/development/FREEZE.md),
 section 6.17) touches every pass. A `matches` header is an `ExprAST` in
 `MatchesArm::Values` (with parallel `Guards` and the arm's `Bindings`): an
 ordinary expression is the original equality pattern, and
@@ -743,7 +745,7 @@ A generic like `List<T>` is a template. Monomorphization is the step that stamps
 
 Generics are monomorphized: one fully specialized, independently compiled
 clone of a generic function, method, constructor or struct per distinct tuple
-of concrete type arguments the program uses (`docs/development/FREEZE.md`,
+of concrete type arguments the program uses ([`docs/development/FREEZE.md`](https://github.com/turf-lang/turf-lang/blob/master/docs/development/FREEZE.md),
 section 6.1). There is no type erasure: a type parameter is never represented
 as an opaque pointer-sized slot. The invariant (INV-GEN-1) is that no
 `TurfGenericParamType` reaches Codegen; it is asserted in Codegen and in the
@@ -803,7 +805,7 @@ The result is independent code and layout per instantiation. `List<int>` and
 `List<string>` are two `llvm::StructType`s with two sets of methods;
 `GlobalSymbolTable` has one registered `TurfStructType` per instantiation,
 keyed by the clone's identity, never one shared `List` entry. See
-`docs/architecture/memory_model.md` section 2.7 for the layout consequences.
+[`docs/architecture/memory_model.md`](/docs/compiler/memory-model/) section 2.7 for the layout consequences.
 
 ### Instantiation chains and the depth cap
 

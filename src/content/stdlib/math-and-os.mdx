@@ -56,7 +56,7 @@ round the same way, but the methods panic for a NaN, an infinity or a value
 beyond the range of an `int`, where the `math` functions return the value
 unchanged.
 
-<Program file="math_and_os_functions_from.tr">
+<Program file="math_and_os_c_math_functions.tr">
 ```turf
 fn main(): int {
     immut radius: double = 2.5;
@@ -187,7 +187,7 @@ input: it returns `MathError::DivisionByZero` when `b` is `0` (or `0.0`) and `a 
 otherwise. Integer division truncates toward zero, as `/` does:
 `divide(-7, 2)` is `-3`.
 
-<Program file="math_and_os_error_matherror.tr">
+<Program file="math_and_os_math_error.tr">
 ```turf
 fn average(total: int, count: int): int {
     return math::divide(total, count) recover produce 0;
@@ -236,7 +236,11 @@ import os;
 ```
 </Code>
 
-### `env(name: string): string`
+### `env`
+
+```turf
+env(name: string): string
+```
 
 The value of the environment variable `name`, or `""` if it is not set. A
 variable that is set to the empty string also reads as `""`, so `env` cannot tell
@@ -258,7 +262,7 @@ starts afterwards. It does not change the shell that launched your program.
 value alone and **still succeeds**. It fails with `OsError::SetEnvFailed(name)`
 when the system rejects the name: an empty name, or one that contains `=`.
 
-<Program file="math_and_os_error_oserror.tr">
+<Program file="math_and_os_os_error.tr">
 ```turf
 import os;
 
@@ -305,12 +309,20 @@ updated
 rejected: BAD=NAME
 ```
 
-### `argc(): int`
+### `argc`
+
+```turf
+argc(): int
+```
 
 The number of command-line arguments **including** the program itself, like C's
 `argc`. A program run with no arguments has `argc() == 1`.
 
-### `argv(index: int): string`
+### `argv`
+
+```turf
+argv(index: int): string
+```
 
 The argument at `index`. `argv(0)` is the program's own invocation path, and
 `argv(1)` is the first argument the user typed. Arguments are not parsed: a

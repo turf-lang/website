@@ -9,6 +9,8 @@ outcomes:
   - "Explain how an `import` finds its module across packages."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/reference/projects_and_packages.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 A **project** is a folder with a file called `turf.toml` in it. That file, the **manifest**, is the project's name tag and shopping list: its name, its version, and which other packages it needs. A **package** is a named set of modules that can be built into a program, shared as a library, or both. `turf` reads the manifest, fetches the dependencies, pins the git ones in a lock file (`turf.lock`) so that everyone builds the same thing, and compiles everything in one go.

@@ -67,7 +67,11 @@ its last value. `body` is whatever followed the blank line.
 A `Request` you create yourself starts with empty strings and no headers:
 `http::Request::default()`.
 
-### `parse_request(conn: net::TcpConnection): Request`
+### `parse_request`
+
+```turf
+parse_request(conn: net::TcpConnection): Request
+```
 
 Reads one request from `conn` with a single `conn.read(8192)` and parses it. The
 header block ends at the first blank line, either `\r\n\r\n` (what clients send)
@@ -75,11 +79,19 @@ or `\n\n`; a trailing `\r` is removed from every line either way. It never
 fails: an empty or malformed request line gives a `Request` whose `method` and
 `path` are `""`, which falls through to your not-found branch.
 
-### `Request.has_header(name: string): bool`
+### `Request.has_header`
+
+```turf
+Request.has_header(name: string): bool
+```
 
 Whether the request has a header called exactly `name`.
 
-### `Request.get_header(name: string): string`
+### `Request.get_header`
+
+```turf
+Request.get_header(name: string): string
+```
 
 The header's value. It **panics** if the header is not there, with a message that
 starts with your call's `file:line:` and names the header. Ask with `has_header`
@@ -102,16 +114,28 @@ hands the handler a ready `Response`. Each `send_*` call writes a complete
 response and nothing else, so call exactly one per request. The connection is
 not closed by `send_*`; that is the caller's `defer conn.close();`.
 
-### `Response.send_text(status: int, body: string): void`
+### `Response.send_text`
+
+```turf
+Response.send_text(status: int, body: string): void
+```
 
 Sends `status` with `Content-Type: text/plain`.
 
-### `Response.send_json(status: int, body: string): void`
+### `Response.send_json`
+
+```turf
+Response.send_json(status: int, body: string): void
+```
 
 Sends `status` with `Content-Type: application/json`. `body` is JSON text you
 have already made, for example with [`json::stringify`](/stdlib/json/#stringifyv-jsonvalue-string).
 
-### `Response.send_raw(status: int, content_type: string, body: string): void`
+### `Response.send_raw`
+
+```turf
+Response.send_raw(status: int, content_type: string, body: string): void
+```
 
 The function the other two call: any content type. The response is, with `\r\n`
 line endings:
@@ -127,7 +151,11 @@ Welcome to Turf
 
 `Content-Length` is the length of `body` in bytes.
 
-### `status_text(status: int): string`
+### `status_text`
+
+```turf
+status_text(status: int): string
+```
 
 The status line text for a code: `"200 OK"`, `"201 Created"`,
 `"400 Bad Request"`, `"404 Not Found"`, `"500 Internal Server Error"`. Any other
@@ -157,22 +185,38 @@ Matching is **exact on the path** and ignores the method: `/users` does not matc
 `/users/7` or `/users?page=2`, and a `POST /` goes to the same handler as
 `GET /`. A handler that needs the method reads `req.method`.
 
-### `Server.get(path: string, handler: fn(Request, Response): void): void`
+### `Server.get`
+
+```turf
+Server.get(path: string, handler: fn(Request, Response): void): void
+```
 
 Registers `handler` for `path`. Registering the same path again replaces the
 handler.
 
-### `Server.has_route(path: string): bool`
+### `Server.has_route`
+
+```turf
+Server.has_route(path: string): bool
+```
 
 Whether a handler is registered for exactly `path`.
 
-### `Server.get_route(path: string): fn(Request, Response): void`
+### `Server.get_route`
+
+```turf
+Server.get_route(path: string): fn(Request, Response): void
+```
 
 The handler registered for `path`. It **panics** if there is none, with a message
 that starts with your call's `file:line:` and names the path. Use `has_route`
 first.
 
-### `Server.listen(port: int): void`
+### `Server.listen`
+
+```turf
+Server.listen(port: int): void
+```
 
 Binds `port` on every interface and serves forever. For each connection it
 parses the request and calls the handler for `req.path`; if no handler matches
@@ -189,7 +233,7 @@ handler returns.
 
 ## Example: a `Server` with a JSON handler
 
-<Code title="http_example_a.tr">
+<Code title="http_json_handler.tr">
 ```turf
 import http;
 import json;
@@ -230,7 +274,7 @@ request, per-method handling, or a different not-found response. This one
 answers three requests and stops. `defer conn.close();` runs at the end of
 each pass of the loop, on every path.
 
-<Code title="http_example_manual.tr">
+<Code title="http_manual_routing.tr">
 ```turf
 import http;
 import net;
@@ -278,7 +322,7 @@ A handler that builds JSON by hand must escape any text it did not write itself,
 or a quote in a user's name breaks the document. `json::escape_string` does it
 ([JSON](/stdlib/json/#escape_strings-string-string)):
 
-<Code title="http_escaping_text.tr">
+<Code title="http_escaping_responses.tr">
 ```turf
 import http;
 import json;

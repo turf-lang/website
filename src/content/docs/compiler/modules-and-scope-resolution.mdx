@@ -9,6 +9,8 @@ outcomes:
   - "Trace `import io::printline;` then `printline(\"hi\");` end to end (Part 3)."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/architecture/modules_and_scope_resolution.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 When you write `import list::List;`, the compiler has to find the file, read it, make its names available, and make sure a `List` from your module is not confused with another module's `List`. This page has two halves: what you can *observe* from the outside, and how the compiler *does it* inside, so the two can be checked against each other.
@@ -17,14 +19,14 @@ Reference for the module/import system, module-scoped type identity,
 visibility (`pub`), package-aware module resolution, and the `::` operator.
 Part 1 states what a TurfLang programmer observes. Part 2 states how the
 compiler implements it, pass by pass. The user-facing counterpart of Part 1 is
-`docs/reference/functions_and_modules.md`; the pipeline these passes sit in is
-`docs/architecture/compiler_pipeline.md`.
+[`docs/reference/functions_and_modules.md`](/docs/language/functions-and-modules/); the pipeline these passes sit in is
+[`docs/architecture/compiler_pipeline.md`](/docs/compiler/compiler-pipeline/).
 
 Related:
 
 - `docs/slm/modules.txt`: the short, example-driven quick reference used by the
   SLM diagnostic assistant.
-- `docs/development/FREEZE.md`, sections 6.11 (type identity), 6.15 (`pub`),
+- [`docs/development/FREEZE.md`](https://github.com/turf-lang/turf-lang/blob/master/docs/development/FREEZE.md), sections 6.11 (type identity), 6.15 (`pub`),
   6.16 (packages), 6.24 (imports) and 6.25 (the prelude): the frozen rules.
 
 ## Part 1: External reference (language semantics)

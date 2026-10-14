@@ -148,7 +148,7 @@ geometry/
 
 `src/shapes.tr`:
 
-<Code title="testing_example_tests.tr">
+<Code title="shapes.tr">
 ```turf
 pub fn area_of_rect(width: int, height: int): int {
     return width * height;
@@ -167,7 +167,7 @@ pub fn half(n: int): double {
 `tests/shapes_test.tr` is a plain test: it passes if it compiles, runs and exits
 with status `0`.
 
-<Code title="testing_example_tests_2.tr">
+<Code title="tests_shapes_ok.tr">
 ```turf
 import shapes;
 import test;
@@ -187,7 +187,7 @@ or to abort, and comments say why. `tests/fail_wrong_argument_type.tr` checks th
 the compiler refuses a mistake, and that it is refused for the reason intended
 (`// EXPECT-DIAG:` takes an error code):
 
-<Code title="testing_example_tests_3.tr">
+<Code title="tests_compile_fail.tr">
 ```turf
 // EXPECT-DIAG: E025
 import shapes;
@@ -202,7 +202,7 @@ A test that is expected to abort at run time carries the marker comment
 `// RUNTIME_ABORT_EXPECTED`, and `// EXPECT-RUNTIME:` pins the message it must
 print, as in `tests/fail_assertion_aborts.tr`:
 
-<Code title="testing_example_tests_4.tr">
+<Code title="tests_runtime_abort.tr">
 ```turf
 // RUNTIME_ABORT_EXPECTED
 // EXPECT-RUNTIME: assert_eq failed: 12 != 13
@@ -257,7 +257,7 @@ Outside a project, the same runner is `turfc --test <dir>`.
 A test does not need a project. Any program that asserts and returns `0` is one,
 and you can run it directly:
 
-<Program file="testing_example_a.tr">
+<Program file="testing_single_file_check.tr">
 ```turf
 import list::List;
 import test;

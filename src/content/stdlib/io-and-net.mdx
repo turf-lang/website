@@ -121,7 +121,7 @@ Like `print` and `printline` for a `string`, but to standard error, and
 unbuffered: the text appears at once, in order with any panic message. Only
 `string` is accepted; convert other values with `to string`.
 
-<Code title="io_and_net_standard_error.tr">
+<Code title="io_and_net_stderr.tr">
 ```turf
 fn main(): int {
     eprint("warning: ");
@@ -131,7 +131,11 @@ fn main(): int {
 ```
 </Code>
 
-### `input(): string`, `input(msg: string): string`
+### `input`
+
+```turf
+input(): string`, `input(msg: string): string
+```
 
 Reads one line from standard input and returns it **without** its newline.
 `input(msg)` first prints `msg` and flushes standard output, so the prompt is
@@ -173,7 +177,7 @@ the file, does its work and closes it before returning, so there is nothing to
 `close()` and no `defer` is needed. For a file you read or write piece by piece,
 use `extern fn` ([FFI and unsafe](/docs/language/ffi-and-unsafe/)).
 
-<Code title="io_and_net_files_fileerror.tr">
+<Code title="io_and_net_file_errors.tr">
 ```turf
 error FileError {
     NotFound(path: string),
@@ -200,7 +204,7 @@ platform. A `string` ends at its first NUL byte, so a binary file that contains
 NULs reads in full but its `length()` stops at the first one; `write_string`
 likewise writes up to the first NUL.
 
-<Program file="io_and_net_files_fileerror_2.tr">
+<Program file="io_and_net_file_errors_2.tr">
 ```turf
 import list::List;
 
@@ -251,18 +255,30 @@ true
 
 Ending the program, and the primitive every library panic is built on.
 
-### `exit(code: int): void`
+### `exit`
+
+```turf
+exit(code: int): void
+```
 
 Ends the program at once with status `code`. It never returns, and it does not
 run pending `defer` statements. Standard output is flushed first.
 
-### `abort(): void`
+### `abort`
+
+```turf
+abort(): void
+```
 
 Ends the program at once as an abnormal termination. On Linux and macOS the
 process dies with `SIGABRT`, which a shell reports as status 134; on Windows the
 status is `0xE0545254`. Standard output is flushed first.
 
-### `panic(msg: string): void`
+### `panic`
+
+```turf
+panic(msg: string): void
+```
 
 Writes `msg` and a newline to standard error, then calls `abort`. It never
 returns. Unlike a library panic, it adds no `file:line:` prefix: include your
@@ -333,7 +349,7 @@ fn main(): int {
 
 ### `error NetworkError`
 
-<Code title="io_and_net_error_networkerror.tr">
+<Code title="io_and_net_network_error.tr">
 ```turf
 error NetworkError {
     SocketCreationFailed,
@@ -359,7 +375,11 @@ The variants carry no fields. Which call produces which:
 peer has closed the connection or the read failed, and a `write` that fails is
 silent.
 
-### `resolve_hostname(host: string): !string`
+### `resolve_hostname`
+
+```turf
+resolve_hostname(host: string): !string
+```
 
 Looks `host` up and returns its first IPv4 address as dotted text:
 `resolve_hostname("localhost")` is `"127.0.0.1"`. A name that is already a
@@ -367,12 +387,20 @@ dotted address resolves to itself. `NetworkError::ResolutionFailed` if the name
 does not resolve (a typo, no DNS record, no network) or is empty. IPv6 addresses
 are not returned.
 
-### `TcpConnection::connect(a: int, b: int, c: int, d: int, port: int) static: !TcpConnection`
+### `TcpConnection::connect`
+
+```turf
+TcpConnection::connect(a: int, b: int, c: int, d: int, port: int) static: !TcpConnection
+```
 
 Dials `a.b.c.d:port`. See the table above for the errors. Each octet is taken
 modulo 256.
 
-### `TcpConnection.read(max_bytes: int): string`
+### `TcpConnection.read`
+
+```turf
+TcpConnection.read(max_bytes: int): string
+```
 
 Waits until the peer sends something, then returns what arrived from **one**
 receive: at most `max_bytes` characters, and often fewer, because a TCP message
@@ -380,40 +408,68 @@ can arrive in several pieces. It returns `""` if the peer closed the connection.
 To read until a known end, call it in a loop. The text ends at the first NUL
 byte, so `read` is for text protocols.
 
-### `TcpConnection.write(data: string): void`
+### `TcpConnection.write`
+
+```turf
+TcpConnection.write(data: string): void
+```
 
 Sends `data` in one call. Like `read`, it moves bytes, not messages: the peer
 may receive them in several reads.
 
-### `TcpConnection.close(): void`
+### `TcpConnection.close`
+
+```turf
+TcpConnection.close(): void
+```
 
 Closes the socket. It is **idempotent**: a second call does nothing, so
 `defer conn.close();` and an explicit early close together are safe. (Closing
 the same descriptor number twice is dangerous in general, because the system may
 have given that number to a different file in between.)
 
-### `TcpConnection.raw_fd(): int`
+### `TcpConnection.raw_fd`
+
+```turf
+TcpConnection.raw_fd(): int
+```
 
 The underlying descriptor, for passing to FFI; `-1` once the connection is
 closed.
 
-### `TcpConnection::new(fd: int)`
+### `TcpConnection::new`
+
+```turf
+TcpConnection::new(fd: int)
+```
 
 Wraps a descriptor you already own, so that `read`, `write` and `close` work on
 it. The connection takes responsibility for closing it.
 
-### `TcpListener::bind(port: int) static: !TcpListener`
+### `TcpListener::bind`
+
+```turf
+TcpListener::bind(port: int) static: !TcpListener
+```
 
 Listens on every local interface at `port`, with a backlog of 128. It sets
 `SO_REUSEADDR` first, so restarting a server does not fail with "address in use"
 while the previous socket lingers. Errors: see the table above.
 
-### `TcpListener.accept(): !TcpConnection`
+### `TcpListener.accept`
+
+```turf
+TcpListener.accept(): !TcpConnection
+```
 
 Waits for a client and returns the new connection. `AcceptFailed` is usually
 transient, so a serve loop recovers with `continue`, as below.
 
-### `TcpListener.close(): void`, `TcpListener.raw_fd(): int`, `TcpListener::new(fd: int)`
+### `TcpListener.close`
+
+```turf
+TcpListener.close(): void`, `TcpListener.raw_fd(): int`, `TcpListener::new(fd: int)
+```
 
 As for `TcpConnection`: `close` is idempotent, `raw_fd` is `-1` once closed, and
 `new` wraps a descriptor you own.
@@ -449,7 +505,7 @@ stops when it receives `quit`. `defer conn.close();` closes each connection on
 every path out of `serve`, and `defer listener.close();` closes the listener when
 `main` returns.
 
-<Code title="io_and_net_example_an.tr">
+<Code title="io_and_net_echo_server.tr">
 ```turf
 import net;
 
@@ -489,7 +545,7 @@ fn main(): int {
 
 The client tells apart a server that is not running from a local failure:
 
-<Program file="io_and_net_example_an_2.tr">
+<Program file="io_and_net_echo_client.tr">
 ```turf
 import net;
 

@@ -10,6 +10,8 @@ outcomes:
   - "Know the limits that are there by design."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/architecture/errors_and_recover.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 The [Error Handling](/docs/language/error-handling/) page shows how to *use* errors. This page shows how they *work*: when a function returns `!T`, what is really returned, how `recover` takes it apart, and where each step is done in the compiler.
@@ -17,8 +19,8 @@ The [Error Handling](/docs/language/error-handling/) page shows how to *use* err
 Technical reference for TurfLang's recoverable-error system. **Part 1** defines
 what a TurfLang programmer observes; **Part 2** traces how the compiler
 implements it, pass by pass, so the two halves can be cross-checked against the
-source. The frozen decision is `docs/development/FREEZE.md` §6.18 (F-ERR-1); the
-user-facing guide is `docs/reference/error_handling.md`.
+source. The frozen decision is [`docs/development/FREEZE.md`](https://github.com/turf-lang/turf-lang/blob/master/docs/development/FREEZE.md) §6.18 (F-ERR-1); the
+user-facing guide is [`docs/reference/error_handling.md`](/docs/language/error-handling/).
 
 An error variant is a bare name or carries typed **payload fields** declared as
 part of the variant (`NotFound(path: string)`, §1.2b). Every error value also
@@ -282,7 +284,7 @@ compare err {
 
 `matches E::V(sub, ..)` matches an error value whose tag is `E::V` and whose
 fields match the sub-patterns positionally; the sub-patterns are those of a
-struct pattern (`docs/reference/control_flow.md`, `FREEZE.md` §6.17). It lists
+struct pattern ([`docs/reference/control_flow.md`](/docs/language/control-flow/), `FREEZE.md` §6.17). It lists
 every field or ends in `..`, and a variant without fields is written bare; a bare
 name for one that has fields is [E092](/docs/errors/e092/) (write `E::V(..)`). The subject is an open
 `AnyErrorType` (it always needs `otherwise`/`_`, [E093](/docs/errors/e093/)) or a declared error type
@@ -427,10 +429,10 @@ fn check_index(i: int, len: int): void {
 
 A call to such a function from ordinary code stamps its own source line, and a
 call from inside another `@caller_location` function forwards the inherited
-location. The mechanism is documented in `docs/architecture/caller_location.md`;
+location. The mechanism is documented in [`docs/architecture/caller_location.md`](/docs/compiler/caller-location/);
 the convention for which failures are `!T` and which are panics (`!T` for the
 input or environment, a caller-located panic for a violated precondition) is in
-`docs/reference/stdlib/README.md`. `test::assert` and `test::fail` are
+[`docs/reference/stdlib/README.md`](/stdlib/conventions/). `test::assert` and `test::fail` are
 `@caller_location` too.
 
 ## Part 2 — Internal architecture (compiler implementation)

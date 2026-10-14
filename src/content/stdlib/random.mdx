@@ -41,7 +41,11 @@ its own generator (a few lines of arithmetic on an `int` it keeps).
 
 ## Functions
 
-### `random_int(min: int, max: int): int`
+### `random_int`
+
+```turf
+random_int(min: int, max: int): int
+```
 
 A pseudo-random integer from `min` to `max`, **both included**.
 `random_int(1, 6)` is a die roll, and `random_int(5, 5)` is always `5`.
@@ -61,16 +65,28 @@ A pseudo-random integer from `min` to `max`, **both included**.
   uniformity. A wider range draws whole 64-bit values and keeps the first one
   inside it, which is exact.
 
-### `random_double(): double`
+### `random_double`
+
+```turf
+random_double(): double
+```
 
 A pseudo-random double from `0.0` up to, but **not including**, `1.0`.
 Multiply and add to scale it: `lo + random_double() * (hi - lo)`.
 
-### `random_bool(): bool`
+### `random_bool`
+
+```turf
+random_bool(): bool
+```
 
 `true` or `false`, each about half the time.
 
-### `reseed(): void`
+### `reseed`
+
+```turf
+reseed(): void
+```
 
 Discards the current state and draws a fresh seed from the operating system.
 You never need it for correct output; it exists to start a new sequence on
@@ -83,7 +99,7 @@ produces (`random_int` combines several). It is the same on every platform.
 
 ## Example: dealing and rolling
 
-<Code title="random_example_dealing.tr">
+<Code title="random_dealing_and_rolling.tr">
 ```turf
 import random;
 
@@ -115,7 +131,7 @@ fn main(): int {
 Shuffling a list is the standard use of `random_int` with a shrinking range:
 walk from the end and swap each element with a random one at or before it.
 
-<Code title="random_example_a.tr">
+<Code title="random_shuffle.tr">
 ```turf
 import random;
 import list::List;

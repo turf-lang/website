@@ -116,7 +116,7 @@ One variant per operation, each carrying the path it failed on, like
 `err == fs::FsError::MkdirFailed` compares the variant alone; a pattern inside a
 `compare` reads the path:
 
-<Program file="fs_error_fserror.tr">
+<Program file="fs_error.tr">
 ```turf
 import fs;
 
@@ -151,7 +151,11 @@ mkdir failed for data
 (The first `mkdir` succeeds, so only the second prints; the directory is
 removed at the end.)
 
-### `mkdir(path: string): !void`
+### `mkdir`
+
+```turf
+mkdir(path: string): !void
+```
 
 Creates one directory with the permissions `rwxr-xr-x` (octal `0755`, reduced by
 the process's umask on systems that have one). It fails with
@@ -159,20 +163,32 @@ the process's umask on systems that have one). It fails with
 not create `a` and `a/b`), if `path` already exists, or if the process may not
 create it. Create each level in turn to make a nested path.
 
-### `remove_file(path: string): !void`
+### `remove_file`
+
+```turf
+remove_file(path: string): !void
+```
 
 Deletes the file at `path`. It fails with `FsError::RemoveFileFailed(path)` if
 there is no such file or the process may not delete it, and for a directory that
 has contents. On Linux it also deletes an **empty** directory; use `remove_dir`
 for directories so the intent is plain.
 
-### `remove_dir(path: string): !void`
+### `remove_dir`
+
+```turf
+remove_dir(path: string): !void
+```
 
 Removes an **empty** directory. It fails with `FsError::RemoveDirFailed(path)` if
 the directory does not exist, is not empty, or is not a directory. It never
 deletes contents: remove the files first.
 
-### `is_dir(path: string): bool`
+### `is_dir`
+
+```turf
+is_dir(path: string): bool
+```
 
 Whether `path` names a directory that can be opened. It is `false` for a file,
 for a path that does not exist, and for a directory the process may not read.
@@ -189,7 +205,7 @@ This creates an output directory if it is not there, writes a report into it
 with `io::write_string`, and removes everything again. Each step that can fail
 returns a `!T`, so each has a `recover`.
 
-<Program file="fs_example_a.tr">
+<Program file="fs_output_directory.tr">
 ```turf
 import fs;
 

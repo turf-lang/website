@@ -9,6 +9,8 @@ outcomes:
   - "Overload operators for your own types, including indexing."
 ---
 
+{/* Facts, code and wording from the turf-lang repository: docs/reference/generics_and_operators.md. Every program is compiled by scripts/verify-learn.mjs. */}
+
 ## In plain words
 
 A **generic** is a cookie cutter that does not care what the dough is. `List<T>` is a list of *something*; write `List<int>` and you get a list of integers, `List<string>` and you get a list of text. Turf makes a separate, fully specialised copy for each type you actually use, so a `List<int>` stores real `int`s.
