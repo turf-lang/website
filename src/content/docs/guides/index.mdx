@@ -1,0 +1,14 @@
+---
+title: "Guides"
+description: "Step-by-step walkthroughs: a project, a library, a test suite."
+lead: "Task-oriented walkthroughs: how to do something with Turf, step by step, with real commands and their output."
+order: 3
+---
+
+The rules behind each step are in the [language reference](/docs/language/); a guide links to the part it relies on instead of restating it. Every Turf example in these pages is compiled by CI, like the reference's.
+
+1. [Working on a Project](/docs/guides/projects/): `turf new` to a release build. Modules, formatting, diagnostics, path and git dependencies, `turf.lock`, CI flags, debug and release builds.
+2. [Writing a Library](/docs/guides/libraries/): the root module and what it exposes, following the standard library's conventions, error types, generics, releasing with git tags, and wrapping a C library.
+3. [Testing a Project](/docs/guides/testing/): a test suite from the first assertion to CI. Fallible code, programs the compiler must refuse, panics, warnings, files, random numbers and time.
+
+Working on the compiler itself rather than in Turf? See the compiler's [CONTRIBUTING.md](https://github.com/turf-lang/turf-lang/blob/master/CONTRIBUTING.md) and [Testing the compiler](https://github.com/turf-lang/turf-lang/blob/master/docs/development/TESTING.md).

@@ -1,0 +1,35 @@
+---
+title: "E138: A generic type needs its type arguments"
+description: "What compiler error E138 means, and how to fix it."
+order: 138
+---
+
+A generic type is a template: `Box<T>` or `List<T>` becomes a real type only when you say what `T` is. Naming it on its own leaves Turf not knowing what the box holds.
+
+<Code title="Example">
+```turf
+struct Box<T> { v: T }
+
+mut b: Box = Box::default();            // a Box of what?
+```
+</Code>
+
+Say what it holds:
+
+<Code title="Example">
+```turf
+mut b: Box<int> = Box::default();
+mut names: List<string> = List::default();
+```
+</Code>
+
+The same rule applies to a method of a generic struct. It repeats the struct's type parameters, so Turf knows they are the same ones:
+
+<Code title="Example">
+```turf
+struct Box<T> { v: T }
+fn<T> Box.get(): T { ... }              // not `fn Box.get()`
+```
+</Code>
+
+Run `turf --explain E138` in a terminal to read this again.

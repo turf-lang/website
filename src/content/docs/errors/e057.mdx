@@ -1,0 +1,36 @@
+---
+title: "E057: You used an operator on a kind of value it doesn't work for"
+description: "What compiler error E057 means, and how to fix it."
+order: 57
+---
+
+Operators have a job: `+ - * / %` do arithmetic on numbers, `& | ^ << >>` work on whole numbers, `&&` and `||` combine two `bool`s, `!` flips a `bool`, `~` flips the bits of an int. If a value isn't the kind the operator works on -- a `string`, a struct, a `bool` where a number belongs -- Turf can't tell what the operation is supposed to mean, so it stops and names the operator and the two types.
+
+This works:
+
+<Code title="Example">
+```turf
+mut sum: int = 3 + 4;
+mut avg: double = 7.0 / 2.0;
+```
+</Code>
+
+This doesn't, because `"4"` is text, not a number:
+
+<Code title="Example">
+```turf
+mut bad: int = 3 + "4";            // cannot apply '+' to 'int' and 'string'
+```
+</Code>
+
+The same goes for the shorthand forms (`x += "4"`), `x++` on a string, `n && m` or `!n` on ints (write `n != 0`), and `**` or `&` on a type that isn't a number.
+
+To fix it, make both sides genuinely the kind the operator wants. If you have a number stored as text you need an actual numeric value first -- Turf doesn't parse text into numbers on its own.
+
+If you wanted to *join* two pieces of text, `+` on two strings does that; it is a number and a string that can't be mixed.
+
+A struct can get its own `+` (or `==`, `[]`, ...) by declaring an `operator`; without one, the operators above don't apply to it.
+
+(Division or remainder by a literal zero is a different thing: Turf warns about it at compile time -- "this will crash at runtime" -- and the program stops when it runs. It is not this error.)
+
+Run `turf --explain E057` in a terminal to read this again.

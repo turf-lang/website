@@ -1,0 +1,33 @@
+---
+title: "E006: E006 is retired -- for-each over an unsized array parameter works now"
+description: "What compiler error E006 means, and how to fix it."
+order: 6
+---
+
+Older versions of Turf refused `for value in arr { ... }` when `arr` was a parameter written `arr: int[]` (no size in the brackets), because such a parameter didn't carry its length with it. It does now: a `T[]` parameter knows how many elements the caller's array has, so this compiles and loops over every one of them.
+
+<Code title="Example">
+```turf
+fn sum(arr: int[]): int {
+    mut total: int = 0;
+    for value in arr {          // fine -- visits every element
+        total = total + value;
+    }
+    return total;
+}
+
+fn main(): int {
+    mut a: int[3] = [1, 2, 3];
+    mut b: int[5] = [1, 2, 3, 4, 5];
+    sum(a);                     // 6
+    sum(b);                     // 15
+    return 0;
+}
+```
+</Code>
+
+`arr.length()` gives the same count, and `arr[i]` is checked against it. The number E006 is kept so an old log that mentions it still has somewhere to land, and is never reused.
+
+If you see an error about an unsized array today, it's E140: `T[]` written somewhere other than a function parameter. Run `turf --explain E140`.
+
+Run `turf --explain E006` in a terminal to read this again.

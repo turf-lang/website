@@ -1,0 +1,24 @@
+---
+title: "E135: That isn't something you can call"
+description: "What compiler error E135 means, and how to fix it."
+order: 135
+---
+
+Writing `(...)` after a name means "run this". Turf found a name that is a plain value, not a function.
+
+An enum variant is already a complete value. It doesn't take arguments:
+
+<Code title="Example">
+```turf
+enum Color { Red, Green }
+
+mut c: Color = Color::Red();        // Red is a value, not a function
+mut c: Color = Color::Red;          // just the name
+```
+</Code>
+
+The same goes for an `error` variant that carries no payload fields: write `IOError::NotFound`, not `IOError::NotFound()` -- unless it takes a message, in which case you pass exactly one string: `IOError::NotFound("a.txt")`.
+
+If you meant to build a struct, that is a call to its constructor: `Point::new(1, 2)` or `Point::default()`.
+
+Run `turf --explain E135` in a terminal to read this again.

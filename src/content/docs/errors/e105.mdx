@@ -1,0 +1,35 @@
+---
+title: "E105: A comma is missing"
+description: "What compiler error E105 means, and how to fix it."
+order: 105
+---
+
+Turf was reading a list -- the fields of a struct, the variants of an enum, the arguments of a call, the items of an array -- and found a second item without a comma in front of it. (The message says what it was looking for: usually "`,` or the closing bracket".)
+
+<Code title="Example">
+```turf
+struct Point {
+    x: int
+    y: int           // no comma after `x: int`
+}
+
+add(1 2)             // no comma between the arguments
+```
+</Code>
+
+Separate the items with commas:
+
+<Code title="Example">
+```turf
+struct Point {
+    x: int,
+    y: int
+}
+
+add(1, 2)
+```
+</Code>
+
+It can also mean the list was supposed to end and the closing bracket is missing (see E104); the message names both possibilities because from where Turf stands it can't tell which one you meant. A trailing comma after the last item is fine.
+
+Run `turf --explain E105` in a terminal to read this again.

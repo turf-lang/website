@@ -1,0 +1,32 @@
+---
+title: "E099: A string or character was opened but never closed"
+description: "What compiler error E099 means, and how to fix it."
+order: 99
+---
+
+Text in Turf is wrapped in quotes: `"hello"` for a string, `'a'` for a single character. This error means Turf found the opening quote and then ran out of line (or out of file) before it found the matching closing one.
+
+<Code title="Example">
+```turf
+mut greeting: string = "hello;       // the closing " is missing
+mut letter: char = 'a;                // the closing ' is missing
+```
+</Code>
+
+Add the missing quote:
+
+<Code title="Example">
+```turf
+mut greeting: string = "hello";
+mut letter: char = 'a';
+```
+</Code>
+
+Two things worth knowing:
+
+- A string can't continue onto the next line. If you want a line break inside your text, write `\n` in it: `"first line\nsecond line"`.
+- A quote inside your text needs a backslash in front of it, or Turf thinks the text has ended there: `"she said \"hi\""`.
+
+When this error appears, look at the line it points to first. Very often the quote is right there, one character short of where you meant it to be.
+
+Run `turf --explain E099` in a terminal to read this again.

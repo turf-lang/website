@@ -1,0 +1,35 @@
+---
+title: "E114: The same name is declared twice in one declaration"
+description: "What compiler error E114 means, and how to fix it."
+order: 114
+---
+
+Inside a struct, an enum, an `error` type or a `machine`, every member needs its own name. Turf found a second member with a name that was already taken, and with two of them it couldn't tell which one you meant.
+
+<Code title="Example">
+```turf
+struct User {
+    name: string,
+    name: int            // `name` is already a field
+}
+
+enum Color { Red, Green, Red }
+
+machine Door { Open -> Closed, Open -> Closed }     // the same transition twice
+```
+</Code>
+
+Rename one, or delete the extra one:
+
+<Code title="Example">
+```turf
+struct User {
+    name: string,
+    age: int
+}
+```
+</Code>
+
+(This is about *members*. Declaring two variables with the same name in one scope is a different mistake -- see E033.)
+
+Run `turf --explain E114` in a terminal to read this again.

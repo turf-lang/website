@@ -1,0 +1,113 @@
+---
+import { render } from "astro:content";
+import DocsLayout from "../../components/docs/DocsLayout.astro";
+import PrevNext from "../../components/page/PrevNext.astro";
+import { docEditUrl, findGroup, getBreadcrumbs, getDocsTree, getFlatDocs, getHeadings, docSourcePath } from "../../lib/docs";
+import checkIcon from "@phosphor-icons/core/assets/regular/check-circle.svg?raw";
+import { learnComponents } from "../../components/learn";
+import { formatDate } from "../../lib/content";
+import Text from "../../components/ui/Text.astro";
+import "../../styles/learn.css";
+
+export async function getStaticPaths() {
+    const flat = await getFlatDocs();
+    return flat.map((doc, i) => ({
+        params: { slug: doc.slug },
+        props: { doc, prev: flat[i - 1], next: flat[i + 1] },
+    }));
+}
+
+const { doc, prev, next } = Astro.props;
+const { data } = doc.entry;
+const { Content } = await render(doc.entry);
+const [tree, headings, crumbs] = await Promise.all([getDocsTree(), getHeadings(doc.entry), getBreadcrumbs(doc.slug)]);
+const group = findGroup(tree, doc.slug);
+const children = group?.children ?? [];
+const statusTone = data.status === "unstable" ? "text-code-string" : data.status === "placeholder" ? "text-fg-faint" : "text-accent";
+const lastUpdated = new Date("2026-10-15");
+const link = (d?: typeof doc) => (d ? { label: d.title, href: d.href } : undefined);
+---
+
+<DocsLayout title={data.title} description={data.description} slug={doc.slug} tree={tree} headings={headings}>
+    <nav aria-label="Breadcrumb">
+        <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-sm">
+            {
+                crumbs.map((crumb) => (
+                    <li class="flex items-center gap-2">
+                        {crumb.href ? (
+                            <a href={crumb.href} class="text-fg-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">
+                                {crumb.label}
+                            </a>
+                        ) : (
+                            <span class="text-fg-muted">{crumb.label}</span>
+                        )}
+                        <span aria-hidden="true" class="text-fg-faint">/</span>
+                    </li>
+                ))
+            }
+            <li aria-current="page" class="text-fg-soft">{data.title}</li>
+        </ol>
+    </nav>
+
+    <h1 class="mt-8 text-balance text-4xl leading-[1.02] tracking-[-0.05em] text-fg md:text-5xl">{data.title}</h1>
+    <Text text={data.lead ?? data.description} class="mt-5 max-w-3xl text-lg leading-8 text-fg-soft" />
+    {data.status && <p class:list={["mt-5 font-mono text-xs", statusTone]}>{data.status}</p>}
+
+    {
+        data.outcomes && (
+            <div class="mt-10 max-w-3xl rounded-2xl border border-line bg-surface-raised p-5 md:p-6">
+                <p class="font-mono text-xs text-fg-muted">By the end of this page you will</p>
+                <ul class="mt-4 grid gap-3">
+                    {data.outcomes.map((outcome) => (
+                        <li class="flex gap-3">
+                            <span class="mt-1 size-5 shrink-0 text-term-hint [&>svg]:size-full" set:html={checkIcon} />
+                            <Text as="span" text={outcome} class="leading-7 text-fg-soft" />
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )
+    }
+
+    <article class="learn-prose docs-prose mt-4 max-w-3xl">
+        <Content components={learnComponents} />
+    </article>
+
+    {
+        children.length > 0 && (
+            <section aria-label="In this section" class="mt-14 max-w-3xl">
+                <h2 class="font-mono text-xs text-fg-faint">In this section</h2>
+                <ul class="mt-4 divide-y divide-line border-y border-line">
+                    {children.map((child) => (
+                        <li>
+                            <a
+                                href={child.kind === "page" ? child.href : child.href ?? "#"}
+                                class="group grid gap-1 py-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:grid-cols-[14rem_1fr] sm:gap-6"
+                            >
+                                <span class="text-fg transition-colors group-hover:text-accent">{child.title}</span>
+                                <span class="text-sm leading-6 text-fg-muted">{child.description}</span>
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        )
+    }
+
+    <p class="mt-14 flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-6 font-mono text-xs text-fg-muted">
+        <span>Last updated: {formatDate(lastUpdated)}</span>
+        <span aria-hidden="true" class="text-fg-faint">·</span>
+        <a
+            href={docEditUrl(doc.entry)}
+            rel="noopener"
+            class="text-fg-soft underline decoration-line-strong underline-offset-4 transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+            title={docSourcePath(doc.entry)}
+        >
+            Edit this page on GitHub
+        </a>
+    </p>
+
+    <div class="mt-10 max-w-2xl">
+        <PrevNext prev={link(prev)} next={link(next)} />
+    </div>
+</DocsLayout>

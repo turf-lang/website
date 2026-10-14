@@ -1,0 +1,30 @@
+---
+title: "E148: A type was given the wrong number of type arguments"
+description: "What compiler error E148 means, and how to fix it."
+order: 148
+---
+
+A generic struct declares its type parameters, and every use of it gives exactly one type for each: `struct Box<T>` takes one, `struct Pair<A, B>` takes two. A struct with no type parameters, or an enum, takes none.
+
+<Code title="Example">
+```turf
+struct Point { x: int, y: int }
+struct Box<T> { v: T }
+
+mut p: Point<int> = Point::default();     // Point is not generic
+mut b: Box<int, int> = Box::default();    // Box takes one type
+```
+</Code>
+
+Write each type the way it was declared:
+
+<Code title="Example">
+```turf
+mut p: Point = Point::default();
+mut b: Box<int> = Box::default();
+```
+</Code>
+
+Giving a generic struct no type arguments at all, `mut b: Box = ...`, is E138.
+
+Run `turf --explain E148` in a terminal to read this again.

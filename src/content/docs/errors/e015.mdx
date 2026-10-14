@@ -1,0 +1,41 @@
+---
+title: "E015: E015 is retired -- Turf now gives a more specific code"
+description: "What compiler error E015 means, and how to fix it."
+order: 15
+---
+
+Older versions of Turf used this one code for every "the shape of this code isn't right" mistake: a missing punctuation mark, a bracket that is never closed, a name or type that is missing. Nothing produces E015 any more. If you are reading an old log, or an old tutorial, that is why you found it.
+
+Each of those mistakes now has its own code, and its own explanation, so you are told *which* shape is wrong:
+
+<Code title="Example">
+```turf
+E099  a string or character literal was never closed
+E100  an escape sequence Turf doesn't know (like `\q`)
+E101  a character literal that isn't exactly one character
+E102  a missing semicolon `;`
+E103  something that doesn't belong at this spot
+E104  a bracket, brace or parenthesis that is never closed
+E105  a missing comma
+E106  a missing colon
+E107  a missing opening `{` or `(`
+E108  a name was expected (a variable, function, field, ...)
+E109  a type was expected
+E110  a specific word or symbol was expected (`in`, `while`, `->`, ...)
+E111  code nested too deeply
+E112  `void` used as the type of a variable, field or parameter
+E113  syntax that used to exist and has been replaced
+E114  the same name declared twice inside a struct, enum, error or machine
+E115  an operator declared with the wrong number of operands
+E116  an `extern` function written with a body
+E117  an `error` declaration that mixes the `;` and `{ }` forms
+E118  a statement outside any function
+E119  no `main` function
+E120  a `for` loop form that isn't supported
+E123  an array size that isn't a positive whole number
+```
+</Code>
+
+Run `turf --explain` with the code your error shows.
+
+Run `turf --explain E015` in a terminal to read this again.

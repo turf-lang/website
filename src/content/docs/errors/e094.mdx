@@ -1,0 +1,31 @@
+---
+title: "E094: An arm of a compare can never run"
+description: "What compiler error E094 means, and how to fix it."
+order: 94
+---
+
+<Code title="Example">
+```turf
+compare p {
+    matches _:               // matches everything
+        ...
+    done
+    matches Point { x: 3 }:  // WARNING: This arm can never run.
+        ...
+    done
+}
+```
+</Code>
+
+Arms are tried in source order and the first header that matches wins. An
+unguarded header that matches every value (`_`, or a struct pattern whose
+fields are all bindings or `_`) therefore makes every later arm, and
+`otherwise`, unreachable. This is a warning rather than an error: the dead arm
+is harmless and often left behind while editing. Delete it, or move it above
+the catch-all.
+
+A guarded header doesn't count as a catch-all, because its guard may be false.
+A duplicate value pattern (`matches 1:` twice) is a different and still
+hard error: see E133.
+
+Run `turf --explain E094` in a terminal to read this again.

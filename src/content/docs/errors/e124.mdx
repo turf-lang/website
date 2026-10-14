@@ -1,0 +1,45 @@
+---
+title: "E124: Those two values can't be compared"
+description: "What compiler error E124 means, and how to fix it."
+order: 124
+---
+
+`==`, `!=`, `<`, `>`, `<=` and `>=` ask a question about two values, and Turf can only answer it when the two are the same kind of thing and that kind knows how to be compared. This error means one of those conditions failed. The message names the two types.
+
+Comparing different kinds of value:
+
+<Code title="Example">
+```turf
+mut x: int = 5;
+if x == null { ... }          // an int is never null, so this can never be true
+if x == "5" { ... }           // a number and a string
+```
+</Code>
+
+Compare like with like -- `x == 5`, `name == "Ada"`. Only pointers and references can be compared to `null`; a plain `int`, `double`, `bool` or `string` can never be null.
+
+Comparing structs directly isn't supported yet:
+
+<Code title="Example">
+```turf
+if a == b { ... }             // a and b are both Point
+```
+</Code>
+
+Compare the fields you care about instead:
+
+<Code title="Example">
+```turf
+if a.x == b.x && a.y == b.y { ... }
+```
+</Code>
+
+Putting enum values in order isn't supported either, because the order of variants isn't something a program should rely on. Convert to numbers first if you really mean it:
+
+<Code title="Example">
+```turf
+if (a to int) < (b to int) { ... }
+```
+</Code>
+
+Run `turf --explain E124` in a terminal to read this again.

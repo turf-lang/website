@@ -1,0 +1,65 @@
+---
+import type { Heading } from "../../lib/docs";
+
+interface Props {
+    headings: Heading[];
+}
+
+const { headings } = Astro.props;
+---
+
+{
+    headings.length > 0 && (
+        <nav aria-label="On this page" data-docs-toc>
+            <p class="font-mono text-xs text-fg-faint">On this page</p>
+            <ul class="mt-4 border-l border-line">
+                {headings.map((h) => (
+                    <li>
+                        <a
+                            href={`#${h.slug}`}
+                            data-toc-link={h.slug}
+                            class:list={[
+                                "-ml-px block border-l border-transparent py-1 text-sm leading-5 text-fg-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent aria-[current=true]:border-accent aria-[current=true]:text-fg",
+                                h.depth === 3 ? "pl-8" : "pl-4",
+                            ]}
+                        >
+                            {h.text}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </nav>
+    )
+}
+
+<script>
+    const toc = document.querySelector("[data-docs-toc]");
+    if (toc && "IntersectionObserver" in window) {
+        const links = new Map<string, HTMLAnchorElement>();
+        toc.querySelectorAll<HTMLAnchorElement>("[data-toc-link]").forEach((a) => links.set(a.dataset.tocLink!, a));
+        const targets = [...links.keys()].map((id) => document.getElementById(id)).filter((el): el is HTMLElement => el !== null);
+        const visible = new Set<string>();
+
+        const update = () => {
+            const first = targets.find((el) => visible.has(el.id));
+            const current = first?.id ?? [...targets].reverse().find((el) => el.getBoundingClientRect().top < 120)?.id;
+            links.forEach((a, id) => {
+                if (id === current) a.setAttribute("aria-current", "true");
+                else a.removeAttribute("aria-current");
+            });
+        };
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    if (entry.isIntersecting) visible.add(entry.target.id);
+                    else visible.delete(entry.target.id);
+                }
+                update();
+            },
+            { rootMargin: "-96px 0px -65% 0px" },
+        );
+        targets.forEach((el) => observer.observe(el));
+        update();
+    }
+</script>

@@ -1,0 +1,28 @@
+---
+title: "E055: E055 is retired -- a bad argument to abs() is now reported as E056 or E025"
+description: "What compiler error E055 means, and how to fix it."
+order: 55
+---
+
+Older versions of Turf treated `abs` as a compiler built-in with an error of its own. It is an ordinary function in the standard library now (`math::abs`), like every other, so nothing produces E055 any more. The number is kept so that an old log or tutorial that mentions it still has somewhere to land, and is never reused for anything else.
+
+Passing `abs` something that isn't a number is reported like any other call with the wrong argument types:
+
+<Code title="Example">
+```turf
+mut bad: int = math::abs("negative five");
+```
+</Code>
+
+That gives `E025`: Turf found `math::abs`, and none of its versions take a `string`. `abs` has one version for `int` and one for `double`:
+
+<Code title="Example">
+```turf
+mut n: int = math::abs(-5);          // 5
+mut d: double = math::abs(-3.14);    // 3.14
+```
+</Code>
+
+Run `turf --explain E025` for the full explanation.
+
+Run `turf --explain E055` in a terminal to read this again.

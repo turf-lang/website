@@ -1,0 +1,40 @@
+---
+title: "E106: A colon is missing"
+description: "What compiler error E106 means, and how to fix it."
+order: 106
+---
+
+In Turf a colon `:` joins a name to its type, and a function's parameter list to its return type. Turf expected one and found something else.
+
+The commonest case is forgetting the colon before a function's return type:
+
+<Code title="Example">
+```turf
+fn add(a: int, b: int) int {     // needs `:` before `int`
+    return a + b;
+}
+
+fn add(a: int, b: int): int {
+    return a + b;
+}
+```
+</Code>
+
+The same shape shows up for a parameter or a struct field, which is `name: type`:
+
+<Code title="Example">
+```turf
+fn greet(name string) { }        // should be `name: string`
+struct User { age int }          // should be `age: int`
+```
+</Code>
+
+And in `compare`, the `matches` and `otherwise` arms need a colon before their body:
+
+<Code title="Example">
+```turf
+otherwise: { ... }
+```
+</Code>
+
+Run `turf --explain E106` in a terminal to read this again.

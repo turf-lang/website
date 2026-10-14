@@ -1,0 +1,36 @@
+---
+title: "E100: Turf doesn't know that escape sequence"
+description: "What compiler error E100 means, and how to fix it."
+order: 100
+---
+
+Inside a string or a character, a backslash `\` starts an "escape sequence": a short code for something you can't easily type, like a line break. Turf knows exactly these:
+
+<Code title="Example">
+```turf
+\n   a new line          \t   a tab
+\r   carriage return     \0   the null character
+\\   a backslash         \"   a double quote
+\'   a single quote      \a \b \f \v   the rarer control characters
+```
+</Code>
+
+Anything else after a backslash is an error, because Turf would otherwise have to guess what you meant:
+
+<Code title="Example">
+```turf
+mut path: string = "C:\temp\q";     // \q is not an escape sequence
+```
+</Code>
+
+If you wanted a real backslash character, write it twice:
+
+<Code title="Example">
+```turf
+mut path: string = "C:\\temp\\q";
+```
+</Code>
+
+Most often this error is a Windows-style path or a regular expression with single backslashes in it. Double each backslash and it goes away.
+
+Run `turf --explain E100` in a terminal to read this again.

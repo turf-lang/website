@@ -1,0 +1,27 @@
+---
+title: "E112: void can't be the type of a variable, field or parameter"
+description: "What compiler error E112 means, and how to fix it."
+order: 112
+---
+
+`void` means "nothing". It describes a function that gives nothing back, so it can only appear as a function's return type:
+
+<Code title="Example">
+```turf
+fn log(msg: string): void { ... }        // fine
+```
+</Code>
+
+A variable, a struct field or a parameter holds a value, and "nothing" can't be held:
+
+<Code title="Example">
+```turf
+mut x: void;                  // what would x contain?
+struct Box { item: void }
+fn show(thing: void): void { ... }
+```
+</Code>
+
+Give it a real type -- `int`, `string`, a struct, ... If you need a pointer to something whose type you don't know (in `extern` code), use `ptr` or `void*` instead.
+
+Run `turf --explain E112` in a terminal to read this again.

@@ -1,0 +1,43 @@
+---
+title: "E005: You tried to for-each over something that isn't an array"
+description: "What compiler error E005 means, and how to fix it."
+order: 5
+---
+
+Turf's `for value in something { ... }` loop only knows how to walk over one kind of thing: a real, built-in array (`int[3]`, `string[10]`, and so on). If `something` is a plain number, a struct, a `List<T>`, or anything else, the compiler stops you here instead of trying to guess what you meant.
+
+<Code title="Example">
+```turf
+mut nums: int[3] = [1, 2, 3];
+for value in nums {
+    io::printline(value to string);
+}
+```
+</Code>
+
+If you try it on something that isn't an array:
+
+<Code title="Example">
+```turf
+mut n: int = 5;
+for value in n {
+    io::printline(value to string);
+}
+```
+</Code>
+
+`n` is just a single number -- there's nothing to loop "over". Turf tells you exactly what type it found where an array was expected.
+
+If what you actually have is a `List<T>` (or another collection type) rather than a fixed-size array, for-each doesn't support it directly yet -- drive a regular counting loop off the list's own `.length()` instead, and access elements through the list's own methods:
+
+<Code title="Example">
+```turf
+for i in 0..my_list.length() step i += 1 {
+    // work with my_list here using its own methods
+}
+```
+</Code>
+
+Once the thing after `in` is a genuine array, the for-each loop works exactly as expected. This is a quick fix once you know the rule: for-each is specifically for Turf's fixed-size arrays.
+
+Run `turf --explain E005` in a terminal to read this again.

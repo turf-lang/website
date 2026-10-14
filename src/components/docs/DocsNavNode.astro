@@ -1,0 +1,80 @@
+---
+import { containsSlug } from "../../lib/docs";
+import type { DocNode } from "../../lib/docs";
+import DocsNavNode from "./DocsNavNode.astro";
+
+interface Props {
+    node: DocNode;
+    current: string;
+    depth?: number;
+}
+
+const { node, current, depth = 0 } = Astro.props;
+
+const link =
+    "-ml-px block border-l py-1.5 pl-4 text-sm leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+const active = "border-accent text-fg";
+const idle = "border-transparent text-fg-muted hover:text-fg";
+---
+
+{
+    node.kind === "page" ? (
+        <li>
+            <a href={node.href} aria-current={node.slug === current ? "page" : undefined} class:list={[link, node.slug === current ? active : idle]}>
+                {node.title}
+            </a>
+        </li>
+    ) : depth === 0 ? (
+        <li class="mt-8 first:mt-0">
+            {node.href ? (
+                <a
+                    href={node.href}
+                    aria-current={node.slug === current ? "page" : undefined}
+                    class:list={[
+                        "block font-mono text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+                        node.slug === current ? "text-fg" : containsSlug(node, current) ? "text-fg-muted hover:text-fg" : "text-fg-faint hover:text-fg",
+                    ]}
+                >
+                    {node.title}
+                </a>
+            ) : (
+                <span class="block font-mono text-xs text-fg-faint">{node.title}</span>
+            )}
+            <ul class="mt-3 border-l border-line">
+                {node.children.map((child) => (
+                    <DocsNavNode node={child} current={current} depth={depth + 1} />
+                ))}
+            </ul>
+        </li>
+    ) : (
+        <li>
+            <details open={containsSlug(node, current)} class="group/nav">
+                <summary
+                    class:list={[
+                        "-ml-px flex cursor-pointer list-none items-center justify-between gap-3 border-l border-transparent py-1.5 pl-4 text-sm leading-5 transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-details-marker]:hidden",
+                        containsSlug(node, current) ? "text-fg-soft" : "text-fg-muted",
+                    ]}
+                >
+                    {node.title}
+                    <span aria-hidden="true" class="font-mono text-xs text-fg-faint transition-transform group-open/nav:rotate-90 motion-reduce:transition-none">›</span>
+                </summary>
+                <ul class="ml-4 border-l border-line">
+                    {node.href && (
+                        <li>
+                            <a
+                                href={node.href}
+                                aria-current={node.slug === current ? "page" : undefined}
+                                class:list={[link, node.slug === current ? active : idle]}
+                            >
+                                Overview
+                            </a>
+                        </li>
+                    )}
+                    {node.children.map((child) => (
+                        <DocsNavNode node={child} current={current} depth={depth + 1} />
+                    ))}
+                </ul>
+            </details>
+        </li>
+    )
+}

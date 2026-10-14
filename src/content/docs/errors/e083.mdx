@@ -1,0 +1,33 @@
+---
+title: "E083: A deferred statement can't return, break or continue"
+description: "What compiler error E083 means, and how to fix it."
+order: 83
+---
+
+`defer` schedules one statement to run when the function ends, however it ends. That statement runs *while the function is already leaving*, so it can't also choose to leave in a different way:
+
+<Code title="Example">
+```turf
+fn main(): int {
+    defer return 5;          // return from where, exactly?
+    return 0;
+}
+```
+</Code>
+
+`break` and `continue` have the same problem: they would jump out of the enclosing loop from the middle of the function's cleanup.
+
+Keep the deferred statement to the cleanup itself -- close the file, free the buffer, print the message -- and put any decision about leaving in the normal flow of the function:
+
+<Code title="Example">
+```turf
+fn main(): int {
+    defer cleanup();
+    return 5;
+}
+```
+</Code>
+
+If the cleanup itself can fail, handle that failure inside the deferred statement: `defer f() recover run { ... };`.
+
+Run `turf --explain E083` in a terminal to read this again.

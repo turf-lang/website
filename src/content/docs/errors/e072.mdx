@@ -1,0 +1,43 @@
+---
+title: "E072: A number can't start or end with an underscore"
+description: "What compiler error E072 means, and how to fix it."
+order: 72
+---
+
+Turf lets you use `_` inside a numeric literal to make long numbers easier
+to read, the same way you might write "1,000,000" by hand:
+
+<Code title="Example">
+```turf
+mut population: int = 1_000_000;
+mut pi_ish: double = 3.14_159;
+mut big_hex: int = 0xFF_FF_FF_FF;
+```
+</Code>
+
+The underscore only makes sense as a separator BETWEEN two digits. Put one
+at the very start or the very end of a run of digits, and there's nothing
+for it to actually separate:
+
+<Code title="Example">
+```turf
+mut a: int = _5;     // ERROR: leading underscore
+mut b: int = 5_;     // ERROR: trailing underscore
+mut c: int = 0x_FF;  // ERROR: leading underscore right after the prefix
+```
+</Code>
+
+The fix is simply to remove the stray underscore:
+
+<Code title="Example">
+```turf
+mut a: int = 5;
+mut b: int = 5;
+mut c: int = 0xFF;
+```
+</Code>
+
+If you were trying to group digits, make sure every underscore has a real
+digit immediately on both sides of it.
+
+Run `turf --explain E072` in a terminal to read this again.

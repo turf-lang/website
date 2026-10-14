@@ -1,0 +1,50 @@
+---
+title: "E128: This variable needs a starting value"
+description: "What compiler error E128 means, and how to fix it."
+order: 128
+---
+
+Some declarations can't exist without a value. Turf found one that has none.
+
+An `immutable` variable can never be assigned after it is created, so it has to get its one and only value right where it is declared:
+
+<Code title="Example">
+```turf
+immutable PI: double;             // never gets a value, and can't later
+
+immutable PI: double = 3.14159;
+```
+</Code>
+
+`guess` asks Turf to work out the type from the value, so it has nothing to work with if there isn't one:
+
+<Code title="Example">
+```turf
+mut x: guess;                     // guess from what?
+
+mut x: guess = 5;                 // an int
+```
+</Code>
+
+Either give the variable its value, or -- for a `mut` variable whose value comes later -- say its type instead of using `guess`:
+
+<Code title="Example">
+```turf
+mut x: int;
+x = 5;
+```
+</Code>
+
+`guess` only works on a local variable that is given its value on the same line. A function's parameters, its return type and a struct's fields have no value to look at, so there you always write the type:
+
+<Code title="Example">
+```turf
+fn double_it(x: guess): int { ... }       // x: guess has nothing to infer from
+fn double_it(x: int): int { ... }
+
+struct Counter { count: guess }           // so does a field
+struct Counter { count: int }
+```
+</Code>
+
+Run `turf --explain E128` in a terminal to read this again.

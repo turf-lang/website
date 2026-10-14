@@ -1,0 +1,29 @@
+---
+title: "E109: A type was expected here"
+description: "What compiler error E109 means, and how to fix it."
+order: 109
+---
+
+Turf was waiting for a type -- `int`, `string`, `bool`, `double`, `char`, a struct's name, `List<int>`, ... -- and found something that isn't one.
+
+<Code title="Example">
+```turf
+fn add(a: int, b:): int { ... }        // parameter `b` has no type
+fn get(): { ... }                       // the return type is missing
+mut values: List<> = ...;               // nothing between the < >
+```
+</Code>
+
+Write the type:
+
+<Code title="Example">
+```turf
+fn add(a: int, b: int): int { ... }
+```
+</Code>
+
+A function that returns nothing says so with `void`: `fn log(msg: string): void { ... }`. A type name is case sensitive -- `Int` is not `int` -- and a struct or enum you declared works as a type too.
+
+`sizeof` takes a type too, not a value: `sizeof(a)` with a variable `a` is this error. Write the variable's type, `sizeof(int)`.
+
+Run `turf --explain E109` in a terminal to read this again.

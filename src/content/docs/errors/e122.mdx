@@ -1,0 +1,36 @@
+---
+title: "E122: Turf can't take the address of that"
+description: "What compiler error E122 means, and how to fix it."
+order: 122
+---
+
+`&x` gives you a reference to something that lives in memory, so it only works on things that have a place: a variable, a struct field, or an array element.
+
+<Code title="Example">
+```turf
+mut x: int = 5;
+mut r: &int = &x;                 // a variable: fine
+mut p: &int = &point.x;           // a field: fine
+mut q: &int = &numbers[2];        // an array element: fine
+```
+</Code>
+
+A computed result has no place -- it is a temporary value that disappears -- so there is nothing to point at:
+
+<Code title="Example">
+```turf
+mut r: &int = &(x + 1);           // (x + 1) is a value, not a place
+mut r: &int = &compute();         // so is a function's result
+```
+</Code>
+
+Store the value in a variable first, then take the address of the variable:
+
+<Code title="Example">
+```turf
+mut tmp: int = x + 1;
+mut r: &int = &tmp;
+```
+</Code>
+
+Run `turf --explain E122` in a terminal to read this again.

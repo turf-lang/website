@@ -1,0 +1,50 @@
+---
+title: "E040: I can't find anything with that name"
+description: "What compiler error E040 means, and how to fix it."
+order: 40
+---
+
+Turf looked everywhere it knows to look -- the current block, any block around it, the whole file -- and couldn't find anything called by that name. No variable, no struct, no enum, nothing. This is the most common error you'll hit while learning, and it's almost always one of two very fixable things.
+
+The first is a plain typo:
+
+<Code title="Example">
+```turf
+mut count: int = 0;
+count = coutn + 1;   // typo! should be "count"
+```
+</Code>
+
+If there's something similar already declared nearby, Turf will usually notice and suggest it for you right in the error message, so you can just apply the fix it's pointing at.
+
+The second is forgetting to declare the variable at all before using it:
+
+<Code title="Example">
+```turf
+mut n: int = undeclared_variable;   // this was never created anywhere
+```
+</Code>
+
+In Turf, you always create a variable with `mut` or `immut` before you can use it -- there's no way to just start using a name and have it exist automatically:
+
+<Code title="Example">
+```turf
+mut undeclared_variable: int = 5;
+mut n: int = undeclared_variable;   // now this works
+```
+</Code>
+
+There is a third case, and the error's hint says so when it applies: the name IS declared, but as a type. A struct, enum or error type is not a value, so it can't stand alone in an expression:
+
+<Code title="Example">
+```turf
+struct Node { v: int }
+mut a: int = Node;        // 'Node' is a struct, not a value
+```
+</Code>
+
+To get a value of a struct type, build one with `Node::default()` (or `Node::new(...)` if the struct declares a `.new` method); for an enum, name one of its variants, `Color::Red`.
+
+If none of those is it, one more thing worth checking: is the name something from a module you haven't imported yet? A function or type that lives in another module needs `import` (or the right `::` qualifier) before Turf can see it. Once the name resolves to something real, this error clears right up.
+
+Run `turf --explain E040` in a terminal to read this again.

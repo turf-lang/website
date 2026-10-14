@@ -1,0 +1,17 @@
+---
+title: "E037: E037 is retired -- an unknown function is E041"
+description: "What compiler error E037 means, and how to fix it."
+order: 37
+---
+
+This code was defined for "I can't find a function named this", but nothing in the compiler ever produced it: a call to a function Turf doesn't know has always been reported as E041 ("Unknown function"). The number is kept so an old log that mentions it still has somewhere to land, and is never reused.
+
+<Code title="Example">
+```turf
+mut n: int = lenght("hello");     // misspelled -- E041, with a "did you mean" suggestion
+```
+</Code>
+
+Run `turf --explain E041` for the explanation. In short: check the spelling, and check that you have imported the module the function lives in.
+
+Run `turf --explain E037` in a terminal to read this again.

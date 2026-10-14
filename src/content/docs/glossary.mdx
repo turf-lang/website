@@ -1,0 +1,59 @@
+---
+title: "Glossary"
+description: "Every term used in the docs, in one plain sentence, with a link to where it is explained."
+lead: "Words in programming can sound strange. Here is each term used in these docs, in one plain sentence, with a link to the page that explains it properly."
+order: 5
+---
+
+| Term | Meaning | Where |
+|---|---|---|
+| Array | A fixed number of values of one type, stored in a row and numbered from 0. | [Read more](/docs/language/arrays/) |
+| AST | Abstract syntax tree: the tree the parser builds from your code, showing how its pieces fit together. | [Read more](/docs/compiler/compiler-pipeline/) |
+| Binary | The finished program file the computer can run directly. | [Read more](/docs/compiler/compiler-pipeline/) |
+| Bounds checking | The runtime check that an index is inside an array, so reading past the end stops the program instead of reading garbage. | [Read more](/docs/language/arrays/) |
+| Caller location | The compiler feature that makes a library panic name the line of your code that made the bad call. | [Read more](/docs/compiler/caller-location/) |
+| Codegen | Code generation: the last stage of the compiler, which turns the checked tree into machine code. | [Read more](/docs/compiler/compiler-pipeline/) |
+| Compiler | The program (`turfc`) that turns the text of your program into a program the computer can run. | [Read more](/docs/compiler/) |
+| Dependency | Another package your project uses. | [Read more](/docs/tooling/projects-and-packages/) |
+| Diagnostic | A message the compiler prints about your code: an error, a warning, a hint or a note. | [Read more](/docs/tooling/cli-and-diagnostics/) |
+| Enum | A value that must be exactly one of a fixed list of named variants. | [Read more](/docs/language/structs-and-enums/) |
+| Error code | The label such as `E060` on a compiler error. Each one has its own page. | [Read more](/docs/errors/) |
+| `extern fn` | A declaration that lets Turf call a function written in C. | [Read more](/docs/language/ffi-and-unsafe/) |
+| FFI | Foreign function interface: the way Turf calls code written in another language. | [Read more](/docs/language/ffi-and-unsafe/) |
+| Function | A named recipe: it takes inputs, does a job, and gives back a result. | [Read more](/docs/language/functions-and-modules/) |
+| Garbage collector | The part of the runtime that finds memory nobody uses any more and frees it for you. | [Read more](/docs/language/memory-and-safety/) |
+| Generic | A function or struct written once for many types, such as `List<T>`. | [Read more](/docs/language/generics-and-operators/) |
+| Heap | A large pool of memory a program borrows from while it runs. Turf has two: the garbage-collected heap and the manual heap. | [Read more](/docs/language/memory-and-safety/) |
+| `immut` | Declares a variable whose value can never change. | [Read more](/docs/language/variables-and-types/) |
+| Import | A line that brings another module's names into your file. | [Read more](/docs/language/functions-and-modules/) |
+| Lexer | The first stage of the compiler: it cuts the text into words and symbols, called tokens. | [Read more](/docs/compiler/compiler-pipeline/) |
+| Lock file | `turf.lock`: the file that pins exact versions of git dependencies, so everyone builds the same thing. | [Read more](/docs/tooling/projects-and-packages/) |
+| Machine | An enum with a rulebook of allowed moves between its states. | [Read more](/docs/language/state-machines/) |
+| Manifest | `turf.toml`: the file that names a project and lists what it needs. | [Read more](/docs/tooling/projects-and-packages/) |
+| Method | A function called with a dot, as in `s.trim()`. | [Read more](/docs/language/functions-and-modules/) |
+| Module | A file of related functions and types that other files can import. | [Read more](/docs/language/functions-and-modules/) |
+| Monomorphization | Making a separate, fully specialised copy of a generic for each type you actually use. | [Read more](/docs/language/generics-and-operators/) |
+| `mut` | Declares a variable whose value can change later. | [Read more](/docs/language/variables-and-types/) |
+| Operator | A symbol such as `+` or `==` that does something to values. | [Read more](/docs/language/operators/) |
+| Package | A named set of modules that can be built into a program, shared as a library, or both. | [Read more](/docs/tooling/projects-and-packages/) |
+| Panic | A bug caught while the program runs. It prints a message and stops the program, and cannot be caught. | [Read more](/docs/language/error-handling/) |
+| Parser | The compiler stage that builds a tree from the tokens. | [Read more](/docs/compiler/compiler-pipeline/) |
+| Precedence | The order in which operators are applied, as in `2 + 3 * 4`. | [Read more](/docs/language/operators/) |
+| Prelude | The modules Turf loads into every program, so you never import them. | [Read more](/stdlib/conventions/#the-prelude) |
+| Primitive type | A built-in basic type: `int`, `int32`, `double`, `bool`, `char`, `string` or `void`. | [Read more](/docs/language/variables-and-types/) |
+| `pub` | Makes a declaration visible to other files. Without it, it is private to its module. | [Read more](/docs/language/functions-and-modules/) |
+| `recover` | Handles a `!T` result by saying what to do if it is an error. | [Read more](/docs/language/error-handling/) |
+| Recoverable error | A failure the caller can handle, reported by returning an `error` in a `!T`. | [Read more](/docs/language/error-handling/) |
+| Reference | A safe pointer, written `&T` (never null) or `&?T` (may be null), which the compiler checks. | [Read more](/docs/language/memory-and-safety/) |
+| Resolver | The compiler stage that works out what every name refers to. | [Read more](/docs/compiler/compiler-pipeline/) |
+| Runtime | The small support library, `libturfrt`, linked into every compiled Turf program. | [Read more](/docs/compiler/runtime/) |
+| Stack | The tidy pile of memory for the function that is running now, discarded when it returns. | [Read more](/docs/compiler/memory-model/) |
+| Standard library | The ready-made modules that come with Turf. | [Read more](/stdlib/) |
+| Struct | Several named values bundled into one. | [Read more](/docs/language/structs-and-enums/) |
+| `try` | Passes an error on to the caller instead of handling it here. | [Read more](/docs/language/error-handling/) |
+| Type | The kind of value a variable can hold. | [Read more](/docs/language/variables-and-types/) |
+| Type checker | The compiler stage that checks every value has the right type. | [Read more](/docs/compiler/compiler-pipeline/) |
+| Type inference | The compiler working out a variable's type from its starting value. `guess` asks for it. | [Read more](/docs/language/variables-and-types/) |
+| UFCS | Uniform function call syntax: calling a function as a method, so `f(x)` can be written `x.f()`. | [Read more](/docs/language/functions-and-modules/) |
+| `unsafe` | The marked area where the compiler stops checking for you. | [Read more](/docs/language/ffi-and-unsafe/) |
+| Variable | A named place that holds a value. | [Read more](/docs/language/variables-and-types/) |

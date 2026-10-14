@@ -1,0 +1,34 @@
+---
+title: "E101: A character literal must hold exactly one character"
+description: "What compiler error E101 means, and how to fix it."
+order: 101
+---
+
+A `char` is a single character, written between single quotes: `'a'`. Turf found something between the quotes that isn't exactly one character -- either nothing at all, or more than one.
+
+<Code title="Example">
+```turf
+mut empty: char = '';       // nothing between the quotes
+mut two: char = 'ab';       // two characters
+```
+</Code>
+
+A character literal holds exactly one:
+
+<Code title="Example">
+```turf
+mut letter: char = 'a';
+```
+</Code>
+
+If you wanted several characters, you want a string, which uses double quotes:
+
+<Code title="Example">
+```turf
+mut word: string = "ab";
+```
+</Code>
+
+An escape sequence like `'\n'` is still one character (a new line), so that is fine. And if you meant a single quote itself, write `'\''`.
+
+Run `turf --explain E101` in a terminal to read this again.

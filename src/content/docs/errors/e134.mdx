@@ -1,0 +1,33 @@
+---
+title: "E134: That conversion isn't allowed"
+description: "What compiler error E134 means, and how to fix it."
+order: 134
+---
+
+`value to Type` converts a value from one type to another, but only for conversions that have a clear meaning. Turf found one that doesn't, and names both types.
+
+These are fine:
+
+<Code title="Example">
+```turf
+mut d: double = 5 to double;        // a whole number to a decimal
+mut n: int = 3.9 to int;            // a decimal to a whole number (drops the .9)
+mut s: string = 42 to string;       // a number to text
+mut c: char = 65 to char;           // a character code to a character
+mut code: int = 'a' to int;         // and back
+mut p: Point = r to Point;          // copies the Point a `&Point` refers to
+```
+</Code>
+
+These are not:
+
+<Code title="Example">
+```turf
+mut b: bool = 5 to bool;            // there is no "5 as true/false"
+mut n: int = true to int;           // a bool is not secretly 0 or 1
+```
+</Code>
+
+Say what you mean instead. If you want to know whether a number is zero, compare it: `n != 0`. If you want a number from a condition, choose the numbers: `give 1 otherwise 0`.
+
+Run `turf --explain E134` in a terminal to read this again.

@@ -1,0 +1,23 @@
+---
+title: "E034: You declared two structs (or enums) with the same name"
+description: "What compiler error E034 means, and how to fix it."
+order: 34
+---
+
+A struct, enum, or error type belongs to the file (or module) that declares it -- so inside one file, each type name can only be used once. Here's the mistake:
+
+<Code title="Example">
+```turf
+struct Point { x: int, y: int }
+struct Point { x: double, y: double }
+// ERROR: A struct named 'Point' is already declared.
+```
+</Code>
+
+Different files are a different story: if a module you import also declares a `struct Config`, that's fine -- it's a separate type, `thatmodule::Config`, and your own `Config` stays yours. (If you import it by name, `import thatmodule::Config;`, a bare `Config` could mean either one -- that's a different error, E085, and Turf will name both.)
+
+Turf will also point you to exactly where the first declaration of that name lives, so you can compare the two and decide what to do.
+
+To fix it: rename one of the two declarations to something more specific.
+
+Run `turf --explain E034` in a terminal to read this again.

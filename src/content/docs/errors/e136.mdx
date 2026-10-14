@@ -1,0 +1,28 @@
+---
+title: "E136: A module name can't be qualified by another module"
+description: "What compiler error E136 means, and how to fix it."
+order: 136
+---
+
+`module::function(...)` reaches into one module. Modules aren't nested inside each other, so there is no `a::b::function` -- you have written two module names in a row.
+
+<Code title="Example">
+```turf
+import io;
+import mem;
+
+mem::io::printline("hi");           // `io` is not inside `mem`
+```
+</Code>
+
+Use the one module that actually has the function:
+
+<Code title="Example">
+```turf
+io::printline("hi");
+```
+</Code>
+
+If you meant a type or an enum inside a module, that is the one form with three parts: `module::Type::Variant`, e.g. `shapes::Color::Red`. The check only complains when the middle name is itself a module.
+
+Run `turf --explain E136` in a terminal to read this again.

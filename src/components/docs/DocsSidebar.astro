@@ -1,0 +1,32 @@
+---
+import { DOCS_VERSION } from "../../lib/docs";
+import type { DocNode } from "../../lib/docs";
+import DocsNavNode from "./DocsNavNode.astro";
+
+interface Props {
+    tree: DocNode[];
+    current: string;
+}
+
+const { tree, current } = Astro.props;
+---
+
+<div class="flex items-center justify-between gap-4 font-mono text-xs">
+    <a href="/docs/" class="text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent">Documentation</a>
+    <span class="text-fg-faint">{DOCS_VERSION}</span>
+</div>
+
+<button
+    type="button"
+    data-search-open
+    class="mt-5 flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 text-left font-mono text-sm text-fg-faint transition-colors hover:border-fg-faint hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+>
+    <span>Search docs</span>
+    <kbd class="text-xs">Ctrl K</kbd>
+</button>
+
+<nav aria-label="Documentation" class="mt-8">
+    <ul>
+        {tree.map((node) => <DocsNavNode node={node} current={current} />)}
+    </ul>
+</nav>

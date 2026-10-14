@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../layout/BaseLayout.astro";
+import type { DocNode, Heading } from "../../lib/docs";
+import DocsSidebar from "./DocsSidebar.astro";
+import DocsToc from "./DocsToc.astro";
+
+interface Props {
+    title: string;
+    description: string;
+    slug: string;
+    tree: DocNode[];
+    headings: Heading[];
+}
+
+const { title, description, slug, tree, headings } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+    <div class="container-page grid gap-x-12 lg:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[15rem_minmax(0,1fr)_13rem] 2xl:gap-x-20">
+        <details class="group/menu border-b border-line py-4 lg:hidden">
+            <summary class="flex cursor-pointer list-none items-center justify-between font-mono text-sm text-fg-soft focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent [&::-webkit-details-marker]:hidden">
+                Docs menu
+                <span aria-hidden="true" class="text-fg-faint transition-transform group-open/menu:rotate-90 motion-reduce:transition-none">›</span>
+            </summary>
+            <div class="max-h-[70dvh] overflow-y-auto pb-4 pt-6">
+                <DocsSidebar tree={tree} current={slug} />
+            </div>
+        </details>
+
+        <aside class="hidden lg:sticky lg:top-20 lg:block lg:max-h-[calc(100dvh-5rem)] lg:self-start lg:overflow-y-auto lg:border-r lg:border-line lg:py-10 lg:pr-6">
+            <DocsSidebar tree={tree} current={slug} />
+        </aside>
+
+        <main class="min-w-0 py-10 md:py-14 xl:pb-24">
+            <slot />
+        </main>
+
+        <aside class="hidden xl:sticky xl:top-20 xl:block xl:max-h-[calc(100dvh-5rem)] xl:self-start xl:overflow-y-auto xl:py-14">
+            <DocsToc headings={headings} />
+        </aside>
+    </div>
+</BaseLayout>

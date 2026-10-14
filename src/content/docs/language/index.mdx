@@ -1,0 +1,49 @@
+---
+title: "Language"
+description: "The complete reference for the Turf language: what you can write and what it means."
+lead: "The reference for Turf 2.0: what you can write, and what it means. Start at the top and read down, or jump to the topic you need."
+order: 1
+---
+
+Every Turf program in these pages is compiled by the language repository's CI: an example either compiles, or is marked with the error code it must be rejected with. The pages here show real output, and the red error boxes are real compiler messages.
+
+## Where to start
+
+<Callout tone="tip" title="Brand new to programming?">
+
+Read the [Learn](/learn/) guides first. They start from nothing installed and are written for complete beginners. This section is the full detail that comes after.
+
+</Callout>
+
+<Callout tone="note" title="Coming from Turf 1.x?">
+
+Start with [Migrating to 2.0](/docs/migrating-to-2/).
+
+</Callout>
+
+## Core language
+
+1. [Variables and Types](/docs/language/variables-and-types/): declarations, `guess` inference, definite assignment, the primitive types, literals, overflow, `to` conversions, `sizeof` / `typeof`.
+2. [Operators](/docs/language/operators/): the precedence table, arithmetic and its runtime checks, comparison, logical, bitwise, `give` / `otherwise`.
+3. [Control Flow](/docs/language/control-flow/): `if`, `while`, `do` / `while`, `for`, `break` / `continue`, `defer`, `compare` and the pattern language.
+4. [Error Handling](/docs/language/error-handling/): `error` types and payloads, `!T`, `recover`, `try`, caller-located panics.
+
+## Structuring programs
+
+5. [Functions and Modules](/docs/language/functions-and-modules/): `fn`, first-class functions, UFCS, annotations, `import`, the prelude, `pub` visibility.
+6. [Structs and Enums](/docs/language/structs-and-enums/): declaration, construction, methods, layout cycles, self-referential types, `enum`.
+7. [State Machines](/docs/language/state-machines/): the `machine` construct and its checked transitions.
+8. [Generics and Operator Overloading](/docs/language/generics-and-operators/): monomorphized generics, the overloadable operators, indexing operators.
+9. [Arrays](/docs/language/arrays/): fixed-size arrays, `T[]` parameters and slicing, bounds checking.
+
+## Memory and systems programming
+
+10. [Memory and Safety](/docs/language/memory-and-safety/): the two heaps, `heap(expr)`, `&T` / `&?T`, escape rules, runtime checks, what safe code guarantees.
+11. [FFI and unsafe](/docs/language/ffi-and-unsafe/): `extern fn`, linking C libraries, raw pointers, `unsafe` blocks and modules, capabilities.
+
+## Beyond this section
+
+- The standard library has its own pages: [Standard library](/stdlib/).
+- Projects, the command line and diagnostics: [Tooling](/docs/tooling/).
+- Step-by-step walkthroughs: [Guides](/docs/guides/).
+- How the compiler implements all this: [How the compiler works](/docs/compiler/).

@@ -1,0 +1,33 @@
+---
+title: "E133: The same value is matched twice in one compare"
+description: "What compiler error E133 means, and how to fix it."
+order: 133
+---
+
+A `compare` tries its `matches` arms from top to bottom and runs the first one that fits. If a later arm matches a value an earlier arm already handles, the later arm can never run -- and Turf treats that as a mistake rather than letting dead code sit quietly, because it nearly always means one of the two arms was meant to match something else.
+
+<Code title="Example">
+```turf
+compare day {
+    matches 1: ... done
+    matches 2: ... done
+    matches 1: ... done          // 1 is already handled above
+}
+```
+</Code>
+
+Either change the repeated value to the one you meant, delete the extra arm, or -- if both arms should do the same thing -- stack them so they share one body:
+
+<Code title="Example">
+```turf
+compare day {
+    matches 1:
+    matches 7: ... done          // 1 or 7
+    matches 2: ... done
+}
+```
+</Code>
+
+(A different situation: an arm that can never run because an earlier *catch-all* arm matches everything -- `matches _:` -- is only a warning, E094.)
+
+Run `turf --explain E133` in a terminal to read this again.

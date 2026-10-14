@@ -1,0 +1,27 @@
+---
+title: "E115: An operator was declared with the wrong shape"
+description: "What compiler error E115 means, and how to fix it."
+order: 115
+---
+
+An `operator` function teaches Turf what a symbol like `+` or `[]` means for your own type. Each operator has a fixed number of operands, and Turf checked yours against it.
+
+<Code title="Example">
+```turf
+fn operator+(a: Vec, b: Vec, c: Vec): Vec { ... }   // `+` takes two operands
+fn operator[](self: Grid): int { ... }              // `[]` takes (self, index)
+fn operator[]=(self: Grid, i: int): void { ... }    // `[]=` takes (self, index, value)
+```
+</Code>
+
+Binary operators (`+ - * / % ** & | ^ << >> == != < > <= >=`) take exactly two parameters. A few have only one form: `!` and `~` are unary (one parameter), and `-` can be either. The message tells you what the operator you wrote needs and how many you gave.
+
+Fix the parameter list to match:
+
+<Code title="Example">
+```turf
+fn operator+(a: Vec, b: Vec): Vec { ... }
+```
+</Code>
+
+Run `turf --explain E115` in a terminal to read this again.

@@ -1,0 +1,55 @@
+---
+title: "E036: You tried to transition into a state that belongs to a different machine"
+description: "What compiler error E036 means, and how to fix it."
+order: 36
+---
+
+Turf's `machine` construct lets you declare a set of states and the moves allowed between them, like `machine ConnectionState { Idle -> Connecting, Connecting -> Connected }`. When you call `.transition(...)`, the thing inside the parentheses has to be one of THAT SAME machine's own states.
+
+Here's a valid transition:
+
+<Code title="Example">
+```turf
+machine ConnectionState {
+    Idle -> Connecting,
+    Connecting -> Connected,
+}
+
+mut conn: ConnectionState = ConnectionState::Idle;
+conn.transition(ConnectionState::Connecting);   // ConnectionState -> ConnectionState, matches
+```
+</Code>
+
+If you pass a state from a totally different machine, or something that isn't a state at all:
+
+<Code title="Example">
+```turf
+machine LightState {
+    Off -> On,
+}
+
+conn.transition(LightState::On);   // conn is a ConnectionState, not a LightState!
+```
+</Code>
+
+...Turf stops you, because `conn` can never actually become a `LightState` -- the two machines are unrelated types, even if their state names happen to look similar.
+
+To fix it, double-check which machine's state you meant to use, and make sure it's a state defined on the exact machine type your variable was declared with. If the state name has a typo or doesn't exist on any machine at all, you'll actually see a different error first (an "unknown variant" error) -- this one specifically means the state exists, just on the wrong machine.
+
+The same error is reported when the target has the right machine type but is a value rather than a written state, such as a parameter or variable that holds one:
+
+<Code title="Example">
+```turf
+fn go(c: ConnectionState, next: ConnectionState): ConnectionState {
+    mut conn: ConnectionState = c;
+    conn.transition(next);             // which edge is this? It can't be known here
+    return conn;
+}
+```
+</Code>
+
+A transition names its target, so the edge it takes is known where it is written. To move to a state chosen at run time, `compare` the value that chooses it and write one `.transition(ConnectionState::X)` per arm.
+
+This kind of mix-up is easy to make once you have a couple of machines in the same file -- Turf catching it here means you find out immediately, not while debugging a confusing runtime issue later.
+
+Run `turf --explain E036` in a terminal to read this again.

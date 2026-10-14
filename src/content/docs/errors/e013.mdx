@@ -1,0 +1,20 @@
+---
+title: "E013: E013 is retired -- code after a return is now always E012"
+description: "What compiler error E013 means, and how to fix it."
+order: 13
+---
+
+Older versions of Turf had two codes for the same mistake: E012 for a statement that comes after a `return`, `break` or `continue`, and E013 for a *declaration* in that position. In practice E012 always fired first, so E013 was documented and nobody ever saw it. The number is kept so an old log that mentions it still has somewhere to land, and is never reused.
+
+<Code title="Example">
+```turf
+fn compute(): int {
+    return 1;
+    mut x: int = 5;        // can never run -- E012
+}
+```
+</Code>
+
+Run `turf --explain E012` for the explanation and the fix: delete the code, or move it before the `return`.
+
+Run `turf --explain E013` in a terminal to read this again.

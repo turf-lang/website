@@ -1,0 +1,33 @@
+---
+title: "E107: An opening brace or parenthesis is missing"
+description: "What compiler error E107 means, and how to fix it."
+order: 107
+---
+
+Turf expected `{` to start a block (or `(` to start a parameter list) and found something else.
+
+In Turf the body of a function, `if`, `elseif`, `while`, `for`, `do`, `unsafe`, `compare`, `struct`, `enum` and `machine` is *always* wrapped in braces -- there is no single-statement shortcut:
+
+<Code title="Example">
+```turf
+if x > 0 return 1;           // no braces
+
+if x > 0 {
+    return 1;
+}
+```
+</Code>
+
+The same goes for a function name that isn't followed by its parameter list:
+
+<Code title="Example">
+```turf
+fn main: int { ... }         // needs ()
+
+fn main(): int { ... }
+```
+</Code>
+
+If you want a one-line choice between two values, use the ternary form instead of a braceless `if`: `give a otherwise b`.
+
+Run `turf --explain E107` in a terminal to read this again.

@@ -1,0 +1,44 @@
+---
+title: "E129: There is nothing to work the type out from"
+description: "What compiler error E129 means, and how to fix it."
+order: 129
+---
+
+`guess` means "use whatever type the value on the right has". That only works when the value has a real type to offer. Turf found one that doesn't:
+
+<Code title="Example">
+```turf
+mut a: guess = null;              // `null` could be a reference to anything
+mut b: guess = print_it();        // print_it() returns void: no value, no type
+mut c: guess = List::default();   // which kind of List?
+```
+</Code>
+
+Say the type yourself, the same way you would without `guess`:
+
+<Code title="Example">
+```turf
+mut a: &?Point = null;
+mut c: List<int> = List::default();
+```
+</Code>
+
+For the `void` case, the real problem is usually that the function was supposed to return something. Call it as a statement on its own if you only want what it does:
+
+<Code title="Example">
+```turf
+print_it();
+```
+</Code>
+
+The same error is reported at a generic function whose type parameter no parameter mentions. Type arguments are worked out from the arguments of each call, and there is no way to write them yourself, so `T` here could never be decided:
+
+<Code title="Example">
+```turf
+fn<T> make(): T { ... }           // which T would `make()` be?
+```
+</Code>
+
+Use the type parameter in a parameter (`fn<T> make(seed: T): T`), or drop it and name a real type.
+
+Run `turf --explain E129` in a terminal to read this again.

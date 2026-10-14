@@ -1,0 +1,35 @@
+---
+title: "E117: An error declaration mixes two forms"
+description: "What compiler error E117 means, and how to fix it."
+order: 117
+---
+
+An `error` type can be written in two ways, and a declaration has to pick one.
+
+A bare error, with no variants -- it ends with a semicolon:
+
+<Code title="Example">
+```turf
+error NotFound;
+```
+</Code>
+
+An error with named variants -- it uses braces and no semicolon in front of them:
+
+<Code title="Example">
+```turf
+error IOError { NotFound, PermissionDenied, Closed }
+```
+</Code>
+
+Writing the bare `;` form and then also a `{ ... }` variant list right after it is ambiguous -- is the type finished, or isn't it? -- so Turf rejects it:
+
+<Code title="Example">
+```turf
+error NotFound; { Missing }
+```
+</Code>
+
+Keep whichever you meant and delete the other.
+
+Run `turf --explain E117` in a terminal to read this again.

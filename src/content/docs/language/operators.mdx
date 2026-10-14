@@ -1,0 +1,580 @@
+---
+title: "Operators"
+description: "Precedence, arithmetic, comparison, logical and bitwise operators, assignment, `give`/`otherwise`, and string operators."
+lead: "An operator is a symbol such as `+` or `==` that does something to values. This page lists every built-in one, which goes first, and what it checks while the program runs."
+order: 2
+outcomes:
+  - "Predict the answer to a line like `2 + 3 * 4` using the precedence table."
+  - "Use arithmetic, comparison, logical and bitwise operators, and the shorthand forms such as compound assignment and `++`."
+  - "Choose a value with `give` / `otherwise`."
+  - "Know which operators work on strings."
+---
+
+## In plain words
+
+Maths has an order of doing things: in `2 + 3 * 4` you multiply first, so the answer is 14, not 20. A programming language needs the same rule for *every* operator, and the **precedence** table below is that rule. A smaller level number means “goes first”.
+
+<Cells
+  cells={[
+    { label: "2 + 3 * 4", value: "14" },
+    { label: "(2 + 3) * 4", value: "20" },
+  ]}
+  caption="Brackets change the order, exactly as in maths."
+/>
+
+The operators come in families: arithmetic (`+ - * / %`), exponentiation (`**`), comparison (`== != < > <= >=`), logical (`&& || !`), bitwise (`& | ^ ~ << >>`), assignment (`=`) and its compound shorthand, and `++` / `--`. Turf also has `give` / `otherwise`, a short way to pick one of two values, and operators for strings.
+
+<Callout tone="note" title="How to read this page">
+
+Below this introduction is the full reference. Every program in it is real: it was compiled with the Turf compiler, and the box under it shows exactly what it prints. A red **error** box means the compiler refuses that code on purpose, to show you the message. New to programming? Read [Language Basics](/learn/basics/) first, then come back here.
+
+</Callout>
+
+This page covers the built-in operators: their precedence, what each accepts
+and what it checks at run time. Declaring an operator for your own type is
+described in [Operator overloading](/docs/language/generics-and-operators/#operator-overloading).
+
+## Precedence
+
+<Callout tone="tip" title="When in doubt, use brackets">
+
+Brackets always win, exactly as in maths. If you are not sure which operator goes first, write `(a & b) == c` and leave nothing to chance. The table below is the full rule; the bullets under it list the places where Turf's order may surprise you.
+
+</Callout>
+
+From the tightest binding to the loosest:
+
+| Level | Operators | Grouping |
+|---|---|---|
+| 1 | postfix `[ ]`, `( )`, `.`, `++`, `--` | left |
+| 2 | prefix `-`, `!`, `~`, `++`, `--` | right |
+| 3 | `**` | right |
+| 4 | `*` `/` `%` | left |
+| 5 | `+` `-` | left |
+| 6 | `<<` `>>` | left |
+| 7 | `&` | left |
+| 8 | `^` | left |
+| 9 | `\|` | left |
+| 10 | `to` | left |
+| 11 | `<` `>` `<=` `>=` | left |
+| 12 | `==` `!=` | left |
+| 13 | `&&` | left |
+| 14 | `\|\|` | left |
+| 15 | `=` `+=` `-=` `*=` `/=` `%=` `&=` `\|=` `^=` `<<=` `>>=` `**=` | right |
+| 16 | `cond give a otherwise b` | right |
+
+Things that differ from C:
+
+- **The bitwise operators bind tighter than comparison.** `x & 1 == 1` is
+  `(x & 1) == 1`, and `flags | 8 == 15` is `(flags | 8) == 15`. In C the same
+  text groups the other way. The order among them is `&`, then `^`, then `|`,
+  and the shifts bind tighter than all three but looser than `+` and `-`
+  (`1 + 2 << 1` is 6).
+- **Unary operators bind tighter than `**`**, with no exception for `-`. So
+  `-2 ** 2` is `(-2) ** 2`, which is `4`; write `-(2 ** 2)` for `-4`. `**`
+  itself groups to the right: `2 ** 3 ** 2` is `2 ** (3 ** 2)`, which is `512`.
+- **`to` sits between the bitwise operators and comparison.** It is looser
+  than every arithmetic and bitwise operator, so `1 + 2 to double` casts the
+  sum, and tighter than comparison and the logical operators, so
+  `a < 3 && s to int > 5` is `(a < 3) && ((s to int) > 5)`. It is tighter than
+  assignment too, so `y = x to int;` is `y = (x to int)`. To cast one operand
+  of an arithmetic operator, parenthesise: `(x to double) * 2`; to cast a
+  comparison's result, parenthesise the comparison: `(a < b) to string`.
+- **Assignment is an expression** whose value is the assigned value, and it
+  groups to the right: `a = b = 3;` assigns both.
+- **`give`/`otherwise` is the loosest of all**, looser than assignment. In
+  `r = c give a otherwise b;` the assignment is the condition. Parenthesise the
+  whole conditional: `r = (c give a otherwise b);`.
+
+There is no `cond ? a : b`. The conditional expression is
+[`give`/`otherwise`](#conditional-give--otherwise).
+
+## Assignment: `=`
+
+<Callout tone="warn" title="One equals sign stores, two ask">
+
+`x = 5` **puts** 5 into `x`. `x == 5` **asks** “is `x` equal to 5?” and gives back `true` or `false`. Mixing them up is the most common slip in any C-like language.
+
+</Callout>
+
+The left side must be a mutable location: a `mut` variable, a struct field or an
+array element. Assigning to an `immut` variable is [E060](/docs/errors/e060/), and assigning to
+something that is not a location (`5 = 6`) is [E061](/docs/errors/e061/).
+
+The right side is evaluated **first**, then the location's own sub-expressions,
+left to right, then the bounds checks. In `a[i()] = v()`, `v` runs before `i`:
+
+<Code title="operators_assignment.tr">
+```turf
+fn tag(label: string, v: int): int {
+    printline(label);
+    return v;
+}
+
+fn main(): int {
+    mut a: int[3] = [0, 0, 0];
+    a[tag("index", 1)] = tag("value", 7);   // prints value, then index
+    return a[1];
+}
+```
+</Code>
+
+The same order holds for compound assignment and for a type's own
+`operator []=`.
+
+## Arithmetic: `+ - * / %`
+
+<Callout tone="note" title="In plain words">
+
+Two whole numbers divide into a whole number, with the fractional part chopped off: `7 / 2` is `3`, not `3.5`. `%` gives the **remainder** left over (`7 % 2` is `1`). If either number is a `double`, the answer is a `double`: `7 / 2.0` is `3.5`. Dividing by zero, or growing a number past what an `int` can hold, **stops the program** with a message; it never gives a wrong answer silently.
+
+</Callout>
+
+<Program file="operators_arithmetic.tr">
+```turf
+fn main(): int {
+    mut a: int = 7;
+    mut b: int = 2;
+    printline(a / b);        // 3: integer division truncates toward zero
+    printline(-a / b);       // -3
+    printline(a % b);        // 1
+    printline(-a % b);       // -1: the sign of the dividend
+    printline(7.5 % 2.0);    // 1.5: % also works on doubles
+    printline(a / 2.0);      // 3.5: an int mixed with a double becomes double
+    return 0;
+}
+```
+```text
+3
+-3
+1
+-1
+1.5
+3.5
+```
+</Program>
+
+Two operands combine to a `double` if either is a `double`, and to an `int`
+otherwise. An `int32` operand counts as an `int`
+([`int32`](/docs/language/variables-and-types/#int32)). A `char` takes no part in arithmetic:
+`'a' + 1` is [E057](/docs/errors/e057/).
+
+**Division and remainder by zero panic**, for `int` and for `double`:
+`Division by zero` for `/`, `Modulo by zero` for `%`. Dividing a `double` by
+zero is never `inf`.
+
+**Signed overflow panics.** `+`, `-`, `*`, unary `-`, `++`, `--`, `<<` and `**`
+on `int` check their result:
+
+<Code title="operators_arithmetic_2.tr">
+```turf
+fn main(): int {
+    mut x: int = 9223372036854775807;
+    x = x + 1;                          // panics: Integer overflow
+    return 0;
+}
+```
+</Code>
+
+```text
+panic: runtime check: Integer overflow
+```
+
+`-INT_MIN` and `INT_MIN / -1` have no `int` result and panic the same way.
+`INT_MIN % -1` is `0`, which is its exact result. `double` arithmetic never
+panics for overflow: `1.7e308 * 10.0` is `inf`.
+
+When every operand is a literal or an `immut` variable with a known value, the
+expression is evaluated exactly at compile time, and a result that does not fit
+is a compile error instead ([E076](/docs/errors/e076/)):
+
+<Diagnostic file="operators_e076.tr">
+```turf
+fn main(): int {
+    mut c: int = 9223372036854775807 + 1;
+    return 0;
+}
+```
+```text
+operators_e076.tr (1 error)
+
+── error at line 2, col 5 [E076 · arithmetic]
+
+  Integer literal is not representable in type 'int'.
+  The literal's value is 9223372036854775808.
+  'int' holds -9223372036854775808 .. 9223372036854775807.
+
+  Hint: 'int' is TurfLang's only general-purpose integer type; there is no wider one. If you need arbitrary precision, use a library type.
+
+  2 │     mut c: int = 9223372036854775807 + 1;
+    │     ^~~ Here!
+
+  Run `turf --explain E076` for more details.
+```
+</Diagnostic>
+
+`mut` variables are never constants, so `x + 1` above is a run-time check. See
+[Integer overflow](/docs/language/variables-and-types/#integer-overflow) for the full list of
+checked operations.
+
+## Exponentiation: `**`
+
+<Program file="operators_exponentiation.tr">
+```turf
+fn main(): int {
+    mut r: int = 2 ** 10;         // 1024
+    mut h: double = 2 ** 0.5;     // 1.41421
+    mut e: double = 2 ** -1.0;    // 0.5
+    printline(r);
+    printline(h);
+    printline(e);
+    return 0;
+}
+```
+```text
+1024
+1.41421
+0.5
+```
+</Program>
+
+With an `int` (or `int32`) on both sides the result is an exact `int`: every
+multiplication is overflow-checked, so `3 ** 62` panics with `Integer
+overflow`, and a negative exponent panics with `Negative exponent in integer
+'**'`. An `int` cannot hold `2 ** -1`, so write `2 ** -1.0`. A `double` on
+either side gives a `double`.
+
+`^` is bitwise XOR and is not exponentiation.
+
+## Comparison: `== != < > <= >=`
+
+<Callout tone="note" title="In plain words">
+
+A comparison asks a question and answers `true` or `false`. `!=` means “not equal”. Numbers compare by value, and an `int` and a `double` compare as numbers (`1 == 1.0` is true). To compare **your own struct** you first have to teach Turf how: each comparison operator you want must be declared separately (see [Operators on your own types](#operators-on-your-own-types)).
+
+</Callout>
+
+Numbers compare by value, and an `int` and a `double` compare numerically
+(`1 == 1.0` is true). `char`s compare by byte value, and a `char` is not
+comparable with an `int` (`c == 97` is [E124](/docs/errors/e124/)). Enums compare with the same
+enum. `bool`s can be compared for equality.
+
+`string` comparison is defined in the standard library, see [String
+operators](#string-operators). For a **struct**, the comparison operators do
+not exist until you declare them, and each one is declared separately:
+declaring `operator ==` does not give you `!=`, and `operator <` does not give
+you `>`. Using one that is missing is [E124](/docs/errors/e124/) ("Values can't be compared"). Arrays
+cannot be compared with `==` either; compare elements.
+
+## Logical: `&& || !`
+
+<Callout tone="note" title="In plain words">
+
+`&&` means **and**, `||` means **or**, and `!` means **not**. They work on `bool` values only, so write the question out: `n != 0`, not `n`. They also **short-circuit**: if the left side already settles the answer, the right side is never run. For `(e != 0) && (100 / e > 5)`, when `e` is zero the left side is `false`, so `100 / e` is never evaluated, and the division by zero never happens. That is the safe way to write a guard.
+
+</Callout>
+
+`&&` and `||` take `bool` operands (an `int` or `double` is [E057](/docs/errors/e057/); write
+`n != 0`) and **short-circuit**: the right operand is
+evaluated only when the left does not already decide the result. That makes
+guard conditions safe:
+
+<Program file="operators_logical.tr">
+```turf
+fn main(): int {
+    mut e: int = 0;
+    mut ok: bool = (e != 0) && (100 / e > 5);   // the division never runs
+    mut any: bool = true || (1 / e > 0);        // neither does this one
+    printline(ok);                              // false
+    printline(any);                             // true
+    return 0;
+}
+```
+```text
+false
+true
+```
+</Program>
+
+`&&` binds tighter than `||`: `true || false && false` is true.
+
+`!x` is `x != true` for a `bool`, so `!!f == f`. Its operand must be a `bool`
+(`!5` is [E057](/docs/errors/e057/)), unless it is a **struct** that declares its own `operator !`;
+then the call replaces the rewriting, for that type.
+
+`&&` and `||` cannot be overloaded, because a function call cannot
+short-circuit. `operator &&` is a syntax error ([E110](/docs/errors/e110/)). A struct operand is
+rejected by `&&` and `||`, whether or not the struct declares `operator !`:
+turn it into a `bool` yourself, with a comparison for example.
+
+## Bitwise: `& | ^ ~ << >>`
+
+<Callout tone="note" title="In plain words">
+
+A whole number is stored as a row of on/off switches called **bits**. Bitwise operators work on each switch separately. Take `12` and `10`:
+
+<Cells
+  cells={[
+    { label: "12", value: "1100" },
+    { label: "10", value: "1010" },
+    { label: "12 & 10", value: "1000 = 8" },
+    { label: "12 | 10", value: "1110 = 14" },
+    { label: "12 ^ 10", value: "0110 = 6" },
+  ]}
+  caption="& keeps a switch on only if it is on in both. | keeps it on if it is on in either. ^ (XOR) keeps it on if exactly one has it on."
+/>
+
+`<<` slides all the switches left (`a << 2` is `a` times 4), and `>>` slides them right. You will mostly meet these when working with flags or talking to C.
+
+</Callout>
+
+<Program file="operators_bitwise.tr">
+```turf
+fn main(): int {
+    mut a: int = 12;
+    mut b: int = 10;
+    printline(a & b);       // 8
+    printline(a | b);       // 14
+    printline(a ^ b);       // 6, XOR
+    printline(~a);          // -13
+    printline(a << 2);      // 48
+    printline(-8 >> 1);     // -4
+    return 0;
+}
+```
+```text
+8
+14
+6
+-13
+48
+-4
+```
+</Program>
+
+All bitwise operators, including unary `~`, take `int` operands. A `double`,
+`bool` or `int32` operand is [E057](/docs/errors/e057/) ("Bitwise operator requires integer
+operands"); there is no implicit conversion.
+
+- `>>` is an **arithmetic** shift: it copies the sign bit. `-8 >> 1` is `-4`
+  and `-1 >> 1` is `-1`.
+- Both shifts take a count from 0 to 63. A count outside that range panics with
+  `Integer overflow`, and so does a `<<` that shifts a set bit past the sign
+  bit (`1 << 63`).
+- `~x` is `-(x + 1)`, so `~0` is `-1`.
+
+## Compound assignment
+
+<Callout tone="note" title="In plain words">
+
+`x += 5` is a shorthand for `x = x + 5`. Every operator in the list works the same way.
+
+</Callout>
+
+```text
++=  -=  *=  /=  %=  &=  |=  ^=  <<=  >>=  **=
+```
+
+`a op= b` means `a = a op b`, with the location `a` evaluated once. It has the
+same checks as the plain operator, including the overflow and zero-division
+panics, and its right side runs first like any assignment. There is no `~=`.
+
+The bitwise forms (`&= |= ^= <<= >>=`) require `int` operands, like the plain
+operators. `**=` follows `**`: with an `int` on both sides it is the exact `int`
+power, and with a `double` on either side the result is computed as a `double`
+and converted back to the variable's own type, trapping if it no longer fits:
+
+<Program file="operators_compound_assignment.tr">
+```turf
+fn main(): int {
+    mut b: int = 3;
+    b **= 4;                   // 81, exact
+    mut d: int = 2;
+    mut exp: double = 3.0;
+    d **= exp;                 // 8, the double power converted back to int
+    printline(b);
+    printline(d);
+    return 0;
+}
+```
+```text
+81
+8
+```
+</Program>
+
+A type that declares `operator +` supports `+=` automatically, because the
+compound form is rewritten to `a = a + b` first (see [Operators on your own
+types](#operators-on-your-own-types)). An `int32` variable supports no compound
+assignment at all ([E126](/docs/errors/e126/)); write `n = (n + 1) to int32;`.
+
+## Increment and decrement: `++` `--`
+
+<Callout tone="note" title="In plain words">
+
+`i++` adds one to `i`. The difference between `i++` and `++i` is only the value the expression has: `i++` gives the value **before** the change, and `++i` the value **after** it. Used on their own (`i++;`) they do the same thing.
+
+</Callout>
+
+Both the prefix and the postfix form work on any assignable location: a
+variable, an array element or a struct field. `i++` and `++i` both add one. They
+differ only in the value the expression has: **postfix gives the value before the
+change, prefix the value after it.**
+
+<Code title="operators_increment_and_decrement.tr">
+```turf
+fn main(): int {
+    mut i: int = 5;
+    printline(i++);       // 5, i is now 6
+    printline(++i);       // 7
+    printline(i--);       // 7, i is now 6
+    printline(--i);       // 5
+
+    mut j: int = 5;
+    mut k: int = - ++j;   // j becomes 6, then it is negated: k is -6
+
+    mut a: int[2] = [1, 2];
+    ++a[0];               // a[0] is 2
+    a[1]--;               // a[1] is 1
+    return k + a[0] + a[1];
+}
+```
+</Code>
+
+Operands are evaluated strictly left to right, so a chain of them has one
+defined result. With `x` starting at 1,
+`x++ + ++x - ++x - x-- - --x` is `1 + 3 - 4 - 4 - 2`, which is `-6`, every time,
+at every optimisation level.
+
+Both forms check for overflow like `+ 1` and `- 1`. They apply to a `double`
+too (`1.5` becomes `2.5`), they are [E060](/docs/errors/e060/) on an `immut` variable, and they are
+[E126](/docs/errors/e126/) on an `int32`.
+
+<Callout tone="note" title="Tokenisation">
+
+`--x` is one token, so `---x` reads as `--` followed by
+`-x` and is a syntax error ([E103](/docs/errors/e103/)). For three negations, separate them:
+`- - - x`.
+
+</Callout>
+
+## Conditional: `give` / `otherwise`
+
+<Callout tone="note" title="In plain words">
+
+`give` / `otherwise` is a question with two possible answers, written as one expression: `n > 3 give "big" otherwise "small"` is `"big"` when `n` is over 3, and `"small"` otherwise. Both answers must be the same type, and `otherwise` is required.
+
+</Callout>
+
+<Code title="operators_conditional_give_otherwise.tr">
+```turf
+fn pick(a: int, b: int): int {
+    return a > b give a otherwise b;
+}
+
+fn main(): int {
+    printline(pick(3, 9));                            // 9
+    mut n: int = 5;
+    mut size: string = n > 3 give "big" otherwise "small";
+    mut grade: int = n > 8 give 3 otherwise n > 4 give 2 otherwise 1;
+    printline(size);
+    return grade + (n > 0 give 1 otherwise 0);
+}
+```
+</Code>
+
+`cond give a otherwise b` evaluates only the branch that is chosen. `otherwise`
+is required ([E110](/docs/errors/e110/) without it), and the two branches must have the same type
+(`give 1 otherwise "x"` is [E066](/docs/errors/e066/)). It is the loosest operator, looser than
+assignment, so parenthesise it when it is not the whole right side: `r = c give a
+otherwise b;` assigns `c` first. Chains nest to the right, as the `grade`
+example shows.
+
+## String operators
+
+`string` has no operator behaviour built into the compiler. `+`, `==`, `!=`,
+`<`, `>`, `<=` and `>=` on two strings are ordinary `operator` overloads in the
+standard library (the `strings` module), which is always loaded, so they work
+in every file with no import.
+
+- `+` concatenates and returns a new string.
+- `==` and `!=` compare the **contents**, not the pointers. The ordering
+  operators compare byte by byte.
+- Both operands of `+` must be strings. `"id " + 5` is [E057](/docs/errors/e057/): convert with
+  `5 to string`.
+
+<Program file="operators_string_operators.tr">
+```turf
+fn main(): int {
+    mut who: string = "ab";
+    mut label: string = "Score: " + (100 to string) + " / " + (200 to string);
+    mut s: string = who;
+    s += "c";                            // s = s + "c"
+    printline(label);
+    printline(s == "abc");               // true
+    printline("Z" < "a");                // true: byte order
+    return 0;
+}
+```
+```text
+Score: 100 / 200
+true
+true
+```
+</Program>
+
+Indexing, `s[i]`, is part of the language and gives a `char`. Its bounds rules
+are described in [Variables and types](/docs/language/variables-and-types/#indexing-a-string).
+
+## Operators on your own types
+
+The built-in rules above apply to the built-in types. For a struct or enum you
+declare, the arithmetic, comparison, bitwise, unary and indexing operators can
+be defined with `operator` declarations, covered in [Generics and operator
+overloading](/docs/language/generics-and-operators/#operator-overloading). How they meet
+the built-ins:
+
+- **The operand types must match exactly.** There is no widening: with
+  `operator +(a: V, b: int)` declared, `v + 1` works and `v + 1.0` is [E057](/docs/errors/e057/).
+- **`&&`, `||`, `=`, `.`, `()` and `to` cannot be overloaded.**
+- **Compound assignment and `++` / `--` use the overload.** `a += b` is
+  `a = a + b`, and `c++` on a `Counter` calls `operator +(Counter, int)` with
+  `1`. There is no `operator +=`.
+- **`!x` calls `operator !` when `x`'s type declares one.** Otherwise it is
+  `x != true`.
+- **Compound assignment and `++` / `--` through `operator []` are rejected**
+  ([E126](/docs/errors/e126/)). `box[i] += 1` and `box[i]++` must be written `box[i] = box[i] + 1;`.
+- **At least one operand must be a type your own module declares**, and an
+  operator whose operands are all built-in numbers is rejected ([E028](/docs/errors/e028/)).
+
+<Code title="operators_operators_on_your.tr">
+```turf
+struct Counter {
+    n: int
+}
+
+operator +(c: Counter, k: int): Counter {
+    mut r: Counter = c;
+    r.n = c.n + k;
+    return r;
+}
+
+operator -(c: Counter, k: int): Counter {
+    mut r: Counter = c;
+    r.n = c.n - k;
+    return r;
+}
+
+fn main(): int {
+    mut c: Counter = Counter::default();
+    c++;
+    ++c;
+    c += 5;
+    c--;
+    return c.n;                  // 6
+}
+```
+</Code>
+
+See also: [Variables and types](/docs/language/variables-and-types/) for the primitive types,
+literals, overflow rules and the full `to` conversion table.

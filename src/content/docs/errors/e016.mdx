@@ -1,0 +1,48 @@
+---
+title: "E016: You're binding an error that has nothing worth inspecting"
+description: "What compiler error E016 means, and how to fix it."
+order: 16
+---
+
+Turf's `recover as err run { ... }` exists so you can look at what actually went wrong -- `err` gives you access to the error's own data, so you can react differently depending on which kind of failure happened. But the function you called here can only ever fail with a "bare" error: one declared as just `error SomethingWentWrong;`, with no extra information attached at all. There's nothing on a bare error worth binding a name to and inspecting, so Turf stops you here instead of letting you write a check that can never actually tell you anything useful.
+
+Here's a bare error and a call that fails with it:
+
+<Code title="Example">
+```turf
+error GeneralError;
+
+fn maybe_fail(should_fail: bool): !int {
+    if should_fail {
+        return GeneralError::DEFAULT;
+    }
+    return 99;
+}
+```
+</Code>
+
+Since `GeneralError` is bare, you don't need (and can't use) `recover as err`:
+
+<Code title="Example">
+```turf
+fn main(): int {
+    return maybe_fail(true) recover produce -1;
+}
+```
+</Code>
+
+And here's the version that trips this error:
+
+<Code title="Example">
+```turf
+fn main(): int {
+    return maybe_fail(true) recover as err run {
+        return -1;
+    };
+}
+```
+</Code>
+
+The fix is simple: swap `recover as err run { ... }` for either `recover produce <value>` (just gives back a fallback value on failure) or `recover run { ... }` (runs some code on failure, without needing to inspect what went wrong). Save `recover as err` for functions that fail with a richer error type -- one that actually carries data worth looking at.
+
+Run `turf --explain E016` in a terminal to read this again.

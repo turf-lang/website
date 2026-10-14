@@ -1,0 +1,29 @@
+---
+title: "E108: A name was expected here"
+description: "What compiler error E108 means, and how to fix it."
+order: 108
+---
+
+Turf was waiting for a name -- of a variable, function, parameter, struct, field, enum variant, module -- and found something that isn't one. The message says which name it was looking for and after what.
+
+<Code title="Example">
+```turf
+mut : int = 5;               // a variable needs a name
+fn (a: int): int { ... }     // a function needs a name
+struct { x: int }            // so does a struct
+import ;                     // so does an import
+```
+</Code>
+
+Give it one:
+
+<Code title="Example">
+```turf
+mut count: int = 5;
+fn add(a: int): int { ... }
+```
+</Code>
+
+A name must start with a letter or an underscore, and it can't be one of Turf's reserved words (`if`, `fn`, `run`, `step`, `ptr`, ...). If you used a reserved word as a name, Turf reads it as the keyword and complains that the name is missing: rename it.
+
+Run `turf --explain E108` in a terminal to read this again.

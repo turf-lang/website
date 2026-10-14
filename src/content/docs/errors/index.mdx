@@ -1,0 +1,191 @@
+---
+title: "Error codes"
+description: "Every error code the Turf compiler can print, with what it means and how to fix it."
+lead: "When the compiler stops you, it prints a code such as E008. Each code has its own page here that explains, in plain words, what went wrong and how to fix it."
+order: 4
+---
+
+## How to use this page
+
+A compiler error looks like this. The code (**E060**) is in square brackets on the first line:
+
+<Diagnostic file="apples.tr">
+```turf
+fn main(): int {
+    immut apples = 3;
+    apples = 4;
+    return 0;
+}
+```
+```text
+apples.tr (1 error)
+
+── error at line 3, col 12 [E060 · declaration]
+
+  Oops! You can't change the value of 'apples' because it's immutable.
+  Note: declared immutable here (line 2, col 5)
+
+  Hint: If you need to change its value later, declare it with 'mutable' instead of 'immutable'.
+
+  3 │     apples = 4;
+    │            ^ Here!
+
+  Run `turf --explain E060` for more details.
+```
+</Diagnostic>
+
+Find the code below, or run `turf --explain E060` in a terminal. The command line and the diagnostic format are described in [CLI & Diagnostics](/docs/tooling/cli-and-diagnostics/#part-2--diagnostics-and-error-codes).
+
+## All 149 codes
+
+| Code | What it means |
+|---|---|
+| [E001](/docs/errors/e001/) | You tried to reach past the end of an array |
+| [E002](/docs/errors/e002/) | You used something other than a whole number to index an array |
+| [E003](/docs/errors/e003/) | The number of values you gave doesn't match the array's declared size |
+| [E004](/docs/errors/e004/) | One of the values in your array's initializer list is the wrong type |
+| [E005](/docs/errors/e005/) | You tried to for-each over something that isn't an array |
+| [E006](/docs/errors/e006/) | E006 is retired -- for-each over an unsized array parameter works now |
+| [E007](/docs/errors/e007/) | You used break, continue, or return somewhere it doesn't belong |
+| [E008](/docs/errors/e008/) | You're reading a variable that might not have a value yet |
+| [E009](/docs/errors/e009/) | Your function promises a value back, but doesn't always give one |
+| [E010](/docs/errors/e010/) | Your recursive function never stops calling itself |
+| [E011](/docs/errors/e011/) | Something about this code breaks one of Turf's basic rules |
+| [E012](/docs/errors/e012/) | You wrote code that comes right after a return, so it can never run |
+| [E013](/docs/errors/e013/) | E013 is retired -- code after a return is now always E012 |
+| [E014](/docs/errors/e014/) | I don't recognize that word here |
+| [E015](/docs/errors/e015/) | E015 is retired -- Turf now gives a more specific code |
+| [E016](/docs/errors/e016/) | You're binding an error that has nothing worth inspecting |
+| [E017](/docs/errors/e017/) | You freed the same memory twice |
+| [E018](/docs/errors/e018/) | You used memory after already freeing it |
+| [E019](/docs/errors/e019/) | Two of your files are waiting on each other to finish loading |
+| [E020](/docs/errors/e020/) | You declared the same extern function two different ways |
+| [E021](/docs/errors/e021/) | export mut isn't a thing yet -- only export immut is |
+| [E022](/docs/errors/e022/) | An exported constant needs a value Turf can know right away |
+| [E023](/docs/errors/e023/) | export only works at the top level of a file, not inside a function |
+| [E024](/docs/errors/e024/) | Two different imports both want to give you something called the same thing |
+| [E025](/docs/errors/e025/) | That module function exists, but not for the arguments you gave it |
+| [E026](/docs/errors/e026/) | That module doesn't have a function with this name |
+| [E027](/docs/errors/e027/) | Turf couldn't find a module by this name anywhere |
+| [E028](/docs/errors/e028/) | You tried to overload an operator for two types Turf already handles |
+| [E029](/docs/errors/e029/) | You used '::' on a variable, but '::' is only for types, enums, and modules |
+| [E030](/docs/errors/e030/) | You called something that doesn't exist inside this module |
+| [E031](/docs/errors/e031/) | Turf doesn't recognize the name you put before '::' |
+| [E032](/docs/errors/e032/) | You used a type's short name, but it lives in another module |
+| [E033](/docs/errors/e033/) | You declared the same variable twice in the same scope |
+| [E034](/docs/errors/e034/) | You declared two structs (or enums) with the same name |
+| [E035](/docs/errors/e035/) | You tried to transition a state machine to a state it can't reach from here |
+| [E036](/docs/errors/e036/) | You tried to transition into a state that belongs to a different machine |
+| [E037](/docs/errors/e037/) | E037 is retired -- an unknown function is E041 |
+| [E038](/docs/errors/e038/) | You defined a function inside another function |
+| [E039](/docs/errors/e039/) | You asked for a variant that doesn't exist on this enum (or error type) |
+| [E040](/docs/errors/e040/) | I can't find anything with that name |
+| [E041](/docs/errors/e041/) | I don't know a function by that name |
+| [E042](/docs/errors/e042/) | Turf has never heard of this type name anywhere |
+| [E043](/docs/errors/e043/) | You're using this variable before you've actually created it |
+| [E044](/docs/errors/e044/) | You called a function with the wrong number of arguments |
+| [E045](/docs/errors/e045/) | You tried to construct a struct through an existing instance instead of its type |
+| [E046](/docs/errors/e046/) | You marked your struct's constructor as static, but it can't be |
+| [E047](/docs/errors/e047/) | You passed arguments to default(), but it never takes any |
+| [E048](/docs/errors/e048/) | You used '.' on something that isn't an actual instance |
+| [E049](/docs/errors/e049/) | Your constructor doesn't set every field on every possible path |
+| [E050](/docs/errors/e050/) | You called new() on a struct that never defined one |
+| [E051](/docs/errors/e051/) | You tried to write your own default() method, but that name is reserved |
+| [E052](/docs/errors/e052/) | You called a static method through an instance with '.' |
+| [E053](/docs/errors/e053/) | You put 'static' on a function that isn't attached to a struct |
+| [E054](/docs/errors/e054/) | You tried to call a method that doesn't exist on this struct |
+| [E055](/docs/errors/e055/) | E055 is retired -- a bad argument to abs() is now reported as E056 or E025 |
+| [E056](/docs/errors/e056/) | You passed a function an argument of the wrong type |
+| [E057](/docs/errors/e057/) | You used an operator on a kind of value it doesn't work for |
+| [E058](/docs/errors/e058/) | Your compare block isn't structured quite right |
+| [E059](/docs/errors/e059/) | One of your compare arms doesn't match the type you're comparing against |
+| [E060](/docs/errors/e060/) | You tried to change a variable that was declared as immutable |
+| [E061](/docs/errors/e061/) | The left side of your assignment isn't something you can actually assign to |
+| [E062](/docs/errors/e062/) | You assigned null to a variable that isn't a pointer |
+| [E063](/docs/errors/e063/) | E063 is retired -- a bad argument to power() is now reported as E056 or E025 |
+| [E064](/docs/errors/e064/) | You returned a value that doesn't match the function's declared return type |
+| [E065](/docs/errors/e065/) | You tried to convert something to a string that Turf doesn't know how to convert |
+| [E066](/docs/errors/e066/) | You used a value where a different, incompatible type was expected |
+| [E067](/docs/errors/e067/) | You tried to use the result of a function that doesn't return anything |
+| [E068](/docs/errors/e068/) | You tried to use a field that doesn't exist on this struct |
+| [E069](/docs/errors/e069/) | Your struct contains itself by value, and that has no finite size |
+| [E070](/docs/errors/e070/) | A radix prefix isn't followed by any digit |
+| [E071](/docs/errors/e071/) | A digit doesn't belong in this number's base |
+| [E072](/docs/errors/e072/) | A number can't start or end with an underscore |
+| [E073](/docs/errors/e073/) | An exponent marker with nothing after it |
+| [E074](/docs/errors/e074/) | This block of code can never run |
+| [E075](/docs/errors/e075/) | There's a branch inside your code that can never actually be taken |
+| [E076](/docs/errors/e076/) | An integer literal is out of range for its destination type |
+| [E077](/docs/errors/e077/) | An integer literal can't be represented exactly as a 'double' |
+| [E078](/docs/errors/e078/) | A float literal is too large -- it rounds to infinity |
+| [E079](/docs/errors/e079/) | A generic instantiation chain never bottoms out |
+| [E080](/docs/errors/e080/) | You declared an operator between two types your module doesn't own |
+| [E081](/docs/errors/e081/) | That value might be null when you use it |
+| [E082](/docs/errors/e082/) | You can't turn a maybe-null reference into a plain one without checking |
+| [E083](/docs/errors/e083/) | A deferred statement can't return, break or continue |
+| [E084](/docs/errors/e084/) | caller_location only works in a function that asks for it |
+| [E085](/docs/errors/e085/) | A type name you used could mean more than one type |
+| [E086](/docs/errors/e086/) | A reference to a local variable can't leave the function |
+| [E087](/docs/errors/e087/) | pub (or public) was written where it does nothing |
+| [E088](/docs/errors/e088/) | A name you used belongs to another module, which did not mark it pub |
+| [E089](/docs/errors/e089/) | A public function or field mentions a type that is not public |
+| [E090](/docs/errors/e090/) | A module name matches more than one file |
+| [E091](/docs/errors/e091/) | A module exists in this build, but this package may not import it |
+| [E092](/docs/errors/e092/) | A compare header is not a legal pattern |
+| [E093](/docs/errors/e093/) | A compare doesn't cover every value of its subject |
+| [E094](/docs/errors/e094/) | An arm of a compare can never run |
+| [E095](/docs/errors/e095/) | try used where it cannot work |
+| [E096](/docs/errors/e096/) | An error variant's payload is declared or used wrongly |
+| [E097](/docs/errors/e097/) | A generic operator's type parameter has to be tied to its operands |
+| [E098](/docs/errors/e098/) | That write would only change a copy |
+| [E099](/docs/errors/e099/) | A string or character was opened but never closed |
+| [E100](/docs/errors/e100/) | Turf doesn't know that escape sequence |
+| [E101](/docs/errors/e101/) | A character literal must hold exactly one character |
+| [E102](/docs/errors/e102/) | A semicolon is missing |
+| [E103](/docs/errors/e103/) | Turf found something it didn't expect here |
+| [E104](/docs/errors/e104/) | A bracket, brace or parenthesis was never closed |
+| [E105](/docs/errors/e105/) | A comma is missing |
+| [E106](/docs/errors/e106/) | A colon is missing |
+| [E107](/docs/errors/e107/) | An opening brace or parenthesis is missing |
+| [E108](/docs/errors/e108/) | A name was expected here |
+| [E109](/docs/errors/e109/) | A type was expected here |
+| [E110](/docs/errors/e110/) | A specific word or symbol was expected |
+| [E111](/docs/errors/e111/) | Nested too deeply |
+| [E112](/docs/errors/e112/) | void can't be the type of a variable, field or parameter |
+| [E113](/docs/errors/e113/) | That syntax used to exist, but doesn't any more |
+| [E114](/docs/errors/e114/) | The same name is declared twice in one declaration |
+| [E115](/docs/errors/e115/) | An operator was declared with the wrong shape |
+| [E116](/docs/errors/e116/) | An extern function can't have a body |
+| [E117](/docs/errors/e117/) | An error declaration mixes two forms |
+| [E118](/docs/errors/e118/) | Statements have to live inside a function |
+| [E119](/docs/errors/e119/) | There is no main function |
+| [E120](/docs/errors/e120/) | That loop form isn't supported |
+| [E121](/docs/errors/e121/) | The compiler hit a problem of its own |
+| [E122](/docs/errors/e122/) | Turf can't take the address of that |
+| [E123](/docs/errors/e123/) | An array's size has to be a positive whole number |
+| [E124](/docs/errors/e124/) | Those two values can't be compared |
+| [E125](/docs/errors/e125/) | More than one definition fits this call equally well |
+| [E126](/docs/errors/e126/) | That operation isn't supported in this form |
+| [E127](/docs/errors/e127/) | That number isn't one of the enum's values |
+| [E128](/docs/errors/e128/) | This variable needs a starting value |
+| [E129](/docs/errors/e129/) | There is nothing to work the type out from |
+| [E130](/docs/errors/e130/) | Raw pointers can only be used inside unsafe |
+| [E131](/docs/errors/e131/) | That type has no methods |
+| [E132](/docs/errors/e132/) | recover is being used in a way that can't work |
+| [E133](/docs/errors/e133/) | The same value is matched twice in one compare |
+| [E134](/docs/errors/e134/) | That conversion isn't allowed |
+| [E135](/docs/errors/e135/) | That isn't something you can call |
+| [E136](/docs/errors/e136/) | A module name can't be qualified by another module |
+| [E137](/docs/errors/e137/) | A function can't be used as a value here |
+| [E138](/docs/errors/e138/) | A generic type needs its type arguments |
+| [E139](/docs/errors/e139/) | That isn't a valid number |
+| [E140](/docs/errors/e140/) | An unsized array type (int[]) was used somewhere it can't safely live |
+| [E141](/docs/errors/e141/) | An immutable array was passed to a function that changes it |
+| [E142](/docs/errors/e142/) | A range slice [a..b] was used on something that isn't an array |
+| [E143](/docs/errors/e143/) | A range slice's bounds are out of range |
+| [E144](/docs/errors/e144/) | A mut view was taken of an immutable array |
+| [E145](/docs/errors/e145/) | A module is used, but this file never imported it |
+| [E146](/docs/errors/e146/) | An annotation the declaration under it cannot carry |
+| [E147](/docs/errors/e147/) | A type has no default value because it reaches itself through & fields |
+| [E148](/docs/errors/e148/) | A type was given the wrong number of type arguments |
+| [E149](/docs/errors/e149/) | That text can never be converted |

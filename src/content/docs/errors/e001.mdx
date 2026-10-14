@@ -1,0 +1,47 @@
+---
+title: "E001: You tried to reach past the end of an array"
+description: "What compiler error E001 means, and how to fix it."
+order: 1
+---
+
+Turf arrays have a fixed size you choose when you declare them, and their valid indices always start at 0 and stop at `size - 1` -- never at `size` itself. So an array of 3 things has valid indices 0, 1, and 2, not 3.
+
+<Code title="Example">
+```turf
+immut primes: int[3] = [2, 3, 5];
+mut first: int = primes[0];   // correct -- the first element
+mut last: int = primes[2];    // correct -- the last element (size - 1)
+```
+</Code>
+
+A negative index counts back from the end, so `primes[-1]` is that same last element and `primes[-3]` is the first. The valid range is `-3` to `2` -- an index below `-3` is out of bounds just like one above `2`:
+
+<Code title="Example">
+```turf
+mut also_last: int = primes[-1];   // correct -- the last element
+mut oops2: int = primes[-4];       // there is no primes[-4]!
+```
+</Code>
+
+If you ask for one index too many:
+
+<Code title="Example">
+```turf
+mut oops: int = primes[3];   // there is no primes[3]!
+```
+</Code>
+
+Turf catches this at compile time and tells you exactly how big the array actually is, so you don't have to go count the brackets yourself.
+
+This mistake almost always comes from an off-by-one: thinking of "3 elements" as meaning "indices 1 through 3" (like counting objects) instead of "indices 0 through 2" (like counting positions). It's one of the most common trips in programming in general, not just in Turf -- you'll stop making it once counting from 0 feels natural, which usually doesn't take long.
+
+If you actually need more room in the array, the fix isn't to index further -- it's to make the array bigger and give it the extra value:
+
+<Code title="Example">
+```turf
+immut primes: int[4] = [2, 3, 5, 7];
+mut last: int = primes[3];   // now valid -- the array really has 4 slots
+```
+</Code>
+
+Run `turf --explain E001` in a terminal to read this again.

@@ -1,0 +1,35 @@
+---
+title: "E004: One of the values in your array's initializer list is the wrong type"
+description: "What compiler error E004 means, and how to fix it."
+order: 4
+---
+
+An array holds one specific type of value -- an `int[3]` holds three ints, a `string[2]` holds two strings, and so on. If even one value in the initializer list doesn't match that type, Turf catches it right away instead of letting a mixed-up array sneak into your program.
+
+<Code title="Example">
+```turf
+immut primes: int[3] = [2, 3, 5];   // correct -- every value is an int
+```
+</Code>
+
+If one of the values is the wrong type:
+
+<Code title="Example">
+```turf
+immut primes: int[3] = [2, 3, "five"];   // "five" is a string, not an int
+```
+</Code>
+
+Turf tells you the element type the array holds and the type of the value it found, so you know what to look for when you scan the list for the odd one out.
+
+To fix it, make sure every value in the list is really the array's declared type. If you have a value of a different type that should logically become that type, convert it explicitly:
+
+<Code title="Example">
+```turf
+immut primes: int[3] = [2, 3, 5];   // just use the right value directly
+```
+</Code>
+
+This is a great one to double-check whenever you're typing out a long list of values by hand -- it's easy for one typo (like quoting a number by accident) to slip in.
+
+Run `turf --explain E004` in a terminal to read this again.

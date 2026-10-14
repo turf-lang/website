@@ -1,0 +1,43 @@
+---
+title: "E023: export only works at the top level of a file, not inside a function"
+description: "What compiler error E023 means, and how to fix it."
+order: 23
+---
+
+The whole point of `export` is to share a constant with other files that import this one. That only makes sense for something declared at the top level of a file -- if you write `export` on a declaration inside a function body, it's contradicting itself: local to one function call, but also supposedly shared everywhere.
+
+<Code title="Example">
+```turf
+fn setup(): void {
+    export immut ready: bool = true;
+}
+```
+</Code>
+
+Here, `ready` is declared inside `setup()`, which means it doesn't even exist until `setup()` actually runs -- there's nothing for another file to import ahead of time. Turf catches this and asks you to pick one: either it lives at the top level and is genuinely shared, or it stays local and drops the `export`.
+
+If you really do want other files to be able to use this value, move it out to the top level of the file:
+
+<Code title="Example">
+```turf
+export immut ready: bool = true;
+
+fn setup(): void {
+    // ready is available here too, and to any file that imports this one
+}
+```
+</Code>
+
+If it was only ever meant to be used inside that one function, it doesn't need `export` at all -- just declare it normally:
+
+<Code title="Example">
+```turf
+fn setup(): void {
+    immut local_flag: bool = true;
+}
+```
+</Code>
+
+Either way, the fix is quick once you decide which of those two things you actually meant.
+
+Run `turf --explain E023` in a terminal to read this again.

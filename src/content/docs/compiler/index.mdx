@@ -1,0 +1,23 @@
+---
+title: "How the compiler works"
+description: "The compiler, the runtime and the memory model: how Turf turns a program into a native binary."
+lead: "These pages explain how Turf is built: how the compiler turns text into a program, how names and types are tracked, and what runs underneath your program."
+order: 4
+---
+
+You do not need any of this to write Turf programs. It is here for anyone who wants to understand, check or contribute to the compiler. Most pages have two halves: **what a Turf programmer observes**, and **how the compiler implements it**, so the two can be compared.
+
+<Callout tone="tip" title="Suggested order">
+
+Begin with [The Compiler Pipeline](/docs/compiler/compiler-pipeline/): it is the map. The other pages each zoom in on one part of it.
+
+</Callout>
+
+1. [The Compiler Pipeline](/docs/compiler/compiler-pipeline/): from a `.tr` file to a native binary.
+2. [Modules and Scope Resolution](/docs/compiler/modules-and-scope-resolution/): imports, visibility, type identity and `::`.
+3. [The Memory Model](/docs/compiler/memory-model/): stack, heap and static data; copies and aliases.
+4. [Pointers and References](/docs/compiler/pointers-and-references/): `ptr`, `T*`, `&T`, `&?T` and the analyses that keep them safe.
+5. [Errors and recover](/docs/compiler/errors-and-recover/): the recoverable-error system, pass by pass.
+6. [Caller Location](/docs/compiler/caller-location/): how a panic names the caller's line.
+7. [The Runtime](/docs/compiler/runtime/): `libturfrt`, linked into every binary.
+8. [The Boundary](/docs/compiler/boundary/): what the compiler, the library and the runtime each own.
