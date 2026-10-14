@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@import "./square.css";
+
+@theme {
+    --font-sans: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "Commit Mono", ui-monospace, monospace;
+    --font-pixel: "Geist Pixel", "Geist", sans-serif;
+
+    --color-surface: #0f1217;
+    --color-surface-raised: #161a21;
+
+    --color-fg: #e8ecf2;
+    --color-fg-soft: rgb(232 236 242 / 0.78);
+    --color-fg-muted: rgb(232 236 242 / 0.56);
+    --color-fg-faint: rgb(232 236 242 / 0.36);
+
+    --color-line: rgb(232 236 242 / 0.1);
+    --color-line-strong: rgb(232 236 242 / 0.2);
+    --color-tint: rgb(232 236 242 / 0.04);
+    --color-tint-strong: rgb(232 236 242 / 0.09);
+
+    --color-accent: #80a3cb;
+    --color-accent-soft: rgb(128 163 203 / 0.14);
+
+    --color-code-keyword: #80a3cb;
+    --color-code-string: #e0c08f;
+    --color-code-type: #86c3b4;
+    --color-code-number: #e0c08f;
+
+    --color-term-error: #e8898c;
+    --color-term-hint: #9fcb8c;
+    --color-term-name: #86c3c9;
+
+    --container-page: 1440px;
+}
+
+@layer base {
+    body {
+        background-color: var(--color-surface);
+        color: var(--color-fg);
+        font-family: var(--font-sans);
+        font-optical-sizing: auto;
+        font-weight: 400;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--font-pixel);
+        font-optical-sizing: auto;
+        font-weight: 400;
+        font-variation-settings: "ELSH" 0;
+    }
+
+    :not(pre) > code {
+        border: 1px solid var(--color-line);
+        border-radius: 0.375rem;
+        background-color: var(--color-tint);
+        padding: 0.0625rem 0.375rem;
+        color: var(--color-fg);
+        font-family: var(--font-mono);
+        font-size: 0.875em;
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+    }
+
+    ::selection {
+        background-color: var(--color-accent-soft);
+        color: var(--color-fg);
+    }
+}
+
+@layer components {
+    .container-page {
+        @apply mx-auto w-full max-w-page px-6 md:px-12;
+    }
+
+    .wordmark-drop {
+        --fade-delay: calc(140ms + var(--stagger, 0ms));
+        --width-delay: var(--stagger, 0ms);
+        display: inline-grid;
+        grid-template-columns: 1fr;
+        transition:
+            grid-template-columns 460ms cubic-bezier(0.65, 0, 0.35, 1)
+                var(--width-delay),
+            opacity 240ms ease-out var(--fade-delay),
+            filter 240ms ease-out var(--fade-delay);
+    }
+
+    .wordmark-drop > span {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    [data-scrolled] .wordmark-drop {
+        --fade-delay: var(--stagger, 0ms);
+        --width-delay: calc(120ms + var(--stagger, 0ms));
+        grid-template-columns: 0fr;
+        opacity: 0;
+        filter: blur(3px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .wordmark-drop {
+            transition: none;
+        }
+    }
+}
