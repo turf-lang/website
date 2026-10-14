@@ -1,0 +1,184 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import Section from "../../components/sections/Section.astro";
+import Button from "../../components/ui/Button.astro";
+import CodeWindow from "../../components/ui/CodeWindow.astro";
+import Text from "../../components/ui/Text.astro";
+import { byHand, checkInstall, downloadLead, formatDate, formatSize, plainBuild, resolveRelease, smartBuild, smartModel, smartNote } from "../../data/download";
+import { install } from "../../data/home";
+
+const release = await resolveRelease();
+const cols = "grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.1fr)] md:gap-8";
+const lead = `Turf ${release.version} is the latest release. ${downloadLead}`;
+const installFor = (os: string) => (os === "windows" ? { title: "Windows (PowerShell)", command: install.windows } : { title: "Terminal", command: install.unix });
+---
+
+<BaseLayout title="Download" description={lead.replaceAll("`", "")}>
+    <PageHeader crumbs={[{ label: "Download" }]} title="Download Turf" lead={lead} meta={[`v${release.version}`, `Released ${formatDate(release.date)}`]} />
+
+    <Section id="your-download" index="01" title="Your download" layout="stacked" class="border-t-0! py-16! md:py-20!">
+        <div data-fallback class="rounded-2xl border border-line bg-surface-raised p-8 md:p-10">
+            <h3 class="text-xl font-black tracking-[-0.03em] text-fg">Pick your platform</h3>
+            <p class="mt-2 max-w-prose leading-7 text-fg-muted">
+                We could not tell which platform you are on. Every download is listed below.
+            </p>
+            <div class="mt-6">
+                <Button href="#more-downloads">See all downloads</Button>
+            </div>
+        </div>
+
+        {
+            release.platforms.map((platform) => {
+                const { title, command } = installFor(platform.os);
+                return (
+                    <div
+                        data-hero={platform.id}
+                        hidden
+                        class="grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line lg:grid-cols-2 [&:not([hidden])]:grid"
+                    >
+                        <div class="flex min-w-0 flex-col bg-surface-raised p-8 md:p-10">
+                            <p class="font-mono text-sm text-accent">Recommended for you</p>
+                            <h3 class="mt-4 text-2xl font-black tracking-[-0.03em] text-fg">
+                                {platform.name} <span class="text-fg-muted">({platform.arch_label})</span>
+                            </h3>
+                            <p class="mt-2 leading-7 text-fg-muted">{platform.note}</p>
+                            {platform.warning && (
+                                <p class="mt-4 rounded-xl border border-term-error/40 bg-term-error/10 px-4 py-3 text-sm leading-6 text-fg-soft">
+                                    <strong class="text-term-error">Intel Mac?</strong> {platform.warning}
+                                </p>
+                            )}
+                            <div class="mt-8 flex flex-wrap items-center gap-3">
+                                <Button href={platform.plain.url}>
+                                    <svg aria-hidden="true" viewBox="0 0 16 16" class="size-4" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
+                                        <path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10" />
+                                    </svg>
+                                    Download · {formatSize(platform.plain.size)}
+                                </Button>
+                                <Button href={platform.smart.url} variant="soft">
+                                    Smart build · {formatSize(platform.smart.size)}
+                                </Button>
+                            </div>
+                            <p class="mt-4 font-mono text-xs text-fg-muted">
+                                {platform.plain.name}
+                            </p>
+                            <p class="mt-auto pt-8 text-sm">
+                                <a href="#more-downloads" class="text-fg-muted underline underline-offset-4 transition-colors hover:text-fg">
+                                    Not your machine? See the other downloads
+                                </a>
+                            </p>
+                        </div>
+                        <div class="min-w-0 bg-surface-raised p-8 md:p-10">
+                            <h3 class="text-xl font-black tracking-[-0.03em] text-fg">Or install with one command</h3>
+                            <Text text="The installer finds the right archive, checks its SHA-256 and adds `turf` to your `PATH`." class="mt-2 leading-7 text-fg-muted" />
+                            <CodeWindow class="mt-6" title={title} code={[[["plain", command]]]} />
+                        </div>
+                    </div>
+                );
+            })
+        }
+    </Section>
+
+    <Section id="more-downloads" index="02" title="All downloads" description={smartNote} class="bg-surface-raised">
+        <div class="overflow-hidden rounded-2xl border border-line bg-surface">
+            <div class={`${cols} hidden border-b border-line bg-surface-raised px-6 py-4 md:grid`}>
+                <p class="font-mono text-xs text-fg-muted">Platform</p>
+                {[plainBuild, smartBuild].map((build) => (
+                    <div>
+                        <p class="font-bold text-fg">{build.title}</p>
+                        <Text text={build.text} class="mt-1 text-sm leading-6 text-fg-muted" />
+                    </div>
+                ))}
+            </div>
+            <ul class="divide-y divide-line">
+                {
+                    release.platforms.map((platform) => (
+                        <li data-row={platform.id} class={`${cols} items-center px-6 py-5`}>
+                            <div class="min-w-0">
+                                <p class="font-bold text-fg">
+                                    {platform.name} <span class="font-normal text-fg-muted">({platform.arch_label})</span>
+                                </p>
+                                <p class="mt-1 text-sm leading-6 text-fg-muted">{platform.note}</p>
+                            </div>
+                            {[
+                                { build: plainBuild, file: platform.plain, variant: "primary" as const },
+                                { build: smartBuild, file: platform.smart, variant: "soft" as const },
+                            ].map(({ build, file, variant }) => (
+                                <div class="min-w-0">
+                                    <div class="mb-3 md:hidden">
+                                        <p class="text-sm font-bold text-fg">{build.title}</p>
+                                        <Text text={build.text} class="mt-1 text-sm leading-6 text-fg-muted" />
+                                    </div>
+                                    <Button href={file.url} variant={variant} class="w-full sm:w-auto">
+                                        Download · {formatSize(file.size)}
+                                    </Button>
+                                    <p class="mt-2 break-all font-mono text-xs text-fg-faint">{file.name}</p>
+                                </div>
+                            ))}
+                        </li>
+                    ))
+                }
+            </ul>
+        </div>
+
+        <div id="smart-model" class="mt-4 grid grid-cols-1 gap-6 rounded-2xl border border-line bg-surface p-6 md:grid-cols-[1.4fr_1fr] md:gap-10 md:p-8">
+            <div class="min-w-0">
+                <h3 class="text-xl font-black tracking-[-0.03em] text-fg">{smartModel.title}</h3>
+                <Text text={smartModel.text} class="mt-2 leading-7 text-fg-muted" />
+            </div>
+            <div class="flex min-w-0 flex-col items-start">
+                <Text text={smartModel.recommended} class="leading-7 text-fg-muted" />
+                <Button href={smartModel.href} variant="soft" class="mt-auto">{smartModel.linkLabel}</Button>
+            </div>
+        </div>
+    </Section>
+
+    <Section id="install-by-hand" index="03" title="Install by hand" layout="stacked">
+        <div class="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line lg:grid-cols-2">
+            <div class="min-w-0 bg-surface p-8 md:p-10">
+                <h3 class="text-xl font-black tracking-[-0.03em] text-fg">Unpack and run</h3>
+                <Text text={byHand} class="mt-2 leading-7 text-fg-muted" />
+            </div>
+            <div class="min-w-0 bg-surface p-8 md:p-10">
+                <h3 class="text-xl font-black tracking-[-0.03em] text-fg">Check it</h3>
+                <Text text={checkInstall} class="mt-2 leading-7 text-fg-muted" />
+                <p class="mt-4 leading-7 text-fg-muted">
+                    SHA-256 checksums for every archive are in <a href={release.checksumsUrl} class="text-fg underline underline-offset-4">checksums.txt</a>.
+                </p>
+            </div>
+        </div>
+        <div class="mt-12 flex flex-wrap items-center gap-3">
+            <Button href="/learn/installation/">Installation guide</Button>
+            <Button href={release.notesUrl} variant="soft">Release notes</Button>
+        </div>
+    </Section>
+
+    <Section id="older-versions" index="04" title="Older versions" layout="stacked" class="bg-surface-raised">
+        <p class="max-w-prose text-lg leading-8 text-fg-muted">
+            Turf {release.version} is the only version you can download. Every version before 2.0.0 is retired.
+        </p>
+        <div class="mt-8">
+            <Button href="/docs/migrating-to-2/" variant="soft">Migrating to 2.0</Button>
+        </div>
+    </Section>
+</BaseLayout>
+
+<script>
+    import { detectPlatform } from "../../lib/download";
+
+    async function init() {
+        const { os, arch } = await detectPlatform();
+        if (!os) return;
+
+        const id = os === "macos" ? "macos-arm64" : os === "windows" ? "windows-x64" : `linux-${arch ?? "x64"}`;
+        const hero = document.querySelector<HTMLElement>(`[data-hero="${id}"]`);
+        if (!hero) return;
+
+        hero.hidden = false;
+        hero.id = os;
+        document.querySelector<HTMLElement>("[data-fallback]")?.setAttribute("hidden", "");
+        document.querySelector<HTMLElement>(`[data-row="${id}"]`)?.setAttribute("hidden", "");
+    }
+
+    init();
+</script>

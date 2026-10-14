@@ -1,0 +1,64 @@
+---
+import Text from "../ui/Text.astro";
+
+export interface Crumb {
+    label: string;
+    href?: string;
+}
+
+interface Props {
+    crumbs: Crumb[];
+    title: string;
+    lead?: string;
+    meta?: string[];
+    align?: "start" | "center";
+}
+
+const { crumbs, title, lead, meta, align = "start" } = Astro.props;
+const centered = align === "center";
+const all: Crumb[] = [{ label: "Turf", href: "/" }, ...crumbs];
+---
+
+<header class="border-b border-line">
+    <div class:list={["container-page py-14 md:py-20", centered && "text-center"]}>
+        <nav aria-label="Breadcrumb">
+            <ol class:list={["flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-sm", centered && "justify-center"]}>
+                {
+                    all.map((crumb, i) => (
+                        <li class="flex items-center gap-2">
+                            {i > 0 && <span aria-hidden="true" class="text-fg-faint">/</span>}
+                            {crumb.href ? (
+                                <a
+                                    href={crumb.href}
+                                    class="text-fg-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+                                >
+                                    {crumb.label}
+                                </a>
+                            ) : (
+                                <span aria-current="page" class="text-fg-soft">{crumb.label}</span>
+                            )}
+                        </li>
+                    ))
+                }
+            </ol>
+        </nav>
+
+        <h1 class:list={["mt-8 text-balance text-4xl font-black leading-[0.98] tracking-[-0.05em] text-fg md:text-6xl", centered && "mx-auto max-w-4xl"]}>
+            {title}
+        </h1>
+        {lead && <Text text={lead} class:list={["mt-6 max-w-xl text-base font-medium leading-7 text-fg-muted md:text-lg", centered && "mx-auto"]} />}
+        {
+            meta && meta.length > 0 && (
+                <p class:list={["mt-8 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm text-fg-muted", centered && "justify-center"]}>
+                    {meta.map((item, i) => (
+                        <>
+                            {i > 0 && <span aria-hidden="true" class="text-fg-faint">·</span>}
+                            <span>{item}</span>
+                        </>
+                    ))}
+                </p>
+            )
+        }
+        <slot />
+    </div>
+</header>
