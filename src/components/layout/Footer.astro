@@ -1,7 +1,14 @@
 ---
 import { navigation } from "../../data/navigation";
 import type { NavLink } from "../../data/navigation";
+import githubIcon from "@phosphor-icons/core/assets/regular/github-logo.svg?raw";
+import xIcon from "@phosphor-icons/core/assets/regular/x-logo.svg?raw";
 import Wordmark from "../ui/Wordmark.astro";
+
+const socials = [
+    { label: "Turf on X", href: "https://x.com/turflang", icon: xIcon },
+    { label: "Turf on GitHub", href: "https://github.com/turf-lang", icon: githubIcon },
+];
 
 interface Column {
     heading: string;
@@ -52,8 +59,23 @@ const linkClass =
             }
         </nav>
 
-        <p class="mt-12 border-t border-line pt-8 text-sm text-fg-muted">
-            &copy; 2026 Turf. All rights reserved.
-        </p>
+        <div class="mt-12 flex items-center justify-between gap-4 border-t border-line pt-8">
+            <p class="text-sm text-fg-muted">&copy; 2026 Turf. All rights reserved.</p>
+            <ul class="flex items-center gap-5">
+                {
+                    socials.map((social) => (
+                        <li>
+                            <a
+                                href={social.href}
+                                aria-label={social.label}
+                                rel="noopener"
+                                class:list={[linkClass, "block size-6 [&>svg]:size-full"]}
+                                set:html={social.icon}
+                            />
+                        </li>
+                    ))
+                }
+            </ul>
+        </div>
     </div>
 </footer>
