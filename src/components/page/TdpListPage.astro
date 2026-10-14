@@ -1,0 +1,31 @@
+---
+import { getProposals } from "../../lib/content";
+import type { ProposalFilter } from "../../lib/content";
+import BaseLayout from "../layout/BaseLayout.astro";
+import TdpGrid from "../sections/TdpGrid.astro";
+import PageHeader from "./PageHeader.astro";
+import TdpTabs from "./TdpTabs.astro";
+
+interface Props {
+    filter: ProposalFilter;
+    href: string;
+    title: string;
+    lead: string;
+}
+
+const { filter, href, title, lead } = Astro.props;
+const proposals = await getProposals(filter);
+---
+
+<BaseLayout title={`${title} · TDP`} description={lead}>
+    <PageHeader
+        crumbs={[{ label: "TDP", href: "/tdp/" }, { label: title }]}
+        title={title}
+        lead={lead}
+    />
+    <TdpTabs current={href} />
+
+    <main class="container-page py-12 md:py-16">
+        <TdpGrid proposals={proposals} />
+    </main>
+</BaseLayout>

@@ -1,0 +1,43 @@
+---
+import type { NavLink } from "../../data/navigation";
+import PageHeader from "./PageHeader.astro";
+import type { Crumb } from "./PageHeader.astro";
+import PrevNext from "./PrevNext.astro";
+import "../../styles/prose.css";
+
+interface Props {
+    crumbs: Crumb[];
+    title: string;
+    lead: string;
+    prev?: NavLink;
+    next?: NavLink;
+    prevText?: string;
+    nextText?: string;
+    back: NavLink;
+}
+
+const { crumbs, title, lead, prev, next, prevText, nextText, back } = Astro.props;
+---
+
+<PageHeader crumbs={crumbs} title={title} lead={lead} align="center">
+    <div class="mt-8">
+        <slot name="meta" />
+    </div>
+</PageHeader>
+
+<main class="container-page py-12 md:py-16">
+    <article class="prose-turf prose-justify mx-auto max-w-3xl">
+        <slot />
+    </article>
+
+    <div class="mx-auto mt-16 max-w-3xl">
+        <PrevNext prev={prev} next={next} prevText={prevText} nextText={nextText} />
+        <a
+            href={back.href}
+            class="group mt-8 inline-flex items-center gap-2 font-mono text-sm text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        >
+            <span aria-hidden="true" class="transition-transform group-hover:-translate-x-1 motion-reduce:transition-none">←</span>
+            {back.label}
+        </a>
+    </div>
+</main>

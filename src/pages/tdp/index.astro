@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import TdpTabs from "../../components/page/TdpTabs.astro";
+import { Content } from "../../data/constitution.md";
+import "../../styles/prose.css";
+
+const lead = "Turf has these design principles. Every proposal ever raised obeys them, so Turf stays consistent with what it promises.";
+---
+
+<BaseLayout title="Constitution · TDP" description={lead}>
+    <PageHeader crumbs={[{ label: "TDP" }, { label: "Constitution" }]} title="The Turf Design Philosophy" lead={lead} />
+    <TdpTabs current="/tdp/" />
+
+    <main class="container-page py-12 md:py-16">
+        <article class="prose-turf prose-justify mx-auto max-w-3xl">
+            <Content />
+        </article>
+    </main>
+</BaseLayout>

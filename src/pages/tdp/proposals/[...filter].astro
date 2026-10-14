@@ -1,0 +1,36 @@
+---
+import TdpListPage from "../../../components/page/TdpListPage.astro";
+import { getProposals } from "../../../lib/content";
+
+const pages = {
+    all: {
+        href: "/tdp/proposals/",
+        title: "Proposals",
+        lead: "Every change to the language starts as a proposal. Follow them from idea to release.",
+    },
+    accepted: {
+        href: "/tdp/proposals/accepted/",
+        title: "Accepted",
+        lead: "Approved by the maintainers and waiting to be built.",
+    },
+    implemented: {
+        href: "/tdp/proposals/implemented/",
+        title: "Implemented",
+        lead: "Proposals that have shipped in a release.",
+    },
+} as const;
+
+export async function getStaticPaths() {
+    const paths = [];
+    for (const filter of ["all", "accepted", "implemented"] as const) {
+        if ((await getProposals(filter)).length > 0) {
+            paths.push({ params: { filter: filter === "all" ? undefined : filter }, props: { filter } });
+        }
+    }
+    return paths;
+}
+
+const { filter } = Astro.props;
+---
+
+<TdpListPage filter={filter} {...pages[filter]} />
