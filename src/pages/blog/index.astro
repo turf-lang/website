@@ -1,0 +1,19 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import PostGrid from "../../components/sections/PostGrid.astro";
+import { getSection } from "../../data/navigation";
+import { getPosts } from "../../lib/content";
+
+const section = getSection("blog");
+const lead = "News, release notes and the thinking behind the language.";
+const posts = await getPosts();
+---
+
+<BaseLayout title={section.label} description={lead}>
+    <PageHeader crumbs={[{ label: section.label }]} title={section.label} lead={lead} />
+
+    <div class="container-page py-12 md:py-16">
+        <PostGrid posts={posts} />
+    </div>
+</BaseLayout>

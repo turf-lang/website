@@ -1,0 +1,42 @@
+---
+import { render } from "astro:content";
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import ContentArticle from "../../components/page/ContentArticle.astro";
+import { formatDate, getPosts, isoDate, readingTime } from "../../lib/content";
+
+export async function getStaticPaths() {
+    const posts = await getPosts();
+    return posts.map((post, i) => ({
+        params: { slug: post.id },
+        props: { post, newer: posts[i - 1], older: posts[i + 1] },
+    }));
+}
+
+const { post, newer, older } = Astro.props;
+const { Content } = await render(post);
+const link = (p?: typeof post) => (p ? { label: p.data.title, href: `/blog/${p.id}/` } : undefined);
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+    <ContentArticle
+        crumbs={[{ label: "Blog", href: "/blog/" }, { label: post.data.title }]}
+        title={post.data.title}
+        lead={post.data.description}
+        prev={link(older)}
+        next={link(newer)}
+        prevText="← Older"
+        nextText="Newer →"
+        back={{ label: "All posts", href: "/blog/" }}
+    >
+        <div slot="meta" class="grid gap-1.5 font-mono text-sm">
+            <p class="text-fg-soft">{post.data.author}</p>
+            <p class="flex items-center justify-center gap-x-3 text-fg-muted">
+                <time datetime={isoDate(post.data.date)}>{formatDate(post.data.date)}</time>
+                <span aria-hidden="true" class="text-fg-faint">·</span>
+                <span>{readingTime(post.body)}</span>
+            </p>
+        </div>
+
+        <Content />
+    </ContentArticle>
+</BaseLayout>
