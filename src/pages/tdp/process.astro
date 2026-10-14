@@ -1,0 +1,113 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import TdpTabs from "../../components/page/TdpTabs.astro";
+import Text from "../../components/ui/Text.astro";
+
+const lead = "How to propose a change to Turf, and what happens to it afterwards.";
+
+const steps = [
+    "Write a short proposal describing the problem and the change.",
+    "Open it for discussion and revise it as feedback arrives.",
+    "The maintainers accept or reject it, and the outcome is recorded.",
+    "Accepted proposals are implemented, then marked once they ship.",
+];
+
+const headings = [
+    ["Summary", "one paragraph describing the change."],
+    ["Motivation", "the problem, and why it matters."],
+    ["Design", "the change itself, with examples."],
+    ["Alternatives", "what else you considered and why you chose this."],
+    ["Unresolved questions", "what is still open."],
+];
+
+const statuses = [
+    ["draft", "The author is still writing. Not yet open for review."],
+    ["proposed", "Open for public discussion."],
+    ["accepted", "Approved by the maintainers, waiting for an implementation."],
+    ["implemented", "Shipped in a release."],
+    ["rejected", "Declined. The text and the reasons are kept for the record."],
+    ["withdrawn", "Pulled back by its author before a decision."],
+];
+
+const h2 = "text-balance font-pixel text-3xl leading-tight tracking-[-0.04em] text-fg";
+const body = "mt-4 leading-7 text-fg-muted";
+const rows = "mt-6 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface";
+---
+
+<BaseLayout title="Process · TDP" description={lead}>
+    <PageHeader crumbs={[{ label: "TDP", href: "/tdp/" }, { label: "Process" }]} title="Process" lead={lead} align="center" />
+    <TdpTabs current="/tdp/process/" />
+
+    <main class="container-page py-16 md:py-24">
+        <div class="mx-auto flex max-w-2xl flex-col gap-16 md:gap-20">
+            <section>
+                <h2 class={h2}>When to write a proposal</h2>
+                <p class={body}>
+                    Small fixes and documentation changes do not need one. Write a proposal when a change adds to the language,
+                    alters how existing code behaves, or introduces a new part of the standard library. If you are unsure,
+                    start a conversation first and the maintainers will tell you.
+                </p>
+            </section>
+
+            <section>
+                <h2 class={h2}>The steps</h2>
+                <ol class={rows}>
+                    {
+                        steps.map((step, i) => (
+                            <li class="flex gap-5 px-6 py-5">
+                                <span class="font-mono text-sm leading-7 text-fg-faint">{String(i + 1).padStart(2, "0")}</span>
+                                <span class="leading-7 text-fg-muted">{step}</span>
+                            </li>
+                        ))
+                    }
+                </ol>
+            </section>
+
+            <section>
+                <h2 class={h2}>Writing the proposal</h2>
+                <p class={body}>A proposal is a single Markdown file. Keep it short and concrete. Use these headings, in this order:</p>
+                <ul class={rows}>
+                    {
+                        headings.map(([name, text]) => (
+                            <li class="px-6 py-5 leading-7">
+                                <span class="font-bold text-fg">{name}</span>
+                                <span class="text-fg-muted">: {text}</span>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </section>
+
+            <section>
+                <h2 class={h2}>Statuses</h2>
+                <p class={body}>Each proposal carries one status at a time.</p>
+                <ul class={rows}>
+                    {
+                        statuses.map(([name, text]) => (
+                            <li class="grid gap-1 px-6 py-5 sm:grid-cols-[8rem_1fr] sm:gap-6">
+                                <span class="font-mono text-sm leading-7 text-fg">{name}</span>
+                                <span class="leading-7 text-fg-muted">{text}</span>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </section>
+
+            <section>
+                <h2 class={h2}>Numbering</h2>
+                <Text
+                    text="Numbers are assigned in order when a proposal is first submitted and never reused, so `TDP-001` always refers to the same document."
+                    class={body}
+                />
+                <a
+                    href="/tdp/proposals/"
+                    class="group mt-6 inline-flex items-center gap-2 font-mono text-sm text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+                >
+                    Browse everything on the proposals page
+                    <span aria-hidden="true" class="transition-transform group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+                </a>
+            </section>
+        </div>
+    </main>
+</BaseLayout>
