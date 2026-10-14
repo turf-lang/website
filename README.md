@@ -1,43 +1,37 @@
-# Astro Starter Kit: Minimal
+# Turf website
+
+The source of the website for [Turf](https://github.com/turf-lang/turflang), a compiled, memory-safe systems programming language. It holds the home page, the download page, the Learn course, the documentation, the standard library reference, the blog and the Turf Design Proposals.
+
+Built with [Astro](https://astro.build), Tailwind CSS and MDX. The output is plain static files.
+
+## Running it
+
+You need Node 22.12 or newer and [pnpm](https://pnpm.io).
 
 ```sh
-pnpm create astro@latest -- --template minimal
+pnpm install
+pnpm dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+The site is then at `http://localhost:4321`. `pnpm build` writes the finished site to `dist/`, and `pnpm preview` serves it.
 
-## 🚀 Project Structure
+## Writing
 
-Inside of your Astro project, you'll see the following folders and files:
+All the writing is in `src/content/`, one folder for each part of the site: `blog`, `learn`, `docs`, `stdlib`, `resources` and `tdp`. A page is a Markdown or MDX file with a short block of front matter at the top. A new blog post is just a new file in `src/content/blog/`:
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```md
+---
+title: Your title
+description: One sentence about the post.
+date: 2026-10-15
+author: Your Name
+---
+
+The post starts here.
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+The fields each page needs are listed in `src/content.config.ts`, and the build tells you if one is missing or wrong.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## Contributing
 
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Fixes and improvements are welcome, from a typo to a whole new guide. Open an issue or a pull request, and run `pnpm build` first to make sure the site still compiles.
