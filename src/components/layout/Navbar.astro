@@ -1,0 +1,282 @@
+---
+import { downloadHref, navigation } from "../../data/navigation";
+import Wordmark from "../ui/Wordmark.astro";
+
+const focusRing = "focus-visible:outline-2 focus-visible:outline-accent";
+---
+
+<header
+    id="site-header"
+    class="group/header sticky top-0 z-40 w-full border-b border-line bg-surface/95 text-fg backdrop-blur-md"
+>
+    <div class="container-page relative flex h-20 items-center justify-between">
+        <Wordmark collapsible />
+
+        <nav aria-label="Main" class="absolute left-1/2 hidden -translate-x-1/2 md:block">
+            <ul class="flex items-center gap-8 font-medium tracking-[-0.01em] text-fg-muted">
+                {
+                    navigation.map((item, i) => (
+                        <li class="group relative" data-nav-item={item.links ? "" : undefined}>
+                            {item.links ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        id={`nav-trigger-${i}`}
+                                        aria-expanded="false"
+                                        aria-controls={`nav-panel-${i}`}
+                                        data-nav-trigger
+                                        class:list={["flex cursor-pointer items-center gap-1.5 py-2 tracking-[-0.01em] transition-colors hover:text-fg group-data-open:text-fg focus-visible:outline-offset-4", focusRing]}
+                                    >
+                                        {item.label}
+                                        <svg
+                                            aria-hidden="true"
+                                            viewBox="0 0 12 12"
+                                            class="size-3 transition-transform duration-200 group-data-open:rotate-180 motion-reduce:transition-none"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="1.5"
+                                            stroke-linecap="square"
+                                            stroke-linejoin="miter"
+                                        >
+                                            <path d="M2.5 4.5 6 8l3.5-3.5" />
+                                        </svg>
+                                    </button>
+                                    <div class="invisible absolute left-1/2 top-full z-50 -translate-x-1/2 pt-4 group-data-open:visible">
+                                        <div
+                                            id={`nav-panel-${i}`}
+                                            role="group"
+                                            aria-labelledby={`nav-trigger-${i}`}
+                                            class:list={[item.links.length > 8 ? "w-[40rem]" : "w-72", "translate-y-1 rounded-xl border border-line bg-surface-raised p-3 opacity-0 transition duration-150 group-data-open:translate-y-0 group-data-open:opacity-100 motion-reduce:transition-none"]}
+                                        >
+                                            <a
+                                                href={`/${item.links[0].href.split("/")[1]}/`}
+                                                class:list={["block rounded-lg px-3 pb-2 pt-2 font-mono text-xs text-fg-muted transition-colors hover:text-fg focus-visible:text-fg focus-visible:-outline-offset-2", focusRing]}
+                                            >
+                                                {item.heading ?? item.label}
+                                            </a>
+                                            <ul class:list={[item.links.length > 8 && "grid grid-cols-2"]}>
+                                                {item.links.map((link, n) => (
+                                                    <li class:list={[item.links!.length > 8 && item.links!.length % 2 === 1 && n === item.links!.length - 1 && "col-span-2"]}>
+                                                        <a
+                                                            href={link.href}
+                                                            class:list={["block rounded-lg px-3 py-2.5 text-fg-muted transition-colors hover:bg-tint hover:text-fg focus-visible:bg-tint focus-visible:text-fg focus-visible:-outline-offset-2", focusRing]}
+                                                        >
+                                                            <span class="block text-sm font-medium text-fg">
+                                                                {link.label}
+                                                            </span>
+                                                            {link.description && (
+                                                                <span class="mt-0.5 block text-sm font-normal">
+                                                                    {link.description}
+                                                                </span>
+                                                            )}
+                                                        </a>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <a
+                                    class:list={["py-2 transition-colors hover:text-fg focus-visible:outline-offset-4", focusRing]}
+                                    href={item.href}
+                                >
+                                    {item.label}
+                                </a>
+                            )}
+                        </li>
+                    ))
+                }
+            </ul>
+        </nav>
+
+        <div class="ml-auto flex items-center gap-3">
+            <button
+                type="button"
+                data-search-open
+                aria-label="Search (Ctrl K)"
+                title="Search (Ctrl K)"
+                class:list={["box-border inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line text-fg-soft transition-colors hover:bg-tint hover:text-fg focus-visible:outline-offset-2", focusRing]}
+            >
+                <svg aria-hidden="true" viewBox="0 0 20 20" class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+                    <circle cx="9" cy="9" r="5.5"></circle>
+                    <path d="m13.5 13.5 3.5 3.5"></path>
+                </svg>
+            </button>
+            <button
+                type="button"
+                id="mobile-menu-button"
+                aria-expanded="false"
+                aria-controls="mobile-menu"
+                aria-label="Menu"
+                class:list={["box-border inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line text-fg-soft transition-colors hover:bg-tint hover:text-fg focus-visible:outline-offset-2 md:hidden", focusRing]}
+            >
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 20 20"
+                    class="size-5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="square"
+                >
+                    <path id="menu-icon-open" d="M3 6.5h14M3 13.5h14"></path>
+                    <path id="menu-icon-close" class="hidden" d="M5 5l10 10M15 5 5 15"></path>
+                </svg>
+            </button>
+            <a
+                href={downloadHref}
+                class:list={["box-border inline-flex h-11 shrink-0 items-center rounded-full bg-fg px-6 font-bold leading-none text-surface transition-colors hover:bg-fg/90 focus-visible:outline-offset-2", focusRing]}
+            >
+                Download
+            </a>
+        </div>
+    </div>
+
+    <div
+        id="mobile-menu"
+        hidden
+        class="absolute inset-x-0 top-full max-h-[calc(100dvh-5rem)] overflow-y-auto border-b border-line bg-surface md:hidden"
+    >
+        <nav aria-label="Mobile" class="container-page py-2">
+            <ul class="divide-y divide-line">
+                {
+                    navigation.map((item) => (
+                        <li>
+                            {item.links ? (
+                                <details class="group/details">
+                                    <summary class:list={["flex cursor-pointer list-none items-center justify-between py-4 font-medium text-fg focus-visible:-outline-offset-2 [&::-webkit-details-marker]:hidden", focusRing]}>
+                                        {item.label}
+                                        <svg
+                                            aria-hidden="true"
+                                            viewBox="0 0 12 12"
+                                            class="size-3 text-fg-muted transition-transform group-open/details:rotate-180"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="1.5"
+                                            stroke-linecap="square"
+                                            stroke-linejoin="miter"
+                                        >
+                                            <path d="M2.5 4.5 6 8l3.5-3.5" />
+                                        </svg>
+                                    </summary>
+                                    <ul class="pb-3">
+                                        {item.links.map((link) => (
+                                            <li>
+                                                <a
+                                                    href={link.href}
+                                                    class:list={["block rounded-lg px-3 py-2.5 text-fg-muted transition-colors hover:bg-tint hover:text-fg focus-visible:-outline-offset-2", focusRing]}
+                                                >
+                                                    {link.label}
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </details>
+                            ) : (
+                                <a
+                                    href={item.href}
+                                    class:list={["block py-4 font-medium text-fg focus-visible:-outline-offset-2", focusRing]}
+                                >
+                                    {item.label}
+                                </a>
+                            )}
+                        </li>
+                    ))
+                }
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<script>
+    const CLOSE_DELAY = 120;
+
+    const items = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-nav-item]"),
+    );
+    const timers = new WeakMap<HTMLElement, number>();
+
+    const triggerOf = (item: HTMLElement) =>
+        item.querySelector<HTMLButtonElement>("[data-nav-trigger]")!;
+
+    function setOpen(item: HTMLElement, open: boolean) {
+        window.clearTimeout(timers.get(item));
+        item.toggleAttribute("data-open", open);
+        triggerOf(item).setAttribute("aria-expanded", String(open));
+    }
+
+    function closeAll(except?: HTMLElement) {
+        for (const item of items) if (item !== except) setOpen(item, false);
+    }
+
+    for (const item of items) {
+        item.addEventListener("pointerenter", (e) => {
+            if (e.pointerType !== "mouse") return;
+            closeAll(item);
+            setOpen(item, true);
+        });
+
+        item.addEventListener("pointerleave", (e) => {
+            if (e.pointerType !== "mouse") return;
+            timers.set(
+                item,
+                window.setTimeout(() => setOpen(item, false), CLOSE_DELAY),
+            );
+        });
+
+        triggerOf(item).addEventListener("click", (e) => {
+            // A mouse click lands after hover already opened the panel: keep it open.
+            const open = (e as PointerEvent).pointerType === "mouse" || !item.hasAttribute("data-open");
+            closeAll(item);
+            setOpen(item, open);
+        });
+
+        item.addEventListener("focusout", (e) => {
+            const next = e.relatedTarget as Node | null;
+            if (next && !item.contains(next)) setOpen(item, false);
+        });
+    }
+
+    const menuButton = document.getElementById("mobile-menu-button")!;
+    const menu = document.getElementById("mobile-menu")!;
+    const header = document.getElementById("site-header")!;
+
+    const syncScrolled = () => header.toggleAttribute("data-scrolled", window.scrollY > 24);
+    syncScrolled();
+    window.addEventListener("scroll", syncScrolled, { passive: true });
+    const iconOpen = document.getElementById("menu-icon-open")!;
+    const iconClose = document.getElementById("menu-icon-close")!;
+
+    function setMenu(open: boolean) {
+        menu.hidden = !open;
+        menuButton.setAttribute("aria-expanded", String(open));
+        iconOpen.classList.toggle("hidden", open);
+        iconClose.classList.toggle("hidden", !open);
+    }
+
+    menuButton.addEventListener("click", () => setMenu(menu.hidden));
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        const open = items.find((item) => item.hasAttribute("data-open"));
+        if (open) {
+            setOpen(open, false);
+            triggerOf(open).focus();
+        }
+        if (!menu.hidden) {
+            setMenu(false);
+            menuButton.focus();
+        }
+    });
+
+    document.addEventListener("click", (e) => {
+        const target = e.target as Node;
+        for (const item of items) if (!item.contains(target)) setOpen(item, false);
+        if (!menu.hidden && !header.contains(target)) setMenu(false);
+    });
+
+    window.matchMedia("(min-width: 768px)").addEventListener("change", (e) => {
+        if (e.matches) setMenu(false);
+    });
+</script>
