@@ -40,7 +40,8 @@ export function paintDiagnostic(source: string): string {
             if (/^\s*Hint:/.test(line)) return span("text-term-hint", line);
             if ((match = line.match(/^(\s*\d* │ )(\s*)(\^.*)$/))) return `${span(gray, match[1])}${match[2]}${span(`font-bold ${red}`, match[3])}`;
             if ((match = line.match(/^(\s*\d* │ )(.*)$/))) return `${span(gray, match[1])}${span("text-fg", match[2])}`;
-            if (/^\s*(Run `turf|Note:)/.test(line)) return span(gray, line);
+            if (/^\s*Note:/.test(line)) return span("text-term-note", line);
+            if (/^\s*Run `turf/.test(line)) return span(gray, line);
             return names(line);
         })
         .join("\n");

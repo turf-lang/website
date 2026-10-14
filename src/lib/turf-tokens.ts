@@ -14,12 +14,12 @@ export const tokenClass: Record<TokenKind, string> = {
 };
 
 export const keywords = new Set([
-    "fn", "mut", "immut", "guess", "return", "if", "else", "for", "in", "step", "while", "do", "break", "continue",
-    "compare", "matches", "done", "otherwise", "give", "to", "struct", "enum", "error", "machine", "recover", "produce",
-    "run", "as", "try", "defer", "heap", "import", "pub", "public", "extern", "from", "unsafe", "module", "operator",
-    "null", "true", "false", "self",
+    "fn", "mut", "mutable", "immut", "immutable", "guess", "return", "if", "elseif", "else", "for", "in", "step", "while",
+    "do", "break", "continue", "compare", "matches", "done", "otherwise", "give", "to", "struct", "enum", "error", "machine",
+    "recover", "produce", "run", "as", "try", "defer", "import", "export", "static", "pub", "public", "extern", "unsafe",
+    "operator", "sizeof", "caller_location", "null", "true", "false", "self",
 ]);
-export const types = new Set(["int", "double", "bool", "char", "string", "void", "ptr"]);
+export const types = new Set(["int", "int32", "double", "float", "bool", "char", "string", "void", "ptr"]);
 
 const rules: [TokenKind | "ident", RegExp][] = [
     ["plain", /\s+/y],
