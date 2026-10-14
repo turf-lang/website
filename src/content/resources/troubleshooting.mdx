@@ -1,0 +1,134 @@
+---
+title: "Troubleshooting"
+description: "Fixes for the usual problems: turf not found, the language server, --smart, and packages."
+lead: "Something not working? Find what you see in the list below. Each fix comes from the way Turf is documented to behave, with the exact messages it prints."
+outcomes:
+  - "Fix `turf: command not found`."
+  - "Fix a compiler that cannot be found, or a stale `TURF_HOME`."
+  - "Find out why the editor, `--smart` or a package is not working."
+---
+
+## `turf` is not found
+
+The terminal cannot find `turf` on its `PATH`. Try these, in order:
+
+1. Close the terminal and open a new one. The installer adds the `bin` folder to your `PATH` with one marked block, so `turf` works in any **new** terminal.
+2. On Linux or macOS, to use Turf in the terminal you already have open, run the line the installer printed at the end. For the usual folder it is `export PATH="$HOME/.turf/bin:$PATH"`.
+3. The installer knows the zsh, bash and fish shells. If you use a different one, it tells you which file it put the `PATH` line in. If your shell doesn't read that file, add `~/.turf/bin` to your `PATH` yourself.
+4. You may have installed with `--no-modify-path` (Windows: `-NoModifyPath`). Then the installer left your start-up files alone and printed the line to add yourself.
+
+Check it with `turf version`, which prints the versions of `turf` and of the compiler `turfc` behind it. Paste it into a bug report.
+
+<Command text="turf version" />
+
+## The compiler cannot be found
+
+`turf` looks for `turfc` in this order and takes the first match:
+
+1. `$TURF_COMPILER`, a path to the binary.
+2. `turfc` in the directory of the running `turf`, with symlinks resolved.
+3. `$TURF_HOME/bin/turfc`.
+4. `turfc` on `PATH`.
+
+Nothing found is an error that lists what was looked at:
+
+<Terminal>
+```text
+turf: cannot find the compiler (turfc)
+  looked in:
+    $TURF_COMPILER (not set)
+    /somewhere/alone/turfc
+    $TURF_HOME/bin/turfc (TURF_HOME not set)
+    turfc on PATH
+hint: set TURF_COMPILER to the turfc binary, or build it with `cmake --build build`
+```
+</Terminal>
+
+An unpacked release archive needs no environment variable at all: both programs find their install root from their own location. Set `TURF_HOME` only for an install you have moved apart.
+
+A stale `TURF_HOME` pointing at another installation makes every compile use that installation's library, and typically fails with "Could not find module" (E027). Unset it.
+
+## The editor and the language server
+
+In VS Code, click **Turf** in the status bar for what is running, and open **Output → Turf Language Server** for the log. Set `turf.trace.server` to `verbose` to see the protocol traffic. Elsewhere, the server logs to stderr, and to a file if `TURF_LSP_LOG` names one.
+
+| What you see | Cause and fix |
+|---|---|
+| “the standard library was not found” | The server found no `lib/std` next to itself, in `TURF_HOME` or in `~/.turf`. Reinstall the extension, or keep the `bin/` and `lib/` layout. |
+| Imports of your own modules are red | They need a `turf.toml` at the project root (`turf new` makes one), and the `turf` helper next to the server or on `PATH`. A manifest that does not parse is reported on the file. |
+| `turf-lsp` exits at once on Linux | A development build links the shared LLVM. Build with `-DTURF_STATIC_LLVM=ON`, or install LLVM 22. Released binaries are static. |
+
+`turf-lsp --version` prints what the server found, including where it looked for the standard library.
+
+Editing needs nothing more than the extension. Running a program needs the `turf` command.
+
+## `--smart` does nothing
+
+`--smart` needs two things: the **smart build**, and **one model** that you choose. When either is missing, it says so in one line and shows the compiler's own diagnostics.
+
+- **The smart build.** Every release has two archives per platform: the plain one, and a `-smart` one. In the plain build `--smart` prints one note saying so. Install the smart build with `install.sh --smart` (Windows: `install.ps1 -Smart`). `turfc --version` ends with `smart built-in` or `smart not-built`.
+- **One model.** No model is shipped or downloaded. Put exactly one `.gguf` file in the `models` folder of your install (`<root>/models`; the root is the line `turf version` prints). Its name does not matter.
+
+| `<root>/models` holds | `--smart` |
+|---|---|
+| no `.gguf` file | prints a note that it has no model to run, and carries on with the compiler's diagnostics |
+| one `.gguf` file | loads it and uses it |
+| more than one | uses none of them, because it cannot know which you meant, and says how many it found |
+
+A model runs on the CPU, so a suggestion can take from several seconds to a minute or more per error. A suggestion the model cannot get validated after three attempts is dropped, and you see the compiler's diagnostic.
+
+## Packages and projects
+
+### “Could not find module” (E027)
+
+In a project, `import helper;` names one of three things: a module of this package (a file `helper.tr` anywhere under `src/`), a package listed under `[dependencies]` in `turf.toml`, or a standard-library module. A `helper.tr` next to `turf.toml` is not found. Check the spelling, create `src/helper.tr`, or add the dependency with `turf add`.
+
+If you compiled a single file with `turf compile` inside a project, its dependencies are not visible. Use `turf build`, `turf run` or `turf check` with no file.
+
+### Two things answer to one name (E090)
+
+A module may not share its name with a standard-library module, or with a dependency. Rename your file, for example `list.tr` to `my_list.tr`, and import it by the new name.
+
+### A dependency is refused
+
+- A git dependency needs exactly one of `tag`, `rev` or `branch`.
+- A dependency is `path` or `git`, never both.
+- There is no registry in 2.0, so a version string such as `math = "1.0"` is refused. Use `{ path = "..." }` or `{ git = "...", tag = "..." }`.
+- A dependency may not be named like a standard-library module.
+
+### The cached tree does not match `turf.lock`
+
+<Terminal>
+```text
+turf: the cached tree of 'jsonx' (…/cache/src/jsonx-1d0f2d73…) does not match turf.lock (expected sha256:da455b69…, found sha256:618cac84…): it was modified or corrupted
+hint: delete …/cache/src/jsonx-1d0f2d73… and build again to re-extract it; if turf.lock itself is wrong, 'turf update jsonx'
+```
+</Terminal>
+
+Do what the hint says: delete the cached folder and build again.
+
+### The dependency did not update
+
+`turf build` never moves a pin. A `tag` that was re-pointed upstream, or a `branch` with new commits, is not noticed. Only `turf update` moves it, and it needs the network.
+
+### `--locked` and `--offline` errors
+
+- **`--locked`** means `turf.lock` must already be exactly what the build needs. If it is out of date, nothing is written. Run `turf build` or `turf fetch` once without `--locked` and commit the new `turf.lock`.
+- **`--offline`** runs no `git` network command. A dependency that is not both locked and cached is an error naming it. Run without `--offline`.
+
+## A program crashes with `panic`
+
+A panic is not a bug in your editor. It is a check the language does while the program runs. The program prints one line and stops with exit status **134**.
+
+| What happened | Message |
+|---|---|
+| Array index out of range | `panic: runtime check: Array index out of bounds for 'a' (oob.tr:2)` |
+| Division or remainder by zero | `panic: runtime check: Division by zero (div.tr:2)` |
+| Integer overflow | `panic: runtime check: Integer overflow (ovf.tr:2)` |
+| Stack overflow (unbounded recursion) | `panic: stack overflow: the call stack exceeded its limit -- check for unbounded or missing-base-case recursion` |
+
+Every error code has an explanation in [Error codes](/docs/errors/).
+
+## Still stuck?
+
+Run `turf version` and paste its output into a bug report on [GitHub](https://github.com/turf-lang/turf-lang).

@@ -1,0 +1,109 @@
+---
+title: "Agent skills"
+description: "Install the Turf skill into Claude Code, Cursor, Codex and other coding agents."
+lead: "A coding agent writes better Turf when it has read about Turf first. The Turf skill is a small folder of notes that your agent opens by itself when you ask it to work on Turf code."
+outcomes:
+  - "Explain what an agent skill is and what the Turf skill teaches."
+  - "Install the skill for your agent with one command."
+  - "Know what to ask your agent: a new Turf project, or porting code you already have."
+---
+
+## What is an agent skill?
+
+An **agent** is a program that writes and changes code for you while you talk to it. Claude Code, Cursor and Codex are agents.
+
+An agent only knows what it has learned and what you show it. Turf is new, so an agent may guess at its rules and get them wrong. A **skill** fixes that. Think of it as handing the agent a small manual before it starts work.
+
+A skill is `SKILL.md` (always read) plus `references/` and `examples/`, which the agent opens when it needs them. So it reads a short page first, and fetches the thick reference chapters only when a question calls for one.
+
+## What the Turf skill teaches
+
+There is one skill, called `turflang`.
+
+| Skill | What it teaches |
+|---|---|
+| `turflang` | Turf 2.0 syntax and semantics, the standard library, the compile/fix loop with the compiler's diagnostics and `--smart`, projects and `turf test`, and porting code into Turf |
+
+Two of those matter most for what you want to do:
+
+<Cards>
+<Card title="Start a new Turf project">
+The skill covers projects and `turf test`, the standard library, and the compile/fix loop: the agent writes code, runs the compiler, reads its diagnostics and fixes what they say.
+</Card>
+<Card title="Move code you already have">
+The skill has an idiom map from other languages, and a guide to moving from 1.x to 2.0, so the agent can port code into Turf.
+</Card>
+</Cards>
+
+## Install it
+
+You need Node.js 22.20 or newer. Then, in your terminal, run:
+
+<Command text="npx turflang-skills" />
+
+or, with the generic [skills](https://github.com/vercel-labs/skills) CLI:
+
+<Command text="npx skills@latest add turf-lang/turf-skills" />
+
+Either command asks:
+
+- which agents to install for (Claude Code, Cursor, Codex, OpenCode, GitHub Copilot, Windsurf and 70+ others);
+- whether to install for this project or for your user (global);
+- whether to symlink or copy.
+
+### Skip the questions
+
+These commands answer the questions in advance:
+
+<Command title="Terminal">
+```sh
+npx turflang-skills -g -a claude-code -y
+npx turflang-skills -a claude-code cursor codex -y
+npx turflang-skills --github
+npx turflang-skills update
+npx turflang-skills remove turflang
+```
+</Command>
+
+| Command | What it does |
+|---|---|
+| `npx turflang-skills -g -a claude-code -y` | Global, Claude Code only. |
+| `npx turflang-skills -a claude-code cursor codex -y` | This project, three agents. |
+| `npx turflang-skills --github` | The latest from GitHub instead of the npm-bundled copy. |
+| `npx turflang-skills update` | Updates installed skills. |
+| `npx turflang-skills remove turflang` | Uninstalls. |
+
+`npx turflang-skills` installs the copy bundled with that npm version. `npx skills add turf-lang/turf-skills` (or `--github`) installs whatever is on `master`.
+
+### Install by hand
+
+Copy the `turflang/` folder into your agent's skills directory, for example `~/.claude/skills/turflang` for Claude Code.
+
+## What is inside
+
+<FileTree title="turflang/">
+  <TreeItem name="SKILL.md">workflow, core syntax, the traps</TreeItem>
+  <TreeItem name="references/" dir>the long chapters, opened when needed</TreeItem>
+  <TreeItem name="language.md" depth={1}>full language rules (condensed reference)</TreeItem>
+  <TreeItem name="stdlib.md" depth={1}>every stdlib module and signature</TreeItem>
+  <TreeItem name="diagnostics.md" depth={1}>fix loop, diagnostic anatomy, --smart, runtime panics</TreeItem>
+  <TreeItem name="error-codes.md" depth={1}>E001–E149: trigger and usual fix</TreeItem>
+  <TreeItem name="projects-and-testing.md" depth={1}>turf.toml, modules, packages, turf test</TreeItem>
+  <TreeItem name="porting.md" depth={1}>idiom map from other languages, 1.x → 2.0</TreeItem>
+  <TreeItem name="examples/" dir>complete programs (compiled and run)</TreeItem>
+  <TreeItem name="inventory/" depth={1} dir>a small project with tests</TreeItem>
+</FileTree>
+
+## Is it accurate?
+
+The content is derived from `docs/` in the turf-lang repository. Every `turflang` code block that is a complete program, and every file in `examples/`, compiles with `turfc` 2.0.x. The exception is the wrong/right fragments in `error-codes.md`.
+
+<Callout tone="try" title="Try it">
+
+Once it is installed, open your agent in an empty folder and ask it, in your own words, to make a small Turf project with a test. Then ask it to port a short script you already have. Check what it wrote with `turf check` and `turf test`: the compiler, not the agent, decides whether the program is valid.
+
+</Callout>
+
+## Get the source
+
+The skill lives in the [turf-skills](https://github.com/turf-lang/turf-skills) repository.

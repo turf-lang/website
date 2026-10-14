@@ -1,0 +1,19 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import LinkRows from "../../components/sections/LinkRows.astro";
+import Section from "../../components/sections/Section.astro";
+import { getSection } from "../../data/navigation";
+
+const section = getSection("resources");
+const lead = "Extras that sit around the language: tools for your coding agent, and help for when something does not work.";
+const items = section.links.map((link) => ({ title: link.label, description: link.description ?? "", href: link.href }));
+---
+
+<BaseLayout title={section.label} description={lead}>
+    <PageHeader crumbs={[{ label: section.label }]} title={section.label} lead={lead} />
+
+    <Section id="pages" index="01" title="Pages" layout="stacked" class="border-t-0! py-16! md:py-20!">
+        <LinkRows items={items} />
+    </Section>
+</BaseLayout>
