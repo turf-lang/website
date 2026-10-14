@@ -1,0 +1,41 @@
+---
+import type { NavLink } from "../../data/navigation";
+
+interface Props {
+    prev?: NavLink;
+    next?: NavLink;
+    prevText?: string;
+    nextText?: string;
+}
+
+const { prev, next, prevText = "← Previous", nextText = "Next →" } = Astro.props;
+const both = Boolean(prev && next);
+const cell =
+    "group block h-full bg-surface p-6 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:p-8";
+---
+
+{
+    (prev || next) && (
+        <nav
+            aria-label="Previous and next"
+            class:list={[
+                "grid gap-px overflow-hidden rounded-2xl border border-line bg-line",
+                both ? "sm:grid-cols-2" : "sm:max-w-[50%]",
+                !prev && "sm:ml-auto",
+            ]}
+        >
+            {prev && (
+                <a href={prev.href} rel="prev" class={cell}>
+                    <span class="font-mono text-sm text-fg-muted transition-colors group-hover:text-fg">{prevText}</span>
+                    <span class="mt-3 block text-lg font-black tracking-[-0.03em] text-fg">{prev.label}</span>
+                </a>
+            )}
+            {next && (
+                <a href={next.href} rel="next" class:list={[cell, both && "sm:text-right"]}>
+                    <span class="font-mono text-sm text-fg-muted transition-colors group-hover:text-fg">{nextText}</span>
+                    <span class="mt-3 block text-lg font-black tracking-[-0.03em] text-fg">{next.label}</span>
+                </a>
+            )}
+        </nav>
+    )
+}

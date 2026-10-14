@@ -1,0 +1,34 @@
+---
+export interface LinkItem {
+    title: string;
+    description?: string;
+    href: string;
+}
+
+interface Props {
+    items: LinkItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<ul class="divide-y divide-line border-y border-line">
+    {
+        items.map((item) => (
+            <li>
+                <a
+                    href={item.href}
+                    class="group flex items-center justify-between gap-6 px-2 py-6 transition-colors hover:bg-tint focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:px-4"
+                >
+                    <span class="grid gap-1 md:grid-cols-[14rem_1fr] md:gap-6">
+                        <span class="text-xl font-black tracking-[-0.03em] text-fg">{item.title}</span>
+                        <span class="text-fg-muted">{item.description}</span>
+                    </span>
+                    <span aria-hidden="true" class="font-mono text-fg-muted transition-transform group-hover:translate-x-1 group-hover:text-fg motion-reduce:transition-none">
+                        →
+                    </span>
+                </a>
+            </li>
+        ))
+    }
+</ul>

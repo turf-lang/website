@@ -1,0 +1,181 @@
+---
+---
+
+<dialog
+    id="search-dialog"
+    aria-label="Search the site"
+    class="m-0 mx-auto mt-[10dvh] w-[min(42rem,calc(100vw-2rem))] max-w-none overflow-hidden rounded-2xl border border-line bg-surface p-0 text-fg backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+>
+    <form method="dialog" class="flex items-center gap-3 border-b border-line px-5">
+        <svg aria-hidden="true" viewBox="0 0 20 20" class="size-5 shrink-0 text-fg-muted" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square">
+            <circle cx="9" cy="9" r="5.5"></circle>
+            <path d="m13.5 13.5 3.5 3.5"></path>
+        </svg>
+        <input
+            id="search-input"
+            type="search"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Search Learn, the standard library and the docs"
+            aria-label="Search"
+            aria-controls="search-results"
+            class="min-w-0 flex-1 bg-transparent py-4 text-fg [&::-webkit-search-cancel-button]:hidden placeholder:text-fg-faint focus:outline-none"
+        />
+        <kbd class="rounded border border-line px-1.5 py-0.5 font-mono text-xs text-fg-faint">Esc</kbd>
+    </form>
+    <div class="max-h-[60dvh] overflow-y-auto">
+        <ul id="search-results" role="listbox" aria-label="Results" class="divide-y divide-line empty:hidden"></ul>
+        <p id="search-status" class="px-5 py-8 text-center text-sm text-fg-muted">Type to search.</p>
+    </div>
+    <p class="hidden border-t border-line px-5 py-3 font-mono text-xs text-fg-faint sm:block">↑ ↓ to move · Enter to open · Esc to close</p>
+</dialog>
+
+<script>
+    type Record = { t: string; d: string; a: string; u: string; h: [string, string][]; b: string };
+
+    const dialog = document.querySelector<HTMLDialogElement>("#search-dialog")!;
+    const input = document.querySelector<HTMLInputElement>("#search-input")!;
+    const list = document.querySelector<HTMLUListElement>("#search-results")!;
+    const status = document.querySelector<HTMLParagraphElement>("#search-status")!;
+
+    let records: Record[] | null = null;
+    let loading: Promise<void> | null = null;
+    let active = 0;
+
+    const load = () =>
+        (loading ??= fetch("/search.json")
+            .then((r) => r.json())
+            .then((data: Record[]) => {
+                records = data;
+            })
+            .catch(() => {
+                loading = null;
+                status.textContent = "Search could not load. Try again.";
+            }));
+
+    const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+    const mark = (text: string, words: string[]) => {
+        const safe = escapeHtml(text);
+        const re = new RegExp(`(${words.map((w) => escapeHtml(w).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
+        return safe.replace(re, '<mark class="bg-transparent text-accent">$1</mark>');
+    };
+
+    function search(query: string) {
+        const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+        if (!records || !words.length) return [];
+        const hits = [];
+        for (const r of records) {
+            const title = r.t.toLowerCase();
+            const desc = r.d.toLowerCase();
+            const body = r.b.toLowerCase();
+            let score = 0;
+            let heading: [string, string] | undefined;
+            let ok = true;
+            for (const w of words) {
+                let s = 0;
+                if (title.includes(w)) s += title === w ? 60 : title.startsWith(w) ? 40 : 25;
+                const h = r.h.find(([text]) => text.toLowerCase().includes(w));
+                if (h) {
+                    s += 15;
+                    heading ??= h;
+                }
+                if (desc.includes(w)) s += 8;
+                const at = body.indexOf(w);
+                if (at >= 0) s += 3 + Math.min(body.split(w).length - 1, 10) * 0.3;
+                if (!s) ok = false;
+                score += s;
+            }
+            if (!ok) continue;
+            let snippet = "";
+            const at = body.indexOf(words[0]);
+            if (at >= 0) snippet = (at > 40 ? "…" : "") + r.b.slice(Math.max(0, at - 40), at + 120) + "…";
+            hits.push({ r, score, heading, snippet: snippet || r.d });
+        }
+        return hits.sort((a, b) => b.score - a.score).slice(0, 12);
+    }
+
+    function render() {
+        const query = input.value.trim();
+        list.innerHTML = "";
+        active = 0;
+        if (!query) {
+            status.hidden = false;
+            status.textContent = "Type to search.";
+            return;
+        }
+        if (!records) {
+            status.hidden = false;
+            status.textContent = "Loading…";
+            return;
+        }
+        const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+        const hits = search(query);
+        status.hidden = hits.length > 0;
+        if (!hits.length) status.textContent = `Nothing found for “${query}”.`;
+        hits.forEach(({ r, heading, snippet }, i) => {
+            const li = document.createElement("li");
+            li.setAttribute("role", "option");
+            li.setAttribute("aria-selected", String(i === 0));
+            const href = heading ? `${r.u}#${heading[1]}` : r.u;
+            li.innerHTML = `<a href="${escapeHtml(href)}" tabindex="-1" class="block px-5 py-3.5 aria-selected:bg-tint">
+                <span class="flex items-baseline justify-between gap-4">
+                    <span class="font-bold text-fg">${mark(r.t, words)}${heading ? `<span class="font-normal text-fg-muted"> › ${mark(heading[0], words)}</span>` : ""}</span>
+                    <span class="shrink-0 font-mono text-xs text-fg-faint">${escapeHtml(r.a)}</span>
+                </span>
+                <span class="mt-1 block text-sm leading-6 text-fg-muted">${mark(snippet, words)}</span>
+            </a>`;
+            list.append(li);
+        });
+        paint();
+    }
+
+    function paint() {
+        [...list.children].forEach((li, i) => {
+            li.setAttribute("aria-selected", String(i === active));
+            li.querySelector("a")!.setAttribute("aria-selected", String(i === active));
+            if (i === active) li.scrollIntoView({ block: "nearest" });
+        });
+    }
+
+    function open() {
+        if (!dialog.open) dialog.showModal();
+        input.focus();
+        input.select();
+        void load().then(render);
+    }
+
+    document.addEventListener("keydown", (e) => {
+        const typing = (e.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable]");
+        if ((e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey && !e.altKey)) {
+            e.preventDefault();
+            dialog.open ? dialog.close() : open();
+        }
+    });
+    document.addEventListener("click", (e) => {
+        if ((e.target as HTMLElement).closest("[data-search-open]")) {
+            e.preventDefault();
+            open();
+        } else if (e.target === dialog) dialog.close();
+    });
+    input.addEventListener("input", render);
+    input.addEventListener("keydown", (e) => {
+        const n = list.children.length;
+        if (e.key === "ArrowDown" && n) {
+            e.preventDefault();
+            active = (active + 1) % n;
+            paint();
+        } else if (e.key === "ArrowUp" && n) {
+            e.preventDefault();
+            active = (active - 1 + n) % n;
+            paint();
+        } else if (e.key === "Enter" && n) {
+            e.preventDefault();
+            list.children[active]?.querySelector("a")?.click();
+        }
+    });
+    list.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("close", () => {
+        input.value = "";
+        render();
+    });
+</script>
