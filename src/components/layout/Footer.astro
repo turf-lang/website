@@ -1,0 +1,59 @@
+---
+import { navigation } from "../../data/navigation";
+import type { NavLink } from "../../data/navigation";
+import Wordmark from "../ui/Wordmark.astro";
+
+interface Column {
+    heading: string;
+    links: NavLink[];
+}
+
+const columns: Column[] = [];
+const more: NavLink[] = [];
+for (const item of navigation) {
+    if (item.links && item.links.length > 1) {
+        columns.push({ heading: item.heading ?? item.label, links: item.links });
+    } else if (item.links) {
+        more.push(...item.links);
+    } else if (item.href) {
+        more.push({ label: item.label, href: item.href });
+    }
+}
+if (more.length) {
+    const resources = columns.find((column) => column.heading === "Resources");
+    if (resources) resources.links = [...resources.links, ...more];
+    else columns.push({ heading: "More", links: more });
+}
+const wide = (column: Column) => column.links.length > 8;
+
+const linkClass =
+    "text-fg-muted transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent";
+---
+
+<footer class="border-t border-line py-16 md:py-20">
+    <div class="container-page">
+        <div>
+            <Wordmark />
+            <p class="mt-4 max-w-sm leading-7 text-fg-muted">A programming language that kinda knows what you want.</p>
+        </div>
+
+        <nav aria-label="Footer" class="mt-12 grid grid-cols-2 gap-x-6 gap-y-10 border-t border-line pt-12 sm:grid-cols-4 lg:grid-cols-6">
+            {
+                columns.map((column) => (
+                    <div class:list={[wide(column) && "col-span-2"]}>
+                        <h2 class="font-mono text-xs text-fg-soft">{column.heading}</h2>
+                        <ul class:list={["mt-4 grid gap-3 text-sm", wide(column) && "grid-cols-2 gap-x-6"]}>
+                            {column.links.map((link) => (
+                                <li><a href={link.href} class={linkClass}>{link.label}</a></li>
+                            ))}
+                        </ul>
+                    </div>
+                ))
+            }
+        </nav>
+
+        <p class="mt-12 border-t border-line pt-8 text-sm text-fg-muted">
+            &copy; 2026 Turf. All rights reserved.
+        </p>
+    </div>
+</footer>
