@@ -1,0 +1,14 @@
+---
+interface Props {
+    text: string;
+    as?: "p" | "span" | "h3";
+    class?: string;
+}
+
+const { text, as: Tag = "p", class: className } = Astro.props;
+const parts = text.split("`");
+---
+
+<Tag class={className}>
+    {parts.map((part, i) => (i % 2 === 1 ? <code>{part}</code> : part))}
+</Tag>

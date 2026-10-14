@@ -1,0 +1,21 @@
+---
+import Text from "../ui/Text.astro";
+
+interface Props {
+    index: string;
+    title: string;
+    description?: string;
+    titleId?: string;
+    class?: string;
+}
+
+const { index, title, description, titleId, class: className } = Astro.props;
+---
+
+<div class:list={["max-w-xl", className]}>
+    <p class="font-mono text-sm text-accent">{index}</p>
+    <h2 id={titleId} class="mt-4 text-balance text-4xl font-black leading-[1.02] tracking-[-0.04em] text-fg md:text-5xl">
+        {title}
+    </h2>
+    {description && <Text text={description} class="mt-5 text-base leading-7 text-fg-muted md:text-lg" />}
+</div>

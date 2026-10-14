@@ -1,0 +1,46 @@
+---
+import { install, installNote, platforms, platformsNote, quickStart, quickStartNote } from "../../data/home";
+import { paintSession } from "../../lib/terminal";
+import Button from "../ui/Button.astro";
+import CodeWindow from "../ui/CodeWindow.astro";
+import Text from "../ui/Text.astro";
+import Section from "./Section.astro";
+---
+
+<Section id="get-started" index="04" title="Get started" layout="stacked" class="bg-surface-raised">
+    <div class="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line lg:grid-cols-2">
+        <div class="min-w-0 bg-surface-raised p-8 md:p-10 lg:col-span-2">
+            <p class="font-mono text-sm text-accent">01</p>
+            <h3 class="mt-4 text-xl font-black tracking-[-0.03em] text-fg">Install</h3>
+            <Text text={installNote} class="mt-2 leading-7 text-fg-muted" />
+            <CodeWindow class="mt-6" title="Linux and macOS" code={[[["plain", install.unix]]]} />
+            <CodeWindow class="mt-4" title="Windows (PowerShell)" code={[[["plain", install.windows]]]} />
+        </div>
+        <div class="min-w-0 bg-surface-raised p-8 md:p-10">
+            <p class="font-mono text-sm text-accent">02</p>
+            <h3 class="mt-4 text-xl font-black tracking-[-0.03em] text-fg">Create and run</h3>
+            <Text text={quickStartNote} class="mt-2 leading-7 text-fg-muted" />
+            <CodeWindow class="mt-6" title="Terminal" html={paintSession(quickStart)} />
+        </div>
+        <div class="flex min-w-0 flex-col bg-surface-raised p-8 md:p-10">
+            <p class="font-mono text-sm text-accent">03</p>
+            <h3 class="mt-4 text-xl font-black tracking-[-0.03em] text-fg">Supported platforms</h3>
+            <Text text={platformsNote} class="mt-2 leading-7 text-fg-muted" />
+            <ul class="mt-6 flex flex-1 flex-col divide-y divide-line overflow-hidden rounded-2xl border border-line">
+                {
+                    platforms.map((platform) => (
+                        <li class="flex flex-1 items-center justify-between gap-4 px-5 py-4">
+                            <span class="font-bold text-fg">{platform.name}</span>
+                            <span class="font-mono text-xs text-fg-muted">{platform.note}</span>
+                        </li>
+                    ))
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="mt-12 flex flex-wrap items-center gap-3">
+        <Button href="/learn/getting-started/">Read the guide</Button>
+        <Button href="/download/" variant="soft">All downloads</Button>
+    </div>
+</Section>

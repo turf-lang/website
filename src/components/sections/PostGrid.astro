@@ -1,0 +1,33 @@
+---
+import { formatDate, isoDate, readingTime } from "../../lib/content";
+import type { Post } from "../../lib/content";
+import { boxGridSpan } from "../../lib/box-grid";
+import BoxGrid from "../ui/BoxGrid.astro";
+
+interface Props {
+    posts: Post[];
+}
+
+const { posts } = Astro.props;
+---
+
+<BoxGrid>
+    {
+        posts.map((post, i) => (
+            <li class:list={["bg-surface", boxGridSpan(i, posts.length)]}>
+                <a
+                    href={`/blog/${post.id}/`}
+                    class="group flex h-full flex-col p-8 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:p-10"
+                >
+                    <span class="flex flex-col gap-1 font-mono text-sm text-fg-muted">
+                        <time datetime={isoDate(post.data.date)}>{formatDate(post.data.date)}</time>
+                        <span class="text-fg-faint">{readingTime(post.body)}</span>
+                    </span>
+                    <h3 class="mt-6 text-balance text-xl font-black tracking-[-0.03em] text-fg">{post.data.title}</h3>
+                    <p class="mt-3 leading-7 text-fg-muted">{post.data.description}</p>
+                    <span class="mt-auto pt-8 font-mono text-sm text-fg-faint">{post.data.author}</span>
+                </a>
+            </li>
+        ))
+    }
+</BoxGrid>

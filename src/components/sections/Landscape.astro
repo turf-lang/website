@@ -1,0 +1,59 @@
+---
+import { constitutionUrl, landscape, turfPosition, turfTradeoff } from "../../data/home";
+import Section from "./Section.astro";
+
+const cols = "md:grid-cols-[8rem_1fr_1fr] md:gap-8";
+---
+
+<Section
+    id="landscape"
+    index="02"
+    title="Where Turf sits"
+    description="Every language picks where its safety and speed come from, and what it pays for them."
+    class="bg-surface-raised"
+>
+    <div class="overflow-hidden rounded-2xl border border-line">
+        <div class:list={["hidden gap-4 border-b border-line px-6 py-4 font-mono text-xs uppercase tracking-wider text-fg-faint md:grid md:px-8", cols]}>
+            <span>Language</span>
+            <span>Gets</span>
+            <span>Pays</span>
+        </div>
+        <ul class="divide-y divide-line">
+            {
+                landscape.map((row) => (
+                    <li class:list={["grid gap-1 bg-surface px-6 py-5 md:items-baseline md:px-8", cols]}>
+                        <span class="text-lg font-black tracking-[-0.03em] text-fg">{row.language}</span>
+                        <span class="leading-7 text-fg-muted">
+                            <span class="font-mono text-xs uppercase tracking-wider text-fg-faint md:hidden">Gets </span>
+                            {row.gets}
+                        </span>
+                        <span class="leading-7 text-fg-muted">
+                            <span class="font-mono text-xs uppercase tracking-wider text-fg-faint md:hidden">Pays </span>
+                            {row.pays}
+                        </span>
+                    </li>
+                ))
+            }
+            <li class:list={["grid gap-1 bg-accent-soft px-6 py-5 md:items-baseline md:px-8", cols]}>
+                <span class="text-lg font-black tracking-[-0.03em] text-accent">Turf</span>
+                <span class="leading-7 text-fg-soft">
+                    <span class="font-mono text-xs uppercase tracking-wider text-fg-faint md:hidden">Gets </span>
+                    {turfTradeoff.gets}
+                </span>
+                <span class="leading-7 text-fg-soft">
+                    <span class="font-mono text-xs uppercase tracking-wider text-fg-faint md:hidden">Pays </span>
+                    {turfTradeoff.pays}
+                </span>
+            </li>
+        </ul>
+    </div>
+
+    <p class="mt-8 max-w-2xl leading-7 text-fg-muted">{turfPosition}</p>
+    <a
+        href={constitutionUrl}
+        class="group mt-6 inline-flex items-center gap-2 font-mono text-sm text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+    >
+        The deliberate non-goals are in the constitution
+        <span aria-hidden="true" class="transition-transform group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+    </a>
+</Section>

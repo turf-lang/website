@@ -1,0 +1,62 @@
+---
+import { downloadHref } from "../../data/navigation";
+import { helloCode } from "../../data/snippets";
+import Button from "./Button.astro";
+import CodeWindow from "./CodeWindow.astro";
+import DownloadButton from "./DownloadButton.astro";
+import Text from "./Text.astro";
+import HeroBackground from "./HeroBackground.astro";
+---
+
+<section class="relative isolate overflow-hidden bg-surface text-fg">
+    <HeroBackground />
+
+    <div class="container-page py-16 md:py-20 lg:py-24">
+        <div class="grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
+            <div>
+                <h1 class="text-balance text-5xl font-black leading-[0.95] tracking-[-0.05em] sm:text-6xl xl:text-7xl">
+                    The language that
+                    <span class="block text-accent">kinda knows what you want.</span>
+                </h1>
+
+                <p class="mt-8 text-xl font-bold leading-tight tracking-[-0.025em] text-fg-soft sm:text-2xl">
+                    Fast, without the fuss.
+                    <span class="block">Safe, without the worry.</span>
+                </p>
+
+                <p class="mt-5 max-w-xl text-base font-medium leading-7 text-fg-muted md:text-lg">
+                    Turf builds quick, efficient programs, keeps memory safe with a
+                    carefully engineered garbage collector, and reads clean enough
+                    that your time goes into the idea, not the syntax.
+                </p>
+
+                <div class="mt-10 flex flex-wrap items-center gap-3">
+                    <DownloadButton />
+                    <Button href="/learn/getting-started/" variant="soft">Start learning</Button>
+                </div>
+
+                <Text
+                    text="This downloads the standard build, without the optional AI model support (`--smart`)."
+                    class="mt-4 max-w-xl text-sm leading-6 text-fg-muted"
+                />
+
+                <p class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-fg-muted">
+                    <span data-release-version hidden class="text-fg-soft"></span>
+                    <a
+                        href={downloadHref}
+                        class="transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    >
+                        Other platforms and versions →
+                    </a>
+                </p>
+            </div>
+
+            <CodeWindow
+                title="hello.tr"
+                code={helloCode}
+                command="turf run hello.tr"
+                output="Hello, Turf!"
+            />
+        </div>
+    </div>
+</section>

@@ -1,0 +1,18 @@
+---
+import { getLatestPosts } from "../../lib/content";
+import PostGrid from "./PostGrid.astro";
+import Section from "./Section.astro";
+
+const posts = await getLatestPosts(3);
+---
+
+<Section id="blog" index="07" title="From the blog" layout="stacked">
+    <PostGrid posts={posts} />
+    <a
+        href="/blog/"
+        class="group mt-8 inline-flex items-center gap-2 font-mono text-sm text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+    >
+        All posts
+        <span aria-hidden="true" class="transition-transform group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+    </a>
+</Section>

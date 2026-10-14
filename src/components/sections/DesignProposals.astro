@@ -1,0 +1,25 @@
+---
+import { getLatestProposals } from "../../lib/content";
+import Section from "./Section.astro";
+import TdpGrid from "./TdpGrid.astro";
+
+const proposals = await getLatestProposals(3);
+---
+
+<Section
+    id="proposals"
+    index="08"
+    layout="stacked"
+    class="bg-surface-raised"
+    title="Design proposals"
+    description="Every change to the language starts as a written proposal. Follow them from idea to release."
+>
+    <TdpGrid proposals={proposals} />
+    <a
+        href="/tdp/proposals/"
+        class="group mt-8 inline-flex items-center gap-2 font-mono text-sm text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+    >
+        All proposals
+        <span aria-hidden="true" class="transition-transform group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+    </a>
+</Section>

@@ -1,0 +1,46 @@
+---
+import { tokenClass } from "../../lib/turf-tokens";
+import type { Line } from "../../lib/turf-tokens";
+import CopyButton from "./CopyButton.astro";
+
+export type { Line, Token, TokenKind } from "../../lib/turf-tokens";
+
+interface Props {
+    title: string;
+    code?: Line[];
+    html?: string;
+    copy?: string | false;
+    command?: string;
+    output?: string;
+    class?: string;
+}
+
+const { title, code, html, copy, command, output, class: className } = Astro.props;
+const source = code?.map((line) => line.map(([, text]) => text).join("")).join("\n");
+const copyText = copy === false ? undefined : (copy ?? source);
+const body = "max-h-[30rem] overflow-auto overscroll-contain px-5 py-5 font-mono text-sm leading-7 sm:text-[15px]";
+---
+
+<div class:list={["overflow-hidden rounded-2xl border border-line bg-surface-raised", className]}>
+    <div class="flex min-h-11 items-center gap-2 border-b border-line py-1.5 pl-5 pr-2.5">
+        <span class="ml-0 font-mono text-xs text-fg-muted">{title}</span>
+        {copyText && <CopyButton text={copyText} class="ml-auto" />}
+    </div>
+
+    {
+        html ? (
+            <pre class:list={[body, "text-fg-soft"]} set:html={html} />
+        ) : (
+            <pre class={body}><code>{code?.map((line) => <span class="block min-h-7">{line.map(([kind, text]) => <span class={tokenClass[kind]}>{text}</span>)}</span>)}</code></pre>
+        )
+    }
+
+    {
+        command && (
+            <div class="overflow-x-auto border-t border-line bg-tint px-5 py-4 font-mono text-sm leading-7 sm:text-[15px]">
+                <p class="text-fg-soft"><span class="select-none text-fg-faint">$ </span>{command}</p>
+                {output && <p class="whitespace-pre text-fg-muted">{output}</p>}
+            </div>
+        )
+    }
+</div>

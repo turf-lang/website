@@ -1,0 +1,39 @@
+---
+import SectionHeading from "./SectionHeading.astro";
+
+interface Props {
+    id: string;
+    index: string;
+    title: string;
+    description?: string;
+    layout?: "split" | "stacked";
+    class?: string;
+}
+
+const { id, index, title, description, layout = "split", class: className } = Astro.props;
+---
+
+<section
+    id={id}
+    aria-labelledby={`${id}-title`}
+    class:list={["relative isolate overflow-hidden border-t border-line py-24 md:py-32", className]}
+>
+    <slot name="background" />
+    <div
+        class:list={[
+            "container-page grid grid-cols-1 gap-12 md:gap-16",
+            layout === "split" && "lg:grid-cols-12",
+        ]}
+    >
+        <SectionHeading
+            index={index}
+            title={title}
+            description={description}
+            titleId={`${id}-title`}
+            class={layout === "split" ? "lg:col-span-4" : undefined}
+        />
+        <div class:list={[layout === "split" && "lg:col-span-8"]}>
+            <slot />
+        </div>
+    </div>
+</section>

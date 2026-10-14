@@ -1,0 +1,38 @@
+---
+import { stdlibGroups, stdlibNote } from "../../data/home";
+import { boxGridSpan } from "../../lib/box-grid";
+import BoxGrid from "../ui/BoxGrid.astro";
+import Text from "../ui/Text.astro";
+import Section from "./Section.astro";
+---
+
+<Section
+    id="stdlib"
+    index="06"
+    title="The standard library"
+    description="Ordinary Turf source, with no privileges your code lacks. The prelude needs no `import`; the rest are imported by name."
+    class="bg-surface-raised"
+>
+    <BoxGrid>
+        {
+            stdlibGroups.map(([modules, purpose], i) => (
+                <li class:list={["bg-surface p-8", boxGridSpan(i, stdlibGroups.length)]}>
+                    <span class="flex flex-wrap gap-2">
+                        {modules.map((module) => (
+                            <span class="rounded-full border border-line px-3 py-1 font-mono text-sm text-fg">{module}</span>
+                        ))}
+                    </span>
+                    <Text text={purpose} class="mt-5 text-sm leading-6 text-fg-muted" />
+                </li>
+            ))
+        }
+    </BoxGrid>
+    <Text text={stdlibNote} class="mt-8 leading-7 text-fg-muted" />
+    <a
+        href="/stdlib/"
+        class="group mt-6 inline-flex items-center gap-2 font-mono text-sm text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+    >
+        Browse the modules
+        <span aria-hidden="true" class="transition-transform group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+    </a>
+</Section>

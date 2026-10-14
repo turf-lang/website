@@ -1,0 +1,63 @@
+---
+interface Field {
+    cx: number;
+    cy: number;
+    start: number;
+    step: number;
+    rings: number;
+    seed: number;
+}
+
+const width = 1440;
+const height = 760;
+
+const fields: Field[] = [
+    { cx: 1180, cy: 260, start: 48, step: 44, rings: 16, seed: 1 },
+    { cx: 120, cy: 780, start: 70, step: 44, rings: 9, seed: 4 },
+];
+
+function ring(field: Field, i: number): string {
+    const r = field.start + i * field.step;
+    const s = field.seed;
+    const points = 120;
+    let d = "";
+    for (let p = 0; p <= points; p++) {
+        const t = (p / points) * Math.PI * 2;
+        const wobble =
+            0.08 * Math.sin(2 * t + s + i * 0.12) +
+            0.04 * Math.sin(3 * t + s * 2 - i * 0.09) +
+            0.02 * Math.sin(5 * t + s * 3 + i * 0.05);
+        const x = field.cx + Math.cos(t) * r * (1 + wobble) * 1.25;
+        const y = field.cy + Math.sin(t) * r * (1 + wobble);
+        d += `${p === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+    }
+    return d + "Z";
+}
+
+const lines = fields.flatMap((field) =>
+    Array.from({ length: field.rings }, (_, i) => ({
+        d: ring(field, i),
+        major: i % 5 === 4,
+    })),
+);
+---
+
+<svg
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 -z-10 size-full"
+    viewBox={`0 0 ${width} ${height}`}
+    preserveAspectRatio="xMidYMid slice"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+>
+    {
+        lines.map((line) => (
+            <path
+                d={line.d}
+                class={line.major ? "stroke-accent/[0.1]" : "stroke-fg/[0.03]"}
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+            />
+        ))
+    }
+</svg>
