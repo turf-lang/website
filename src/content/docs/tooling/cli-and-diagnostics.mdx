@@ -155,7 +155,8 @@ A **flag** is an option you add after the command to change what it does, such a
 | `--link <lib>` | Adds `-l<lib>` to the final link, on top of any library a program's own `extern from "libname" fn` declarations already name. Repeatable. |
 | `--check` | Reports every diagnostic and writes no file. Also `turf check`. |
 | `--module` | With `--check`: the file is a module that is only ever imported, so it needs no `main`. Without `--check` it is an error. |
-| `--smart` | Asks a local language model to suggest fixes for errors. See [`--smart`](#--smart). `--smart-write-fix=<path>` writes the first validated fix to that file. |
+| `--smart` | Asks a local language model to suggest a fix for an error that has no compiler fix. See [`--smart`](#--smart). |
+| `--smart-write-fix=<path>` | Writes the program with every `Fix:` the compiler showed applied, or, with `--smart`, the model's validated fix, to that file. Works in every build. See [Fixes](#fixes). |
 | `--stdlib-warnings` | Shows warnings that point into the standard library, which are hidden by default. See [Warnings in the standard library](#warnings-in-the-standard-library). |
 | `--allow-unsafe-modules` | Honors `unsafe module;` in a module outside the install root, in a single-file compile. It does not apply in a project, where the manifest's `[unsafe] allow` decides ([Projects & Packages](/docs/tooling/projects-and-packages/#8-unsafe-module-in-dependencies)). |
 | `--dump-ast`, `--resolve`, `--typecheck`, `--dump-resolved`, `--dump-typechecked`, `--dump-resolver-symbols`, `--dump-modules`, `--dump-instantiations` | Print what the compiler knows at each stage. `turf dump` is the friendly spelling of these. |
@@ -404,7 +405,7 @@ A module exists in this build, but this package may not import it
 
 ### `--smart`
 
-`--smart` asks a small language model, running locally, to suggest a fix for the first error of a compile. The compiler checks the suggestion in an isolated copy of your program, and shows it only if it removes the error without introducing another; otherwise you see the compiler's own diagnostic, unchanged. Nothing runs on a clean compile, warnings never start it, and no network is involved.
+`--smart` asks a small language model, running locally, to suggest a fix for the first error of a compile. When the compiler already has a [`Fix:`](#fixes) for that error, it prints it and does not call the model. Otherwise the compiler checks the model's suggestion in an isolated copy of your program, and shows it, labelled `[Model Suggestion]`, only if it removes the error without introducing another; otherwise you see the compiler's own diagnostic, unchanged. Nothing runs on a clean compile, warnings never start it, and no network is involved.
 
 <Terminal title="Compiler output" diagnostic>
 ```text
@@ -413,7 +414,7 @@ prog.tr (1 error)
 
 ── error at line 1, col 1 [E009 · control flow]
 
-  [AI Suggestion]
+  [Model Suggestion]
   Explanation: The function never returns a value.
   Suggested fix:
     + 2 |     return 42;
@@ -667,11 +668,25 @@ typo.tr (1 error)
   3 │     return contaner;
     │            ^~~~~~~~ Here!
 
+  Fix: replace 'contaner' with 'container'
+  3 │     return container;
+    │            ~~~~~~~~~
+
   Run `turf --explain E040` for more details.
 ```
 </Terminal>
 
 A match is a small edit distance away, and swapping two adjacent letters counts as one edit. The allowed distance grows with the length of the name: 1 for four characters or fewer, 2 for up to seven, about a third of the length beyond that. When nothing is close, the hint explains how to declare the thing instead.
+
+### Fixes
+
+When the compiler knows the exact edit that removes an error, it prints it after the source snippet as a `Fix:`: what to do in one line, then the corrected line with `~` under the part that changed. It does this in every build, with no flag and no model.
+
+A `Fix:` is printed only after the compiler has made the edit in its own copy of the program and checked that the original error is gone and no new one appears. An error with no single exact edit has no `Fix:`; it keeps its `Hint:`. At most ten errors in one compile are checked this way.
+
+The edits are renaming a name to the one close match, changing `.` to `::` or `::` to `.`, removing a misplaced `static` or `pub`, declaring `mut` instead of `immut`, adding a missing `;`, and adding a missing `<T>`. The codes that can print a `Fix:` are [E014](/docs/errors/e014/), [E026](/docs/errors/e026/), [E029](/docs/errors/e029/), [E030](/docs/errors/e030/), [E031](/docs/errors/e031/), [E039](/docs/errors/e039/), [E040](/docs/errors/e040/), [E041](/docs/errors/e041/), [E042](/docs/errors/e042/), [E046](/docs/errors/e046/), [E048](/docs/errors/e048/), [E052](/docs/errors/e052/), [E054](/docs/errors/e054/), [E060](/docs/errors/e060/), [E068](/docs/errors/e068/), [E087](/docs/errors/e087/), [E102](/docs/errors/e102/) and [E138](/docs/errors/e138/).
+
+`--smart-write-fix=<path>` writes the program with the shown fixes applied to `<path>`, so a script or an agent can take the result without editing the text itself.
 
 ### Error codes
 

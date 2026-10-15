@@ -173,6 +173,10 @@ oops.tr (1 error)
   3 │     printline("Hello, " + nmae + "!");
     │                           ^~~~ Here!
 
+  Fix: replace 'nmae' with 'name'
+  3 │     printline("Hello, " + name + "!");
+    │                           ~~~~
+
   Run `turf --explain E040` for more details.
 ```
 </Diagnostic>
@@ -194,6 +198,9 @@ That's a lot of text, but every part has a job. From top to bottom:
   </Step>
   <Step title="The picture">
     Your line of code, with `^~~~ Here!` underlining the exact problem.
+  </Step>
+  <Step title="The fix">
+    `Fix:` shows the corrected line, with `~~~~` under the part that changed. The compiler prints it only when it knows the one edit that removes this error. It has already made the edit in its own copy of your program and checked that the error is gone and no new one appears, so you can make the same edit. Not every error has a `Fix:`.
   </Step>
   <Step title="Where to learn more">
     A command that explains this kind of error in detail.
@@ -244,11 +251,15 @@ semi.tr (1 error)
   3 │     return 0;
     │     ^~~~~~ Here!
 
+  Fix: insert ';' at the end of line 2
+  2 │     printline("Hello, world!");
+    │                               ~
+
   Run `turf --explain E102` for more details.
 ```
 </Diagnostic>
 
-Notice that the error points at **line 3**, not line 2. That's because the compiler only knows the `;` is missing when it reaches `return` and finds something it didn't expect. When an error points at the start of a line, look at the end of the line before it too.
+Notice that the error points at **line 3**, not line 2. That's because the compiler only knows the `;` is missing when it reaches `return` and finds something it didn't expect. When an error points at the start of a line, look at the end of the line before it too. The `Fix:` knows this: it puts the `;` at the end of line 2.
 
 <Callout tone="try" title="Break it on purpose">
 

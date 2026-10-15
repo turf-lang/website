@@ -383,6 +383,10 @@ generics_and_operators_e138.tr (1 error)
   5 │ fn Box.broken(): int {
     │        ^~~~~~ Here!
 
+  Fix: insert '<T>' after 'fn'
+  5 │ fn<T> Box.broken(): int {
+    │   ~~~
+
   Run `turf --explain E138` for more details.
 ```
 </Diagnostic>

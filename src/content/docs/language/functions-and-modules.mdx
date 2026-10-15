@@ -948,6 +948,10 @@ functions_and_modules_e048.tr (1 error)
   2 │     io.printline("x");
     │       ^ Here!
 
+  Fix: replace 'io.printline' with 'io::printline'
+  2 │     io::printline("x");
+    │     ~~~~~~~~~~~~~
+
   Run `turf --explain E048` for more details.
 ```
 </Diagnostic>

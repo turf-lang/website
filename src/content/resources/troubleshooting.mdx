@@ -75,6 +75,8 @@ Editing needs nothing more than the extension. Running a program needs the `turf
 | one `.gguf` file | loads it and uses it |
 | more than one | uses none of them, because it cannot know which you meant, and says how many it found |
 
+An error that has a compiler `Fix:` shows it in every build, with or without `--smart`, and the model is not asked. `--smart` matters for the errors that have none.
+
 A model runs on the CPU, so a suggestion can take from several seconds to a minute or more per error. A suggestion the model cannot get validated after three attempts is dropped, and you see the compiler's diagnostic.
 
 ## Packages and projects

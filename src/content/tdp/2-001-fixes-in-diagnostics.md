@@ -3,8 +3,9 @@ major: 2
 number: 1
 title: Fixes in diagnostics without --smart
 description: Let the compiler print a concrete, validated fix with an error whenever it is sure of one, in every build and without a model.
-status: accepted
+status: implemented
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 discussion: https://github.com/turf-lang/turf-lang/issues/270
@@ -141,12 +142,12 @@ Nothing breaks. Source code is unaffected. A tool that matches the exact text of
 
 ## Unresolved questions
 
-- Should the same fixes be offered as quick fixes by `turf-lsp`? Probably yes, from the same declarations, as a follow-up.
-- The machine-readable form and the apply command are now [TDP-2-004](/tdp/2-004/) (machine-readable diagnostics and applying fixes). It lands first, so tools never need to read the `Fix:` text.
-- Does the rule fix work in a `--no-smart` build? The sandbox and rule layer are compiled in every build, but this has not been tested and must be verified before relying on it.
-- Does a missing `;` print with a code at all? E102 exists, but the benchmark's semicolon case showed no code in its output, so confirm before listing E102 in the first set.
+- Should the same fixes be offered as quick fixes by `turf-lsp`? Probably yes, from the same declarations, as a follow-up. Still open: the language server reads the query facade, which carries no fix yet.
+- The machine-readable form and the apply command are now [TDP-2-004](/tdp/2-004/) (machine-readable diagnostics and applying fixes). It lands first, so tools never need to read the `Fix:` text. **Resolved:** this proposal shipped first, in 2.1.0; the JSON form follows in a later 2.x minor.
+- Does the rule fix work in a `--no-smart` build? The sandbox and rule layer are compiled in every build, but this has not been tested and must be verified before relying on it. **Resolved:** yes. A `--no-smart` build prints the same `Fix:`.
+- Does a missing `;` print with a code at all? E102 exists, but the benchmark's semicolon case showed no code in its output, so confirm before listing E102 in the first set. **Resolved:** E102 prints with its code and a `Fix:` that inserts the `;`.
 - The 136-of-149 count uses a different method from a count of distinct `EXPECT-DIAG` codes (140). The checked-in script settles it.
-- When there are two or three candidates, do we list them all as numbered fixes, or only name them in the hint?
-- A bound on the work: at most one fix check per error, and a cap on the number of errors that get one in a single compile.
-- The wording: `Fix:`, `Did you mean`, or something else. It must work for a one-character change and for a multi-line one.
+- When there are two or three candidates, do we list them all as numbered fixes, or only name them in the hint? **Resolved:** when more than one candidate is equally close, no `Fix:` is printed and the hint names them.
+- A bound on the work: at most one fix check per error, and a cap on the number of errors that get one in a single compile. **Resolved:** at most ten errors per compile are checked for a fix.
+- The wording: `Fix:`, `Did you mean`, or something else. It must work for a one-character change and for a multi-line one. **Resolved:** `Fix:`.
 - Which of the 20 codes with only general advice, and the 5 with no hint, can be given a concrete hint first, since a fix builds on one.

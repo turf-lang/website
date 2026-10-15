@@ -5,13 +5,14 @@ title: Machine-readable diagnostics and applying fixes
 description: Add a JSON form of every diagnostic, with its fix as data, and a command that applies only validated fixes on request.
 status: accepted
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---
 
 ## Summary
 
-Tools that read the compiler's output today scrape text, and the text is explicitly not part of the compatibility promise. This proposal adds `--diagnostics=json`, a versioned, documented form of every diagnostic: code, severity, spans, hint, related locations and the fix as a list of edits. It then adds `turf fix`, which applies only fixes the compiler has validated, atomically and on explicit request. The JSON form lands first, in 2.1. The apply command follows in 2.7, once the fixes it applies exist.
+Tools that read the compiler's output today scrape text, and the text is explicitly not part of the compatibility promise. This proposal adds `--diagnostics=json`, a versioned, documented form of every diagnostic: code, severity, spans, hint, related locations and the fix as a list of edits. It then adds `turf fix`, which applies only fixes the compiler has validated, atomically and on explicit request. The `Fix:` text of TDP-2-001 shipped first, in 2.1.0; the JSON form follows in a later 2.x minor, and the apply command in 2.7, once the fixes it applies exist.
 
 ## Motivation
 
@@ -63,7 +64,7 @@ Message and hint stay in the document for display, but a tool is expected to key
 
 ### Order of work
 
-The JSON form lands **before** any change to default output. The `Fix:` lines of [TDP-2-001](/tdp/2-001/) (fixes in diagnostics without a model) then arrive in text that tools were already told not to parse.
+The plan was for the JSON form to land **before** any change to default output, so that the `Fix:` lines of [TDP-2-001](/tdp/2-001/) (fixes in diagnostics without a model) would arrive in text tools were already told not to parse. TDP-2-001 shipped first, in 2.1.0; the JSON form follows in a later 2.x minor. Until then, diagnostic text stays outside the compatibility promise, and the 2.1.0 release notes say so.
 
 ### `turf fix`
 
