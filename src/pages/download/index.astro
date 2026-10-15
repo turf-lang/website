@@ -7,8 +7,13 @@ import CodeWindow from "../../components/ui/CodeWindow.astro";
 import Text from "../../components/ui/Text.astro";
 import { byHand, checkInstall, downloadLead, formatDate, formatSize, plainBuild, resolveRelease, smartBuild, smartModel, smartNote } from "../../data/download";
 import { install } from "../../data/home";
+import { releasesRepo } from "../../lib/download";
+import { getReleaseEntries, releaseHref } from "../../lib/releases";
 
 const release = await resolveRelease();
+const { entries } = await getReleaseEntries();
+const older = entries.filter((entry) => entry.released && entry.tag !== release.tag && Number.parseInt(entry.tag.slice(1), 10) >= 2);
+const example = older[0]?.tag;
 const cols = "grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.1fr)] md:gap-8";
 const lead = `Turf ${release.version} is the latest release. ${downloadLead}`;
 const installFor = (os: string) => (os === "windows" ? { title: "Windows (PowerShell)", command: install.windows } : { title: "Terminal", command: install.unix });
@@ -155,10 +160,58 @@ const installFor = (os: string) => (os === "windows" ? { title: "Windows (PowerS
 
     <Section id="older-versions" index="04" title="Older versions" layout="stacked" class="bg-surface-raised">
         <p class="max-w-prose text-lg leading-8 text-fg-muted">
-            Turf {release.version} is the only version you can download. Every version before 2.0.0 is retired.
+            The buttons on this page always download Turf {release.version}, the latest release. An older version is a manual download, the same as any
+            release: open its page, find <strong class="font-bold text-fg">Assets</strong> at the bottom and pick the archive for your platform. The
+            installer can fetch one for you too.
         </p>
-        <div class="mt-8">
-            <Button href="/docs/migrating-to-2/" variant="soft">Migrating to 2.0</Button>
+
+        {
+            older.length === 0 ? (
+                <p class="mt-8 max-w-prose rounded-2xl border border-dashed border-line-strong p-6 leading-7 text-fg-muted">
+                    Turf {release.version} is the first release of this line, so there are no older versions to download yet. When the next release ships,
+                    this version will be listed here.
+                </p>
+            ) : (
+                <>
+                    <ul class="mt-10 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+                        {older.map((entry) => (
+                            <li class="flex flex-wrap items-center justify-between gap-x-8 gap-y-4 px-6 py-5 md:px-8">
+                                <div class="flex min-w-0 flex-wrap items-baseline gap-x-5 gap-y-1">
+                                    <span class="font-pixel text-3xl leading-none tracking-[-0.04em] text-fg">{entry.tag}</span>
+                                    <span class="font-mono text-sm text-fg-muted">{formatDate(entry.date.toISOString())}</span>
+                                </div>
+                                <div class="flex flex-wrap gap-3">
+                                    <Button href={releaseHref(entry.tag)} variant="soft">Release notes</Button>
+                                    <Button href={`https://github.com/${releasesRepo}/releases/tag/${entry.tag}`} variant="soft" rel="noopener">
+                                        Archives on GitHub ↗
+                                    </Button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <div class="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        <div class="min-w-0">
+                            <h3 class="text-xl font-black tracking-[-0.03em] text-fg">Install a specific version</h3>
+                            <Text
+                                text={`Pass the version to the installer. The examples install \`${example}\`: replace it with any version you want to download by hand. The installer checks the archive's SHA-256 exactly as it does for the latest release.`}
+                                class="mt-2 leading-7 text-fg-muted"
+                            />
+                        </div>
+                        <div class="grid min-w-0 gap-4">
+                            <CodeWindow title="Terminal" code={[[["plain", `${install.unix} -s -- --version ${example}`]]]} />
+                            <CodeWindow title="Windows (PowerShell)" code={[[["plain", `$env:TURF_INSTALL_VERSION = "${example}"; ${install.windows}`]]]} />
+                        </div>
+                    </div>
+                </>
+            )
+        }
+
+        <div class="mt-10 flex flex-wrap items-center gap-4">
+            <Button href="/community/releases/" variant="soft">All release notes</Button>
+            <p class="max-w-md text-sm leading-6 text-fg-muted">
+                Versions before 2.0.0 are retired and cannot be downloaded. <a href="/docs/migrating-to-2/" class="text-fg underline underline-offset-4">Migrating to 2.0</a> covers the move.
+            </p>
         </div>
     </Section>
 </BaseLayout>

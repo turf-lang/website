@@ -125,7 +125,10 @@ export async function resolveRelease(): Promise<ResolvedRelease> {
     let sizes = new Map<string, number>(Object.entries(fallbackSizes));
     try {
         const response = await fetch(`https://api.github.com/repos/${releasesRepo}/releases/latest`, {
-            headers: { Accept: "application/vnd.github+json" },
+            headers: {
+                Accept: "application/vnd.github+json",
+                ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
+            },
         });
         if (response.ok) {
             const release = (await response.json()) as { tag_name: string; published_at: string; assets: { name: string; size: number }[] };
