@@ -71,4 +71,15 @@ const resources = defineCollection({
     }),
 });
 
-export const collections = { blog, tdp, docs, learn, stdlib, resources };
+const releases = defineCollection({
+    loader: glob({ pattern: ["*.mdx", "!_*"], base: "./src/content/releases" }),
+    schema: z.object({
+        tag: z.string().regex(/^v\d+\.\d+\.\d+$/),
+        title: z.string(),
+        description: z.string(),
+        date: z.coerce.date(),
+        highlights: z.array(z.string()).optional(),
+    }),
+});
+
+export const collections = { blog, tdp, docs, learn, stdlib, resources, releases };

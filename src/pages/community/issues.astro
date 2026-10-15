@@ -1,0 +1,196 @@
+---
+import CommunityTabs from "../../components/community/CommunityTabs.astro";
+import EmptyState from "../../components/community/EmptyState.astro";
+import FetchNotice from "../../components/community/FetchNotice.astro";
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import { githubOrg } from "../../data/community";
+import { formatDate, isoDate } from "../../lib/content";
+import { getIssues } from "../../lib/github";
+
+const href = "/community/issues/";
+const lead = "Every open issue across the compiler, command line, language server, fuzzer and website. Pick one and say hello.";
+const result = await getIssues();
+const repos = result.data;
+const total = repos.reduce((sum, r) => sum + r.issues.length, 0);
+---
+
+<BaseLayout title="Open issues · Community" description={lead}>
+    <PageHeader
+        crumbs={[{ label: "Community", href: "/community/" }, { label: "Open issues" }]}
+        title="Open issues"
+        lead={lead}
+        meta={result.ok ? [`${total} open`, `${repos.length} repositories`] : undefined}
+    />
+    <CommunityTabs current={href} />
+
+    <main class="container-page py-12 md:py-16">
+        {
+            !result.ok ? (
+                <FetchNotice href={`https://github.com/${githubOrg}`} what="open issues" />
+            ) : (
+                <>
+                    <nav aria-label="Repositories">
+                        <ul class="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
+                            {repos.map(({ repo, issues }) => (
+                                <li class="bg-surface">
+                                    <a
+                                        href={`#${repo.name}`}
+                                        class="group flex h-full flex-col p-6 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
+                                    >
+                                        <span class="font-mono text-sm text-fg-muted">{repo.name}</span>
+                                        <span class="mt-6 font-pixel text-5xl leading-none tracking-[-0.04em] text-fg">{issues.length}</span>
+                                        <span class="mt-3 text-sm text-fg-muted">{issues.length === 1 ? "open issue" : "open issues"}</span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+
+                    <div class="mt-16 grid gap-16 md:mt-20 md:gap-20">
+                        {repos.map(({ repo, issues, url }, i) => (
+                            <section id={repo.name} aria-labelledby={`${repo.name}-title`} data-paginated data-page-size="5" class="scroll-mt-28">
+                                <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+                                    <div class="max-w-xl">
+                                        <p class="font-mono text-sm text-accent">{String(i + 1).padStart(2, "0")}</p>
+                                        <h2 id={`${repo.name}-title`} class="mt-3 font-pixel text-4xl leading-none tracking-[-0.04em] text-fg md:text-5xl">
+                                            {repo.name}
+                                        </h2>
+                                        <p class="mt-3 leading-7 text-fg-muted">{repo.description}</p>
+                                    </div>
+                                    <a
+                                        href={url}
+                                        rel="noopener"
+                                        class="font-mono text-sm text-accent transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+                                    >
+                                        All on GitHub ↗
+                                    </a>
+                                </div>
+
+                                <div class="mt-8">
+                                    {issues.length === 0 ? (
+                                        <EmptyState title="Nothing open here">
+                                            <p>This repository has no open issues right now. Found something? <a class="text-accent hover:text-fg" href={`${url}/new/choose`} rel="noopener">Open one</a>.</p>
+                                        </EmptyState>
+                                    ) : (
+                                        <ul data-items class="divide-y divide-line border-y border-line">
+                                            {issues.map((issue) => (
+                                                <li data-item>
+                                                    <a
+                                                        href={issue.url}
+                                                        rel="noopener"
+                                                        class="group flex items-start justify-between gap-6 px-2 py-5 transition-colors hover:bg-tint focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:px-4"
+                                                    >
+                                                        <span class="grid gap-2">
+                                                            <span class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                                                <span class="font-mono text-sm text-fg-faint">#{issue.number}</span>
+                                                                <span class="text-lg font-bold tracking-[-0.02em] text-fg">{issue.title}</span>
+                                                            </span>
+                                                            <span class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-fg-muted">
+                                                                <span>
+                                                                    opened <time datetime={isoDate(issue.created)}>{formatDate(issue.created)}</time> by {issue.author}
+                                                                </span>
+                                                                {issue.comments > 0 && (
+                                                                    <span class="font-mono">
+                                                                        {issue.comments} {issue.comments === 1 ? "comment" : "comments"}
+                                                                    </span>
+                                                                )}
+                                                                {issue.labels.map((label) => (
+                                                                    <span class="inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 font-mono text-xs">
+                                                                        <span aria-hidden="true" class="size-2 rounded-full" style={`background-color:#${label.color}`} />
+                                                                        {label.name}
+                                                                    </span>
+                                                                ))}
+                                                            </span>
+                                                        </span>
+                                                        <span aria-hidden="true" class="font-mono text-fg-muted transition-transform group-hover:translate-x-1 group-hover:text-fg motion-reduce:transition-none">
+                                                            ↗
+                                                        </span>
+                                                    </a>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                    <nav data-pager aria-label={`${repo.name} issue pages`} hidden class="mt-6 flex flex-wrap items-center justify-between gap-4">
+                                        <p data-range class="font-mono text-sm text-fg-muted" aria-live="polite" />
+                                        <ul data-pages class="flex items-center gap-1" />
+                                    </nav>
+                                </div>
+                            </section>
+                        ))}
+                    </div>
+                </>
+            )
+        }
+    </main>
+</BaseLayout>
+
+<script>
+    const buttonClass =
+        "inline-flex h-10 min-w-10 cursor-pointer items-center justify-center rounded-full border border-line px-3 font-mono text-sm text-fg-muted transition-colors hover:bg-tint hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent aria-[current=page]:border-accent aria-[current=page]:text-fg";
+
+    function windowOf(page: number, last: number): (number | null)[] {
+        const pages = new Set([1, last, page - 1, page, page + 1]);
+        const sorted = [...pages].filter((n) => n >= 1 && n <= last).sort((a, b) => a - b);
+        const out: (number | null)[] = [];
+        sorted.forEach((n, i) => {
+            if (i > 0 && n - sorted[i - 1] > 1) out.push(null);
+            out.push(n);
+        });
+        return out;
+    }
+
+    document.querySelectorAll<HTMLElement>("[data-paginated]").forEach((group) => {
+        const size = Number(group.dataset.pageSize);
+        const items = Array.from(group.querySelectorAll<HTMLElement>("[data-item]"));
+        const pager = group.querySelector<HTMLElement>("[data-pager]");
+        const range = group.querySelector<HTMLElement>("[data-range]");
+        const pages = group.querySelector<HTMLElement>("[data-pages]");
+        if (!pager || !range || !pages || items.length <= size) return;
+
+        const last = Math.ceil(items.length / size);
+        pager.hidden = false;
+
+        function button(label: string, onClick: () => void, options: { current?: boolean; disabled?: boolean; aria?: string } = {}) {
+            const li = document.createElement("li");
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = buttonClass;
+            b.textContent = label;
+            if (options.aria) b.setAttribute("aria-label", options.aria);
+            if (options.current) b.setAttribute("aria-current", "page");
+            b.disabled = options.disabled ?? false;
+            b.addEventListener("click", onClick);
+            li.append(b);
+            return li;
+        }
+
+        function show(page: number, focus = false) {
+            items.forEach((item, i) => {
+                item.hidden = Math.floor(i / size) + 1 !== page;
+            });
+            const from = (page - 1) * size + 1;
+            const to = Math.min(page * size, items.length);
+            range!.textContent = `${from}–${to} of ${items.length}`;
+            pages!.replaceChildren(
+                button("←", () => show(page - 1, true), { disabled: page === 1, aria: "Previous page" }),
+                ...windowOf(page, last).map((n) => {
+                    if (n === null) {
+                        const gap = document.createElement("li");
+                        gap.textContent = "…";
+                        gap.className = "px-2 font-mono text-sm text-fg-faint";
+                        return gap;
+                    }
+                    return button(String(n), () => show(n, true), { current: n === page, aria: `Page ${n}` });
+                }),
+                button("→", () => show(page + 1, true), { disabled: page === last, aria: "Next page" }),
+            );
+            if (focus) {
+                pages!.querySelector<HTMLElement>("[aria-current=page]")?.focus();
+                group.querySelector<HTMLElement>("[data-items]")?.scrollIntoView({ block: "nearest" });
+            }
+        }
+
+        show(1);
+    });
+</script>

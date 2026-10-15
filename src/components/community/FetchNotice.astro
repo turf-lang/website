@@ -1,0 +1,23 @@
+---
+interface Props {
+    href: string;
+    what: string;
+}
+
+const { href, what } = Astro.props;
+---
+
+<div class="rounded-2xl border border-line bg-tint p-8 md:p-10" role="status">
+    <p class="font-mono text-sm text-term-error">Could not reach GitHub</p>
+    <p class="mt-4 max-w-xl leading-7 text-fg-muted">
+        The {what} are fetched from GitHub when the site is built, and that request failed this time. The latest
+        information is always on GitHub.
+    </p>
+    <a
+        href={href}
+        rel="noopener"
+        class="mt-6 inline-flex font-mono text-sm text-accent transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+    >
+        Open on GitHub →
+    </a>
+</div>

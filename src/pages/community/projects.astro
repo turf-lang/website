@@ -1,0 +1,99 @@
+---
+import CommunityTabs from "../../components/community/CommunityTabs.astro";
+import EmptyState from "../../components/community/EmptyState.astro";
+import FetchNotice from "../../components/community/FetchNotice.astro";
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import { boxGridSpan } from "../../lib/box-grid";
+import BoxGrid from "../../components/ui/BoxGrid.astro";
+import Button from "../../components/ui/Button.astro";
+import { projectTopic } from "../../data/community";
+import { formatDate } from "../../lib/content";
+import { getProjects } from "../../lib/github";
+
+const href = "/community/projects/";
+const lead = "The best things people have built with Turf, ranked by stars. Tag your repository and it shows up here.";
+const result = await getProjects();
+const list = result.data;
+const topicUrl = `https://github.com/topics/${projectTopic}`;
+---
+
+<BaseLayout title="Made with Turf · Community" description={lead}>
+    <PageHeader
+        crumbs={[{ label: "Community", href: "/community/" }, { label: "Made with Turf" }]}
+        title="Made with Turf"
+        lead={lead}
+        meta={result.ok && list.length > 0 ? [`${list.length} ${list.length === 1 ? "project" : "projects"}`] : undefined}
+    />
+    <CommunityTabs current={href} />
+
+    <main class="container-page py-12 md:py-16">
+        {
+            !result.ok ? (
+                <FetchNotice href={topicUrl} what="community projects" />
+            ) : list.length === 0 ? (
+                <EmptyState title="No projects listed yet">
+                    <p>
+                        This page lists every public repository tagged <code>{projectTopic}</code>. Built something in
+                        Turf? Add the topic in your repository settings and it appears here the next time the site
+                        is built.
+                    </p>
+                    <div class="mt-6">
+                        <Button href={topicUrl} rel="noopener">Add the topic</Button>
+                    </div>
+                </EmptyState>
+            ) : (
+                <>
+                    <BoxGrid>
+                        {list.map((project, i) => (
+                            <li class:list={["bg-surface", boxGridSpan(i, list.length)]}>
+                                <a
+                                    href={project.url}
+                                    rel="noopener"
+                                    class="group flex h-full flex-col p-8 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:p-10"
+                                >
+                                    <span class="flex items-center justify-between font-mono text-sm text-fg-muted">
+                                        <span class="font-pixel text-3xl leading-none tracking-[-0.04em] text-fg-faint">{String(i + 1).padStart(2, "0")}</span>
+                                        <span>★ {project.stars.toLocaleString("en-US")}</span>
+                                    </span>
+                                    <span class="mt-8 flex items-center gap-4">
+                                        <img
+                                            src={`${project.ownerAvatar}&s=96`}
+                                            alt=""
+                                            width="48"
+                                            height="48"
+                                            loading="lazy"
+                                            class="size-12 shrink-0 rounded-full border border-line bg-tint"
+                                        />
+                                        <span class="min-w-0">
+                                            <span class="block truncate font-mono text-sm text-fg-muted">{project.owner}</span>
+                                            <h2 class="truncate text-xl font-black tracking-[-0.03em] text-fg">{project.name}</h2>
+                                        </span>
+                                    </span>
+                                    <p class="mt-3 leading-7 text-fg-muted">{project.description || "No description yet."}</p>
+                                    {project.topics.length > 0 && (
+                                        <span class="mt-6 flex flex-wrap gap-2">
+                                            {project.topics.slice(0, 4).map((topic) => (
+                                                <span class="rounded-full border border-line px-2.5 py-0.5 font-mono text-xs text-fg-muted">{topic}</span>
+                                            ))}
+                                        </span>
+                                    )}
+                                    <span class="mt-auto pt-8 font-mono text-sm text-fg-faint">
+                                        {project.language ? `${project.language} · ` : ""}updated {formatDate(project.updated)}
+                                    </span>
+                                </a>
+                            </li>
+                        ))}
+                    </BoxGrid>
+
+                    <div class="mt-12 flex flex-wrap items-center gap-6">
+                        <Button href={topicUrl} variant="soft" rel="noopener">Add your project</Button>
+                        <p class="max-w-md text-sm leading-6 text-fg-muted">
+                            Add the <code>{projectTopic}</code> topic to your repository to be listed.
+                        </p>
+                    </div>
+                </>
+            )
+        }
+    </main>
+</BaseLayout>

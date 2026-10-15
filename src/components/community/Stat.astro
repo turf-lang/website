@@ -1,0 +1,21 @@
+---
+interface Props {
+    label: string;
+    value: string;
+    note?: string;
+    href: string;
+}
+
+const { label, value, note, href } = Astro.props;
+---
+
+<li class="bg-surface">
+    <a
+        href={href}
+        class="group flex h-full flex-col p-8 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
+    >
+        <span class="font-mono text-sm text-fg-muted">{label}</span>
+        <span class="mt-8 font-pixel text-5xl leading-none tracking-[-0.04em] text-fg md:text-6xl">{value}</span>
+        {note && <span class="mt-4 text-sm text-fg-muted">{note}</span>}
+    </a>
+</li>

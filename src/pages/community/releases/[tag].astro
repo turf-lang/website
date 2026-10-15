@@ -1,0 +1,116 @@
+---
+import checkIcon from "@phosphor-icons/core/assets/regular/check-circle.svg?raw";
+import { render } from "astro:content";
+import { learnComponents } from "../../../components/learn";
+import CommunityTabs from "../../../components/community/CommunityTabs.astro";
+import DocsToc from "../../../components/docs/DocsToc.astro";
+import BaseLayout from "../../../components/layout/BaseLayout.astro";
+import PageHeader from "../../../components/page/PageHeader.astro";
+import Button from "../../../components/ui/Button.astro";
+import { formatDate, isoDate } from "../../../lib/content";
+import { getReleaseEntries } from "../../../lib/releases";
+import { renderEntryText } from "../../../lib/release-text";
+import "../../../styles/learn.css";
+import "../../../styles/prose.css";
+
+export async function getStaticPaths() {
+    const { entries } = await getReleaseEntries();
+    return entries.map((entry, i) => ({
+        params: { tag: entry.tag },
+        props: { entry, newer: entries[i - 1], older: entries[i + 1] },
+    }));
+}
+
+const { entry, newer, older } = Astro.props;
+const rendered = entry.notes ? await render(entry.notes) : undefined;
+const Content = rendered?.Content;
+const headings = (rendered?.headings ?? []).filter((h) => h.depth === 2 || h.depth === 3);
+if (entry.github?.html) headings.push({ depth: 2, slug: "changelog", text: "Full changelog from GitHub" });
+const highlights = entry.notes?.data.highlights ?? [];
+const meta = [entry.released ? formatDate(entry.date) : "Not released yet", entry.tag, ...(entry.prerelease ? ["Pre-release"] : [])];
+---
+
+<BaseLayout title={`${entry.tag} · Release notes`} description={entry.summary}>
+    <PageHeader
+        crumbs={[
+            { label: "Community", href: "/community/" },
+            { label: "Release notes", href: "/community/releases/" },
+            { label: entry.tag },
+        ]}
+        title={entry.title}
+        lead={entry.summary}
+        meta={meta}
+    />
+    <CommunityTabs current="/community/releases/" />
+
+    <div class="container-page grid grid-cols-1 gap-x-16 xl:grid-cols-[minmax(0,1fr)_13rem]">
+        <main class="min-w-0 py-12 md:py-16">
+            <div class="max-w-3xl">
+                <p class="font-pixel text-6xl leading-none tracking-[-0.05em] text-fg md:text-7xl">
+                    {entry.released && <time datetime={isoDate(entry.date)} class="sr-only">{formatDate(entry.date)}</time>}
+                    {entry.tag}
+                </p>
+
+                {
+                    highlights.length > 0 && (
+                        <div class="mt-10 rounded-2xl border border-line bg-surface-raised p-5 md:p-6">
+                            <p class="font-mono text-xs text-fg-muted">In this release</p>
+                            <ul class="mt-4 grid gap-3">
+                                {highlights.map((item) => (
+                                    <li class="flex gap-3">
+                                        <span class="mt-1 size-5 shrink-0 text-term-hint [&>svg]:size-full" set:html={checkIcon} />
+                                        <span class="leading-7 text-fg-soft" set:html={renderEntryText(item)} />
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )
+                }
+
+                {Content && (
+                    <article class="learn-prose mt-4">
+                        <Content components={learnComponents} />
+                    </article>
+                )}
+
+                {
+                    entry.github?.html && (
+                        <section id="changelog" class="mt-16 scroll-mt-28 border-t border-line pt-12">
+                            <h2 class="text-3xl leading-[1.1] tracking-[-0.04em] text-fg md:text-4xl">Full changelog from GitHub</h2>
+                            <p class="mt-4 text-fg-muted">Written on the GitHub release page. It lists every change that went into {entry.tag}.</p>
+                            <div class="prose-turf mt-8 [&_img]:max-w-full [&_table]:block [&_table]:overflow-x-auto" set:html={entry.github.html} />
+                        </section>
+                    )
+                }
+
+                <div class="mt-12 flex flex-wrap gap-3">
+                    {entry.github && <Button href={entry.github.url} variant="soft" rel="noopener">View on GitHub ↗</Button>}
+                    <Button href="/community/releases/" variant="soft">All releases</Button>
+                </div>
+
+                {
+                    (newer || older) && (
+                        <nav aria-label="Other releases" class="mt-16 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
+                            {older ? (
+                                <a href={older.href} class="group flex flex-col gap-2 bg-surface p-6 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent">
+                                    <span class="font-mono text-xs text-fg-muted">← Older</span>
+                                    <span class="font-pixel text-2xl text-fg">{older.tag}</span>
+                                </a>
+                            ) : <span class="hidden bg-surface sm:block" />}
+                            {newer ? (
+                                <a href={newer.href} class="group flex flex-col gap-2 bg-surface p-6 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent sm:items-end sm:text-right">
+                                    <span class="font-mono text-xs text-fg-muted">Newer →</span>
+                                    <span class="font-pixel text-2xl text-fg">{newer.tag}</span>
+                                </a>
+                            ) : <span class="hidden bg-surface sm:block" />}
+                        </nav>
+                    )
+                }
+            </div>
+        </main>
+
+        <aside class="hidden xl:sticky xl:top-20 xl:block xl:max-h-[calc(100dvh-5rem)] xl:self-start xl:overflow-y-auto xl:py-16">
+            <DocsToc headings={headings} />
+        </aside>
+    </div>
+</BaseLayout>

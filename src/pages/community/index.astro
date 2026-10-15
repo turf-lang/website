@@ -1,0 +1,150 @@
+---
+import arrowIcon from "@phosphor-icons/core/assets/regular/arrow-up-right.svg?raw";
+import bugIcon from "@phosphor-icons/core/assets/regular/bug.svg?raw";
+import branchIcon from "@phosphor-icons/core/assets/regular/git-branch.svg?raw";
+import rocketIcon from "@phosphor-icons/core/assets/regular/rocket-launch.svg?raw";
+import tagIcon from "@phosphor-icons/core/assets/regular/tag.svg?raw";
+import usersIcon from "@phosphor-icons/core/assets/regular/users-three.svg?raw";
+import CommunityTabs from "../../components/community/CommunityTabs.astro";
+import Stat from "../../components/community/Stat.astro";
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import Section from "../../components/sections/Section.astro";
+import BoxGrid from "../../components/ui/BoxGrid.astro";
+import Button from "../../components/ui/Button.astro";
+import { communityRepos, githubOrg, projectTopic, repoUrl } from "../../data/community";
+import { getSection } from "../../data/navigation";
+import { boxGridSpan } from "../../lib/box-grid";
+import { formatDate } from "../../lib/content";
+import { getContributors, getIssues, getProjects } from "../../lib/github";
+import { getReleaseEntries } from "../../lib/releases";
+
+const section = getSection("community");
+const lead = "Turf is open source and built in the open. Follow what ships, see what needs help, and meet the people and projects around the language.";
+
+const [releases, issues, contributors, projects] = await Promise.all([
+    getReleaseEntries(),
+    getIssues(),
+    getContributors(),
+    getProjects(),
+]);
+
+const latest = releases.latest;
+const openIssues = issues.data.reduce((sum, r) => sum + r.issues.length, 0);
+const icons: Record<string, string> = {
+    "/community/releases/": tagIcon,
+    "/community/issues/": bugIcon,
+    "/community/contributors/": usersIcon,
+    "/community/projects/": rocketIcon,
+};
+---
+
+<BaseLayout title="Open Source · Community" description={lead}>
+    <PageHeader crumbs={[{ label: "Community" }]} title="Built in the open" lead={lead} />
+    <CommunityTabs current={section.root} />
+
+    <div class="container-page py-12 md:py-16">
+        <ul class="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+            <Stat
+                label="Latest release"
+                value={latest ? latest.tag : "—"}
+                note={latest ? formatDate(latest.date) : "Not available"}
+                href="/community/releases/"
+            />
+            <Stat
+                label="Open issues"
+                value={issues.ok ? String(openIssues) : "—"}
+                note={`Across ${communityRepos.length} repositories`}
+                href="/community/issues/"
+            />
+            <Stat
+                label="Contributors"
+                value={contributors.ok ? String(contributors.data.length) : "—"}
+                note="People with commits"
+                href="/community/contributors/"
+            />
+            <Stat
+                label="Community projects"
+                value={projects.ok ? String(projects.data.length) : "—"}
+                note="Tagged made-with-turf"
+                href="/community/projects/"
+            />
+        </ul>
+    </div>
+
+    <Section id="explore" index="01" title="Explore" layout="stacked" class="border-t-0! pt-4! pb-16! md:pb-20!">
+        <ul class="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+            {
+                section.links.map((link, i) => (
+                    <li class="bg-surface">
+                        <a
+                            href={link.href}
+                            class="group flex h-full min-h-72 flex-col p-8 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:p-10"
+                        >
+                            <span class="flex items-start justify-between">
+                                <span class="size-8 text-accent [&>svg]:size-full" aria-hidden="true" set:html={icons[link.href]} />
+                                <span class="font-mono text-sm text-fg-faint">{String(i + 1).padStart(2, "0")}</span>
+                            </span>
+                            <span class="mt-10 font-pixel text-3xl leading-[1.05] tracking-[-0.04em] text-fg">{link.label}</span>
+                            <span class="mt-4 leading-7 text-fg-muted">{link.description}</span>
+                            <span class="mt-auto flex items-center gap-2 pt-8 font-mono text-sm text-fg-muted transition-colors group-hover:text-fg">
+                                Open
+                                <span aria-hidden="true" class="transition-transform group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+                            </span>
+                        </a>
+                    </li>
+                ))
+            }
+        </ul>
+    </Section>
+
+    <Section
+        id="repositories"
+        index="02"
+        title="Repositories"
+        description="Turf lives in five repositories. Every one of them welcomes issues and pull requests."
+        layout="stacked"
+        class="pb-16! md:pb-20!"
+    >
+        <BoxGrid>
+            {
+                communityRepos.map((repo, i) => (
+                    <li class:list={["bg-surface", boxGridSpan(i, communityRepos.length)]}>
+                        <a
+                            href={repoUrl(repo.name)}
+                            rel="noopener"
+                            class="group flex h-full flex-col p-8 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:p-10"
+                        >
+                            <span class="flex items-center justify-between font-mono text-sm text-fg-muted">
+                                <span class="inline-flex items-center gap-2">
+                                    <span class="size-4 [&>svg]:size-full" aria-hidden="true" set:html={branchIcon} />
+                                    {repo.label}
+                                </span>
+                                <span class="size-4 text-fg-faint transition-colors group-hover:text-fg [&>svg]:size-full" aria-hidden="true" set:html={arrowIcon} />
+                            </span>
+                            <span class="mt-8 font-pixel text-3xl leading-none tracking-[-0.04em] text-fg">{repo.name}</span>
+                            <span class="mt-4 leading-7 text-fg-muted">{repo.description}</span>
+                            <span class="mt-auto pt-8 font-mono text-sm text-fg-faint">{githubOrg}/{repo.name}</span>
+                        </a>
+                    </li>
+                ))
+            }
+        </BoxGrid>
+    </Section>
+
+    <Section
+        id="get-involved"
+        index="03"
+        title="Get involved"
+        description="Read the contributing guide, pick an issue, or list your own project."
+        layout="stacked"
+    >
+        <div class="flex flex-wrap gap-3">
+            <Button href="/docs/compiler/contributing/">Contributing guide</Button>
+            <Button href="/community/issues/" variant="soft">Browse open issues</Button>
+            <Button href={`https://github.com/topics/${projectTopic}`} variant="soft" rel="noopener">
+                Add your project
+            </Button>
+        </div>
+    </Section>
+</BaseLayout>

@@ -2,6 +2,7 @@ import { getCollection } from "astro:content";
 import { getSection } from "../data/navigation";
 import { formatTdpNumber, getProposals, tdpSlug, tdpStatusHref, tdpStatusInfo, tdpStatusOrder } from "./content";
 import { getFlatDocs } from "./docs";
+import { getReleaseEntries } from "./releases";
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
@@ -20,6 +21,11 @@ export async function getOgPages(): Promise<Map<string, string>> {
     add("/blog/", getSection("blog").label);
     add("/learn/", getSection("learn").label);
     add("/resources/", getSection("resources").label);
+    add("/community/", "Open Source · Community");
+    add("/community/releases/", "Release notes");
+    add("/community/issues/", "Open issues");
+    add("/community/contributors/", "Top contributors");
+    add("/community/projects/", "Made with Turf");
     add("/stdlib/", getSection("stdlib").heading);
     add("/tdp/", "Constitution · TDP");
     add("/tdp/process/", "Process · TDP");
@@ -37,6 +43,7 @@ export async function getOgPages(): Promise<Map<string, string>> {
     for (const proposal of await getCollection("tdp")) {
         add(`/tdp/${tdpSlug(proposal.data)}/`, `${formatTdpNumber(proposal.data)} ${proposal.data.title}`);
     }
+    for (const release of (await getReleaseEntries()).entries) add(release.href, `${release.tag} · Release notes`);
     for (const doc of await getFlatDocs()) add(doc.href, doc.title);
 
     return pages;

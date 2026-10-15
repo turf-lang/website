@@ -1,0 +1,135 @@
+---
+import CommunityTabs from "../../components/community/CommunityTabs.astro";
+import EmptyState from "../../components/community/EmptyState.astro";
+import FetchNotice from "../../components/community/FetchNotice.astro";
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import { githubOrg } from "../../data/community";
+import { getContributors } from "../../lib/github";
+
+const href = "/community/contributors/";
+const lead = "The people who write Turf, ranked by commits across the compiler, command line, language server, fuzzer and website.";
+const LIMIT = 25;
+const result = await getContributors();
+const all = result.data;
+const top = all.slice(0, LIMIT);
+const totalCommits = all.reduce((sum, c) => sum + c.commits, 0);
+const podium = top.slice(0, 3).map((person, i) => ({ person, rank: i + 1 }));
+const rest = top.slice(3);
+const max = top[0]?.commits ?? 1;
+const pad = (n: number) => String(n).padStart(2, "0");
+const share = (commits: number) => `${Math.max(1, Math.round((commits / totalCommits) * 100))}%`;
+---
+
+<BaseLayout title="Top contributors · Community" description={lead}>
+    <PageHeader
+        crumbs={[{ label: "Community", href: "/community/" }, { label: "Top contributors" }]}
+        title="Top contributors"
+        lead={lead}
+        meta={result.ok ? [`Top ${top.length} of ${all.length}`, `${totalCommits.toLocaleString("en-US")} commits`] : undefined}
+    />
+    <CommunityTabs current={href} />
+
+    <main class="container-page py-12 md:py-16">
+        {
+            !result.ok ? (
+                <FetchNotice href={`https://github.com/${githubOrg}`} what="contributors" />
+            ) : all.length === 0 ? (
+                <EmptyState title="No contributors yet">
+                    <p>Be the first. Open a pull request and your name lands here.</p>
+                </EmptyState>
+            ) : (
+                <>
+                    <ol class="grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-3">
+                        {podium.map(({ person, rank }) => (
+                            <li class="bg-surface">
+                                <a
+                                    href={person.url}
+                                    rel="noopener"
+                                    class="group flex h-full flex-col p-8 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent md:p-10"
+                                >
+                                    <span class="flex items-center justify-between">
+                                        <span class="font-pixel text-5xl leading-none tracking-[-0.04em] text-accent">{pad(rank)}</span>
+                                        <span class="font-mono text-sm text-fg-faint">{person.repos.length} {person.repos.length === 1 ? "repo" : "repos"}</span>
+                                    </span>
+                                    <img
+                                        src={`${person.avatar}&s=160`}
+                                        alt=""
+                                        width="80"
+                                        height="80"
+                                        loading="lazy"
+                                        class="mt-8 size-20 rounded-full border border-line bg-tint"
+                                    />
+                                    <span class="mt-6 text-2xl font-black tracking-[-0.03em] text-fg">{person.login}</span>
+                                    <span class="mt-2 font-mono text-sm text-fg-muted">
+                                        {person.commits.toLocaleString("en-US")} commits
+                                    </span>
+                                    <span class="mt-6 flex flex-wrap gap-2 pt-2">
+                                        {person.repos.map((repo) => (
+                                            <span class="rounded-full border border-line px-2.5 py-0.5 font-mono text-xs text-fg-muted">{repo}</span>
+                                        ))}
+                                    </span>
+                                </a>
+                            </li>
+                        ))}
+                    </ol>
+
+                    {rest.length > 0 && (
+                        <div class="mt-12 overflow-x-auto rounded-2xl border border-line">
+                            <table class="w-full min-w-[40rem] border-collapse text-left">
+                                <caption class="sr-only">Contributors ranked 4 to {top.length}</caption>
+                                <thead>
+                                    <tr class="border-b border-line bg-tint font-mono text-xs text-fg-muted">
+                                        <th scope="col" class="w-20 px-6 py-4 font-normal">Rank</th>
+                                        <th scope="col" class="px-6 py-4 font-normal">Contributor</th>
+                                        <th scope="col" class="px-6 py-4 font-normal">Repositories</th>
+                                        <th scope="col" class="w-56 px-6 py-4 font-normal">Share</th>
+                                        <th scope="col" class="w-32 px-6 py-4 text-right font-normal">Commits</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-line">
+                                    {rest.map((person, i) => (
+                                        <tr class="transition-colors hover:bg-tint">
+                                            <td class="px-6 py-4 font-pixel text-2xl leading-none text-fg-muted">{pad(i + 4)}</td>
+                                            <td class="px-6 py-4">
+                                                <a
+                                                    href={person.url}
+                                                    rel="noopener"
+                                                    class="flex items-center gap-4 font-bold tracking-[-0.02em] text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+                                                >
+                                                    <img
+                                                        src={`${person.avatar}&s=80`}
+                                                        alt=""
+                                                        width="40"
+                                                        height="40"
+                                                        loading="lazy"
+                                                        class="size-10 rounded-full border border-line bg-tint"
+                                                    />
+                                                    {person.login}
+                                                </a>
+                                            </td>
+                                            <td class="px-6 py-4 font-mono text-sm text-fg-muted">{person.repos.join(", ")}</td>
+                                            <td class="px-6 py-4">
+                                                <span class="flex items-center gap-3">
+                                                    <span aria-hidden="true" class="h-1 flex-1 rounded-full bg-tint-strong">
+                                                        <span class="block h-full rounded-full bg-accent" style={`width:${Math.max(2, (person.commits / max) * 100)}%`} />
+                                                    </span>
+                                                    <span class="w-10 text-right font-mono text-xs text-fg-muted">{share(person.commits)}</span>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right font-mono text-sm text-fg">{person.commits.toLocaleString("en-US")}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    <p class="mt-10 max-w-xl leading-7 text-fg-muted">
+                        Commit counts come from GitHub and refresh each time the site is built. Bots are left out.
+                    </p>
+                </>
+            )
+        }
+    </main>
+</BaseLayout>
