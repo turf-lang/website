@@ -3,8 +3,9 @@ major: 2
 number: 12
 title: Richer patterns and enum payloads
 description: Make `compare` usable as an expression, add range and nested or-patterns, and let plain enums carry data.
-status: proposed
+status: accepted
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

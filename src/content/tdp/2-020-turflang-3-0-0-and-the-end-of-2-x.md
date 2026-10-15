@@ -3,8 +3,9 @@ major: 2
 number: 20
 title: TurfLang 3.0.0 and the end of 2.x
 description: Define what ships in 3.0.0, how 2.8 prepares for it, and how 2.x is supported and then discontinued.
-status: draft
+status: proposed
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

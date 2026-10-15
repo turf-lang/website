@@ -3,8 +3,9 @@ major: 2
 number: 10
 title: Generic inference from arguments and return types
 description: Infer a generic struct's type arguments from a constructor's arguments, allow type parameters that appear only in a return type, and add constructors that carry their element type.
-status: proposed
+status: accepted
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

@@ -3,8 +3,9 @@ major: 2
 number: 16
 title: Native code in packages and checked boundaries
 description: Let a package build its own C sources and link system libraries, and let an `extern fn` declare contracts the compiler turns into checks.
-status: draft
+status: proposed
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

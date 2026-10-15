@@ -3,8 +3,9 @@ major: 2
 number: 9
 title: Closures and function values
 description: Add anonymous functions that can capture variables, passed and stored as function values, in four phases from capture-free to stack-allocated environments.
-status: proposed
+status: accepted
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

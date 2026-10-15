@@ -3,8 +3,9 @@ major: 2
 number: 11
 title: Iteration over collections and storable slices
 description: Let `for x in list` work over the standard collections through a simple protocol, and let a `Slice<T>` be stored in fields, returned and kept in collections.
-status: proposed
+status: accepted
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

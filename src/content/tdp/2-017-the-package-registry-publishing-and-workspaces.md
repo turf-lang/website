@@ -3,8 +3,9 @@ major: 2
 number: 17
 title: The package registry, publishing and workspaces
 description: Add a package registry with semver ranges, a checked `turf publish`, workspaces and generated package documentation, hosted as a static index with no server.
-status: draft
+status: proposed
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

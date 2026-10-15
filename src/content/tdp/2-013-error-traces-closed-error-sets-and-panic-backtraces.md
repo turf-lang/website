@@ -3,8 +3,9 @@ major: 2
 number: 13
 title: Error traces, closed error sets and panic backtraces
 description: Show where an error travelled and where a panic happened, and let a function declare exactly which errors it can return.
-status: proposed
+status: accepted
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

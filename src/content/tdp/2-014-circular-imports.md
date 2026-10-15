@@ -3,8 +3,9 @@ major: 2
 number: 14
 title: Circular imports
 description: Allow two modules to import each other, so a program that is rejected today for a cycle compiles.
-status: proposed
+status: accepted
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

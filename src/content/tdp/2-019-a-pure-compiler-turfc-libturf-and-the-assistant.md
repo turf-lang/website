@@ -3,8 +3,9 @@ major: 2
 number: 19
 title: "A pure compiler: turfc, libturf and the assistant"
 description: Reduce `turfc` to a deterministic compiler, move the front end into a versioned library, and move the model assistant, formatter, migrator and test runner into their own tools.
-status: draft
+status: proposed
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---

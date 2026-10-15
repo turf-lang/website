@@ -3,8 +3,9 @@ major: 2
 number: 18
 title: Safe library interfaces
 description: Count and report a package's unsafe code, warn when a raw pointer leaks through its public API or a method is called through one, and make both errors in 3.0.
-status: draft
+status: proposed
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---
