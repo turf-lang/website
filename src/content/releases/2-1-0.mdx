@@ -1,0 +1,122 @@
+---
+tag: "v2.1.0"
+title: "Fixes in diagnostics, size parameters and the arrays module"
+description: "No breaking changes. The compiler now shows a checked Fix: for errors it knows how to repair, generic functions can take an array's length, and a new arrays module builds whole arrays."
+date: 2026-10-16
+highlights:
+  - "No breaking changes: every program that compiled with 2.0 compiles and behaves the same."
+  - "Diagnostics end with a checked `Fix:` block when the compiler knows the exact edit."
+  - "Size parameters: `fn<T, N: size>` lets a function take and return `T[N]`."
+  - "The new `arrays` module builds whole arrays with `fill`, `generate`, `reversed` and `map`."
+  - "Fixed-size arrays read as zero until written, so a loop that fills one is no longer E008."
+  - "Fewer false warnings from the analysis, and one compiler crash fixed."
+---
+
+Turf 2.1.0 changes nothing you have already written. Every program that compiled with 2.0 still compiles and behaves the same. Some programs that 2.0 rejected now compile, and some warnings that 2.0 printed by mistake are gone.
+
+## Language
+
+### Fixed-size arrays are assigned from their declaration
+
+`mut a: int[1000];` declares an array whose elements all read as the zero value of the element type until something writes them: `0`, `0.0`, `false`, `""`, `null` for `&?T`, or a zero-filled struct. Reading one before any write is no longer E008.
+
+```turf
+import io;
+
+fn main(): int {
+    mut squares: int[10];
+    for i in 0..10 {
+        squares[i] = i * i;
+    }
+    io::printline(squares[3]);
+    return 0;
+}
+```
+
+```text
+9
+```
+
+In 2.0 this program was rejected with E008, because the loop might not run. Version 2.0 tracked an array as a whole: one element write such as `a[0] = 1;` counted as assigning every element, so `a[3]` then read a zero that nothing wrote, while an array filled completely in a loop was rejected. Elements cannot be tracked one by one, so 2.1.0 says out loud what the storage already did: the array is zero-filled from its declaration.
+
+An array whose element type holds a non-null reference, `(&T)[N]` or a struct with a `&T` field, still needs an initializer (E128). So does an unsized `T[]`.
+
+### An array literal of `null`s takes a `(&?T)[N]` type
+
+`a = [null, null];` for `a: (&?N)[2]` compiles, and so does the same literal as an argument, a `return` value or a field value. So does `[&n, &m]` where a `(&?N)[2]` is expected. Version 2.0 accepted these only in a declaration.
+
+### Size parameters
+
+A generic function can take an array's length as a parameter, written `N: size`. `N` is used as an array dimension and reads as an `int` in the body. A call gets it from an array argument, or else from the type the result is stored into.
+
+```turf
+fn<T, N: size> fill(value: T): T[N] {
+    mut r: T[N];
+    for i in 0..N {
+        r[i] = value;
+    }
+    return r;
+}
+
+fn main(): int {
+    mut zeros: int[8] = fill(0);
+    return zeros[7];
+}
+```
+
+Here `N` is 8, because that is the length of the array the result is stored into. When nothing gives `N`, the call is E129. A size parameter on a struct, method or operator, or one used as a type or assigned to, is the new E150.
+
+### `recover` and assignment
+
+`recover` binds more loosely than `=` and `+=`. So `v = f() recover run { ... };` means `(v = f()) recover ...`, and that is E066. Write `v = (f() recover run { ... });` instead. The parser is unchanged; the reference now says so.
+
+## Diagnostics
+
+### Fixes in diagnostics, in every build
+
+When the compiler knows the exact edit that removes an error, the diagnostic now ends with a `Fix:` block showing the corrected line. It needs no flag and no model, and the plain build and the `--no-smart` build both print it. This is [TDP-2-001](/tdp/2-001/).
+
+```text
+── error at line 6, col 27 [E040 · undeclared variable]
+
+  I can't find anything named 'nmae'.
+
+  Hint: It may be from the current file: 'name'
+
+  6 │     printline("Hello, " + nmae + "!");
+    │                           ^~~~ Here!
+
+  Fix: replace 'nmae' with 'name'
+  6 │     printline("Hello, " + name + "!");
+    │                           ~~~~
+
+  Run `turf --explain E040` for more details.
+```
+
+A fix is shown only after it has been checked. The compiler applies the edit to a copy of the program in memory, analyses the copy, and prints the fix only if the original error is gone and no new error appeared. Your files are never changed. A fix is offered only for an error, never a warning, never inside the standard library, and only when there is exactly one candidate. A typo with two equally close names keeps its hint listing both and has no `Fix:`. At most ten fixes are checked in one compile, and a clean compile does none.
+
+These errors can carry a fix: E014, E026, E029, E030, E031, E039, E040, E041, E042, E046, E048, E052, E054, E060, E068, E087, E102 and E138. Error codes are unchanged.
+
+- **`--smart`:** the compiler's own fix comes first, and when an error has one the model is never called. The model is asked only when there is no compiler fix. Its suggestion is now labelled `[Model Suggestion]`, where it used to say `[AI Suggestion]`. The `[Deterministic Fix]` status line is gone, because compiler fixes are no longer part of `--smart`.
+- **`--smart-write-fix=<path>`** writes your program with every `Fix:` the compiler showed applied, in any build and without `--smart`. With `--smart` and no compiler fix, it writes the model's validated suggestion. The flag and the `turfc` interface version are unchanged.
+- **Test authors:** a new marker, `// EXPECT-FIX: replace 'nmae' with 'name'`, pins a printed `Fix:` line. In a test that has one, `turf test` requires each marker to match a printed `Fix:` exactly, then applies the fixes and checks that the fixed program has fewer errors and none the original lacked. Tests without the marker behave as before. `TURF_FIX_DEBUG=1` prints a `[fix]` line for each error the fix path looks at, and why its fix was not shown.
+- **Tools that match diagnostic text** will see the new `Fix:` lines. Diagnostic wording is outside the compatibility promise. The error codes are the stable part.
+
+### Analysis
+
+- **No false "dead store" or "never used" inside a `recover run { }` block.** A loop in the block, and `return`, `break` and `continue` in it, are part of the function's control flow, so a value carried round such a loop, or set before a `continue`, is read.
+- **Writing one element no longer makes the array's earlier value dead.** `mut x: int[3]; x[0] = 1; x[1] = 2; print(x[0]);` no longer warns that `x[0] = 1` is never read, and `mut y = [1, 2, 3]; y[2] = 9;` no longer warns about `y`'s initializer.
+- **A dead initializer says so.** `mut x: int = 0;`, whose value every path overwrites before reading, now reports "The initial value of 'x' is never read: every path assigns 'x' again before reading it.", with a hint to declare `mut x: int;`. Version 2.0 printed "Variable 'x' is assigned but the value is never read (dead store)", which read as if `x` itself were unused.
+- **No false "infinite loop" warning** for a `while true` whose only `break` or `return` is inside a `recover` block, a `compare` arm or an `unsafe` block.
+
+## Standard library
+
+- **`arrays`** (`import arrays;`): `fill`, `generate`, `reversed` and `map` build whole fixed-size arrays. Each returns a new `T[N]` and changes nothing it is given: `mut zeros: int[1000] = arrays::fill(0);`. The length comes from the type the result is stored into, or from an array argument. It is not in the prelude, and it is not the prelude's `array` module, whose helpers read an existing array.
+
+## Compiler crashes fixed
+
+- An `if`/`else` whose branches differ only in an `INT_MIN` literal (`x = -9223372036854775808;` against `x = -7;`) crashed the compiler. It was found by turf-fuzz and is now a regression test.
+
+## Editor support
+
+turf-lsp shows the same warnings as `turf`, because it runs the compiler's own analysis. The fixes above reach your editor once turf-lsp is rebuilt against 2.1.0. No turf-lsp source change is needed.
