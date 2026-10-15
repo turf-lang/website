@@ -12,7 +12,7 @@ authors:
 
 ## Summary
 
-The goal is that a Turf library can wrap C, keep every `unsafe` line inside itself, and present a safe API. This proposal supplies the missing visibility and rules. `turf graph` and a readable `turf audit` report each package's unsafe surface. A raw pointer in a package's `pub` API becomes a warning. A method call through a raw-pointer receiver becomes a warning in 2.2. In 3.0 both become errors. Together with the checking mode of [TDP-2-015](/tdp/2-015/) (runtime debug checks), a memory error in a program always traces to a named unsafe region in a named package.
+The goal is that a Turf library can wrap C, keep every `unsafe` line inside itself, and present a safe API. This proposal supplies the missing visibility and rules. `turf graph` and a readable `turf audit` report each package's unsafe surface. A raw pointer in a package's `pub` API becomes a warning. A method call through a raw-pointer receiver becomes a warning in 2.3. In 3.0 both become errors. Together with the checking mode of [TDP-2-015](/tdp/2-015/) (runtime debug checks), a memory error in a program always traces to a named unsafe region in a named package.
 
 ## Motivation
 
@@ -51,11 +51,11 @@ The compiler supplies the counts through the package-graph output, which is a ve
 
 ### Raw pointers in the public API
 
-A raw pointer type (`ptr`, `T*`) in a package's `pub` API is a warning from 2.6. The rule for 3.0 is decided here: it is an error unless the code holds the raw-pointer capability itself. A library should wrap the pointer in a struct or a safe reference (the checked contracts in [TDP-2-016](/tdp/2-016/), native code in packages and checked boundaries, exist for this), so callers need no `unsafe`.
+A raw pointer type (`ptr`, `T*`) in a package's `pub` API is a warning from 2.7. The rule for 3.0 is decided here: it is an error unless the code holds the raw-pointer capability itself. A library should wrap the pointer in a struct or a safe reference (the checked contracts in [TDP-2-016](/tdp/2-016/), native code in packages and checked boundaries, exist for this), so callers need no `unsafe`.
 
 ### Raw-receiver method calls
 
-A method call whose receiver is a raw pointer is a warning in 2.2 and an error in 3.0:
+A method call whose receiver is a raw pointer is a warning in 2.3 and an error in 3.0:
 
 ```turf
 unsafe {
@@ -86,7 +86,7 @@ In 2.x nothing breaks: both are warnings, and they can be silenced with lint lev
 
 - Tests of the report against packages with known counts of each kind.
 - A failing and a passing test for each warning, and the false-positive record over the standard library, tests, showcase and examples.
-- A test that `lint-set = "3.0"` reports both as errors on 2.8.
+- A test that `lint-set = "3.0"` reports both as errors on 2.9.
 - A test that the migration produces code that compiles and keeps its meaning.
 
 ## Drawbacks

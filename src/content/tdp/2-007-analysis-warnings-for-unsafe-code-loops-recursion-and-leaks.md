@@ -5,13 +5,14 @@ title: Analysis warnings for unsafe code, loops, recursion and leaks
 description: Add a family of warnings that find mistakes in unsafe code, infinite loops, infinite recursion, manual-heap leaks, precision loss, dead code and raw-receiver calls, without rejecting any program that compiles today.
 status: accepted
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---
 
 ## Summary
 
-The compiler already finds some mistakes by analysing a function: it knows when a loop cannot end, when every path recurses, and when a pointer may be null. This proposal extends that analysis in 2.2 with new checks for `unsafe` code, loops, recursion, nullability, manual-heap leaks, `int`-to-`double` precision loss, dead code and method calls through a raw receiver. Every one lands as a **warning**. None rejects a program that compiled before. Each carries a stable code and a hint, and each has a measured false-positive record before it ships. Promotion to an error is a separate, later decision in 3.0.
+The compiler already finds some mistakes by analysing a function: it knows when a loop cannot end, when every path recurses, and when a pointer may be null. This proposal extends that analysis in 2.3 with new checks for `unsafe` code, loops, recursion, nullability, manual-heap leaks, `int`-to-`double` precision loss, dead code and method calls through a raw receiver. Every one lands as a **warning**. None rejects a program that compiled before. Each carries a stable code and a hint, and each has a measured false-positive record before it ships. Promotion to an error is a separate, later decision in 3.0.
 
 ## Motivation
 
@@ -46,9 +47,9 @@ Every new check follows the warn-to-deny ladder from the versioning contract:
 | **Manual-heap leaks.** Memory from `mem::alloc` that is never freed, on the manual heap only. | Garbage-collected memory is not reported. |
 | **Precision loss.** An opt-in warning when an `int` is converted to `double` and may lose digits. | Never an error. Off by default. |
 | **Dead code.** An unused private function, an unused import, an unused `pub` item in a binary's root. | Needs the module graph. Can be allowed. |
-| **Raw-receiver calls.** A method call through a raw-pointer receiver, which needs no `unsafe` today. | A warning in 2.2 and an error in 3.0. |
+| **Raw-receiver calls.** A method call through a raw-pointer receiver, which needs no `unsafe` today. | A warning in 2.3 and an error in 3.0. |
 
-One more recursion check, "no argument shrinks", is a heuristic. It arrives in 2.5 inside an opt-in `pedantic` group and is never promoted.
+One more recursion check, "no argument shrinks", is a heuristic. It arrives in 2.6 inside an opt-in `pedantic` group and is never promoted.
 
 ### Output
 

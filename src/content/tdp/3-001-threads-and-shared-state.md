@@ -5,6 +5,7 @@ title: Threads and shared state
 description: Add threads to Turf with a share-nothing default, transferable arguments, and shared state only through library types, designed so it never needs a major version.
 status: draft
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---
@@ -62,7 +63,7 @@ Their `unsafe` core is inside the standard library and nowhere else, so a progra
 
 ### The runtime
 
-The runtime work provides per-thread stack bounds and register capture, a stop-the-world handshake, allocation through per-thread buffers (the collector work of 2.5), and thread-safe panic and signal handlers. Its key rule is the **single-thread fast path**: locks and handshakes are compiled out until the first thread starts, so a single-threaded program pays no cost, and the benchmark floor must hold.
+The runtime work provides per-thread stack bounds and register capture, a stop-the-world handshake, allocation through per-thread buffers (the collector work of 2.6), and thread-safe panic and signal handlers. Its key rule is the **single-thread fast path**: locks and handshakes are compiled out until the first thread starts, so a single-threaded program pays no cost, and the benchmark floor must hold.
 
 ### Closures and `thread`
 

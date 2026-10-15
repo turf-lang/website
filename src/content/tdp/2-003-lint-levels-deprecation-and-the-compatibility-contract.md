@@ -5,6 +5,7 @@ title: Lint levels, deprecation and the 2.x compatibility contract
 description: Give every diagnostic code a level you can set, add a way to deprecate an API, and enforce the 2.x promise with a frozen test corpus and a code registry.
 status: accepted
 date: 2026-10-15
+updated: 2026-10-16
 authors:
   - Turf Team
 ---
@@ -54,7 +55,7 @@ There is **no source syntax**. A level is a property of a project or a command, 
 
 `lint-set = "2.N"` freezes the set of warnings to those that existed in 2.N. A warning introduced in a later minor is treated as `allow` until the pin moves. This is what makes `deny` safe to use across upgrades: a project that denies warnings and pins `lint-set = "2.4"` does not fail on a warning that 2.5 adds. Without a pin, `--deny-warnings` is documented as upgrade-unsafe, and the manifest says so where it is set.
 
-`lint-set = "3.0"`, available on 2.8, reports every breaking-register entry that applies to source code as an error, so a project can be ready for 3.0 before it upgrades ([TDP-2-020](/tdp/2-020/), TurfLang 3.0.0 and the end of 2.x).
+`lint-set = "3.0"`, available on 2.9, reports every breaking-register entry that applies to source code as an error, so a project can be ready for 3.0 before it upgrades ([TDP-2-020](/tdp/2-020/), TurfLang 3.0.0 and the end of 2.x).
 
 ### `@deprecated`
 
