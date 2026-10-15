@@ -5,7 +5,46 @@ export type Post = CollectionEntry<"blog">;
 export type Proposal = CollectionEntry<"tdp">;
 export type TdpStatus = Proposal["data"]["status"];
 
-export type ProposalFilter = "all" | "accepted" | "implemented";
+export type ProposalFilter = "all" | TdpStatus;
+
+export const tdpStatusOrder = ["proposed", "accepted", "implemented", "draft", "rejected", "withdrawn"] as const satisfies readonly TdpStatus[];
+
+export const tdpStatusInfo: Record<TdpStatus, { label: string; description: string; lead: string }> = {
+    proposed: {
+        label: "Proposed",
+        description: "Open for public discussion.",
+        lead: "Open for public discussion. Read them and say what you think.",
+    },
+    accepted: {
+        label: "Accepted",
+        description: "Approved and awaiting work.",
+        lead: "Approved by the maintainers and waiting to be built.",
+    },
+    implemented: {
+        label: "Implemented",
+        description: "Shipped in a release.",
+        lead: "Proposals that have shipped in a release.",
+    },
+    draft: {
+        label: "Draft",
+        description: "Still being written.",
+        lead: "Still being written by their authors and not yet open for review.",
+    },
+    rejected: {
+        label: "Rejected",
+        description: "Declined, with the reasons kept.",
+        lead: "Declined. The text and the reasons are kept for the record.",
+    },
+    withdrawn: {
+        label: "Withdrawn",
+        description: "Pulled back by the author.",
+        lead: "Pulled back by their authors before a decision.",
+    },
+};
+
+export function tdpStatusHref(status: TdpStatus): string {
+    return `/tdp/proposals/${status}/`;
+}
 
 const WORDS_PER_MINUTE = 200;
 
@@ -22,12 +61,18 @@ export function isoDate(date: Date): string {
     return date.toISOString().slice(0, 10);
 }
 
-export function formatTdpNumber(number: number): string {
-    return `TDP-${String(number).padStart(3, "0")}`;
+type TdpId = Pick<Proposal["data"], "major" | "number">;
+
+export function tdpSlug({ major, number }: TdpId): string {
+    return `${major}-${String(number).padStart(3, "0")}`;
 }
 
-export function tdpSlug(number: number): string {
-    return String(number).padStart(3, "0");
+export function formatTdpNumber(id: TdpId): string {
+    return `TDP-${tdpSlug(id)}`;
+}
+
+function byTdpNumber(a: Proposal, b: Proposal): number {
+    return a.data.major - b.data.major || a.data.number - b.data.number;
 }
 
 export async function getPosts(): Promise<Post[]> {
@@ -41,16 +86,12 @@ export async function getLatestPosts(n: number): Promise<Post[]> {
 
 export async function getProposals(filter: ProposalFilter = "all"): Promise<Proposal[]> {
     const proposals = await getCollection("tdp", ({ data }) => filter === "all" || data.status === filter);
-    return proposals.sort((a, b) => b.data.date.getTime() - a.data.date.getTime() || b.data.number - a.data.number);
+    return proposals.sort(byTdpNumber);
 }
 
 export async function getLatestProposals(n: number): Promise<Proposal[]> {
-    return (await getProposals()).slice(0, n);
-}
-
-export async function getProposalsByNumber(): Promise<Proposal[]> {
-    const proposals = await getCollection("tdp");
-    return proposals.sort((a, b) => a.data.number - b.data.number);
+    const proposals = await getProposals();
+    return proposals.sort((a, b) => b.data.date.getTime() - a.data.date.getTime() || byTdpNumber(b, a)).slice(0, n);
 }
 
 export interface TdpTab {
@@ -61,19 +102,18 @@ export interface TdpTab {
 }
 
 export async function getTdpTabs(): Promise<TdpTab[]> {
-    const [all, accepted, implemented] = await Promise.all([
-        getProposals(),
-        getProposals("accepted"),
-        getProposals("implemented"),
-    ]);
-    const lists: TdpTab[] = [
-        { label: "Proposals", href: "/tdp/proposals/", description: "Every proposal, in one place.", count: all.length },
-        { label: "Accepted", href: "/tdp/proposals/accepted/", description: "Approved and awaiting work.", count: accepted.length },
-        { label: "Implemented", href: "/tdp/proposals/implemented/", description: "Shipped in a release.", count: implemented.length },
-    ].filter((tab) => tab.count > 0);
+    const byStatus = await Promise.all(tdpStatusOrder.map((status) => getProposals(status)));
+    const lists: TdpTab[] = tdpStatusOrder
+        .map((status, i) => ({
+            label: tdpStatusInfo[status].label,
+            href: tdpStatusHref(status),
+            description: tdpStatusInfo[status].description,
+            count: byStatus[i].length,
+        }))
+        .filter((tab) => tab.count > 0);
     return [
         { label: "Constitution", href: "/tdp/", description: "The principles every proposal obeys." },
-        ...lists,
         { label: "Process", href: "/tdp/process/", description: "How to propose a change." },
+        ...lists,
     ];
 }

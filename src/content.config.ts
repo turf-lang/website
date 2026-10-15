@@ -16,7 +16,8 @@ const blog = defineCollection({
 const tdp = defineCollection({
     loader: glob({ pattern: ["*.md", "!_*"], base: "./src/content/tdp" }),
     schema: z.object({
-        number: z.number().int(),
+        major: z.number().int().min(2),
+        number: z.number().int().min(1),
         title: z.string(),
         description: z.string(),
         status: z.enum(["draft", "proposed", "accepted", "implemented", "rejected", "withdrawn"]),

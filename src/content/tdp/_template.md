@@ -1,5 +1,6 @@
 ---
-number: 2 # next unused number, no gaps; the URL becomes /tdp/002/
+major: 2 # the major version line the proposal first ships in
+number: 3 # next unused number within that major, no gaps; the URL becomes /tdp/2-003/
 title: Proposal title in sentence case
 description: One sentence stating what the proposal changes.
 status: draft # draft | proposed | accepted | implemented | rejected | withdrawn

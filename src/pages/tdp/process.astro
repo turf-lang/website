@@ -97,14 +97,14 @@ const rows = "mt-6 divide-y divide-line overflow-hidden rounded-2xl border borde
             <section>
                 <h2 class={h2}>Numbering</h2>
                 <Text
-                    text="Numbers are assigned in order when a proposal is first submitted and never reused, so `TDP-001` always refers to the same document."
+                    text="A proposal is numbered by the major version line it first ships in, then in order within that line: `TDP-2-001`, `TDP-2-002`, and so on, then `TDP-3-001` for the first proposal that ships in 3.x. Numbers are assigned when a proposal is first submitted and never reused, so `TDP-2-001` always refers to the same document. Proposals are listed in that order."
                     class={body}
                 />
                 <a
-                    href="/tdp/proposals/"
+                    href="/tdp/proposals/proposed/"
                     class="group mt-6 inline-flex items-center gap-2 font-mono text-sm text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
                 >
-                    Browse everything on the proposals page
+                    Browse the proposals
                     <span aria-hidden="true" class="transition-transform group-hover:translate-x-1 motion-reduce:transition-none">→</span>
                 </a>
             </section>

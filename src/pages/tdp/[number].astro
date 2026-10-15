@@ -2,12 +2,12 @@
 import { render } from "astro:content";
 import BaseLayout from "../../components/layout/BaseLayout.astro";
 import ContentArticle from "../../components/page/ContentArticle.astro";
-import { formatDate, formatTdpNumber, getProposalsByNumber, isoDate, tdpSlug } from "../../lib/content";
+import { formatDate, formatTdpNumber, getProposals, isoDate, tdpSlug, tdpStatusHref, tdpStatusInfo } from "../../lib/content";
 
 export async function getStaticPaths() {
-    const proposals = await getProposalsByNumber();
+    const proposals = await getProposals();
     return proposals.map((proposal, i) => ({
-        params: { number: tdpSlug(proposal.data.number) },
+        params: { number: tdpSlug(proposal.data) },
         props: { proposal, prev: proposals[i - 1], next: proposals[i + 1] },
     }));
 }
@@ -15,9 +15,11 @@ export async function getStaticPaths() {
 const { proposal, prev, next } = Astro.props;
 const { data } = proposal;
 const { Content } = await render(proposal);
-const number = formatTdpNumber(data.number);
+const number = formatTdpNumber(data);
 const link = (p?: typeof proposal) =>
-    p ? { label: `${formatTdpNumber(p.data.number)} ${p.data.title}`, href: `/tdp/${tdpSlug(p.data.number)}/` } : undefined;
+    p ? { label: `${formatTdpNumber(p.data)} ${p.data.title}`, href: `/tdp/${tdpSlug(p.data)}/` } : undefined;
+
+const statusList = { label: tdpStatusInfo[data.status].label, href: tdpStatusHref(data.status) };
 
 const statusTone =
     data.status === "accepted" || data.status === "implemented"
@@ -37,12 +39,12 @@ const label = "text-xs text-fg-faint";
 
 <BaseLayout title={`${number} ${data.title}`} description={data.description}>
     <ContentArticle
-        crumbs={[{ label: "TDP", href: "/tdp/" }, { label: "Proposals", href: "/tdp/proposals/" }, { label: number }]}
+        crumbs={[{ label: "TDP", href: "/tdp/" }, { label: statusList.label, href: statusList.href }, { label: number }]}
         title={data.title}
         lead={data.description}
         prev={link(prev)}
         next={link(next)}
-        back={{ label: "All proposals", href: "/tdp/proposals/" }}
+        back={{ label: `${statusList.label} proposals`, href: statusList.href }}
     >
         <dl slot="meta" class="mx-auto flex max-w-3xl flex-wrap gap-px overflow-hidden rounded-2xl border border-line bg-line font-mono text-sm">
             <div class={cell}>

@@ -2,7 +2,7 @@
 @import "./square.css";
 
 @theme {
-    --font-sans: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
     --font-mono: "Commit Mono", ui-monospace, monospace;
     --font-pixel: "Geist Pixel", "Geist", sans-serif;
 

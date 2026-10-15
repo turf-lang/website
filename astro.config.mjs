@@ -8,6 +8,11 @@ import mdx from "@astrojs/mdx";
 export default defineConfig({
   site: "https://turflang.org",
 
+  redirects: {
+    "/tdp/001": "/tdp/2-001/",
+    "/tdp/002": "/tdp/2-002/",
+  },
+
   markdown: {
     shikiConfig: {
       theme: turfTheme,

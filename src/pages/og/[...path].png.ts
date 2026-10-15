@@ -28,7 +28,10 @@ function titleSize(title: string): number {
 
 export const getStaticPaths = (async () => {
     const pages = await getOgPages();
-    return [...pages].map(([path, title]) => ({ params: { path }, props: { title } }));
+    return [...pages].map(([path, title]) => ({
+        params: { path },
+        props: { title },
+    }));
 }) satisfies GetStaticPaths;
 
 export const GET: APIRoute = async ({ props }) => {
@@ -51,7 +54,13 @@ export const GET: APIRoute = async ({ props }) => {
                     {
                         type: "div",
                         props: {
-                            style: { display: "flex", flexDirection: "column", justifyContent: "center", flex: 1, padding: "0 80px" },
+                            style: {
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                                flex: 1,
+                                padding: "0 80px",
+                            },
                             children: [
                                 {
                                     type: "div",
@@ -69,7 +78,12 @@ export const GET: APIRoute = async ({ props }) => {
                                 {
                                     type: "div",
                                     props: {
-                                        style: { fontFamily: "Host Grotesk", fontSize: 44, marginTop: 32, color: colors.accent },
+                                        style: {
+                                            fontFamily: "Geist",
+                                            fontSize: 44,
+                                            marginTop: 32,
+                                            color: colors.accent,
+                                        },
                                         children: "The Turf Project",
                                     },
                                 },
@@ -79,7 +93,15 @@ export const GET: APIRoute = async ({ props }) => {
                     {
                         type: "div",
                         props: {
-                            style: { position: "absolute", right: 80, bottom: 64, display: "flex", fontFamily: "Commit Mono", fontSize: 32, color: colors.muted },
+                            style: {
+                                position: "absolute",
+                                right: 80,
+                                bottom: 64,
+                                display: "flex",
+                                fontFamily: "Commit Mono",
+                                fontSize: 32,
+                                color: colors.muted,
+                            },
                             children: "turflang.org",
                         },
                     },
@@ -90,13 +112,25 @@ export const GET: APIRoute = async ({ props }) => {
             width: OG_WIDTH,
             height: OG_HEIGHT,
             fonts: [
-                { name: "Geist Pixel", data: pixel, weight: 400, style: "normal" },
-                { name: "Host Grotesk", data: sans, weight: 400, style: "normal" },
-                { name: "Commit Mono", data: mono, weight: 400, style: "normal" },
+                {
+                    name: "Geist Pixel",
+                    data: pixel,
+                    weight: 400,
+                    style: "normal",
+                },
+                { name: "Geist", data: sans, weight: 400, style: "normal" },
+                {
+                    name: "Commit Mono",
+                    data: mono,
+                    weight: 400,
+                    style: "normal",
+                },
             ],
         },
     );
 
     const png = await sharp(Buffer.from(svg)).png().toBuffer();
-    return new Response(new Uint8Array(png), { headers: { "Content-Type": "image/png" } });
+    return new Response(new Uint8Array(png), {
+        headers: { "Content-Type": "image/png" },
+    });
 };

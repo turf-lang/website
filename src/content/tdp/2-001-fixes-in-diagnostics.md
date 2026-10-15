@@ -1,8 +1,9 @@
 ---
+major: 2
 number: 1
 title: Fixes in diagnostics without --smart
 description: Let the compiler print a concrete, validated fix with an error whenever it is sure of one, in every build and without a model.
-status: draft
+status: accepted
 date: 2026-10-15
 authors:
   - Turf Team
@@ -33,13 +34,13 @@ How much of the work is already done? Running `turf check` over the 771 `fail_*.
 | A hint with only general advice (E001, E004, E010, E044, E104, and 15 more) | 20 |
 | No hint at all (E105, E106, E115, E116, E118) | 5 |
 
-So most codes already carry a concrete suggestion, written as a sentence. Turning the concrete ones into an actual edit is a small step. Today the only route to corrected code is `--smart`, which needs:
+So most codes already carry a concrete suggestion, written as a sentence. Turning the concrete ones into an actual edit is a small step. Today the only route to corrected code is `--smart`. Part of that mechanism already exists and needs no model: `--smart` first tries a rule-based fix for 11 error classes (renames only), validates it in a sandbox re-check, and shows it in about 0.03 s without calling the model. But it still sits behind the flag, it covers only renames, and it labels its result as an AI suggestion although no model ran. For everything else, `--smart` needs:
 
 - the `-smart` archive, or a source build without `--no-smart`;
 - a model file the user chooses and downloads (the one Turf is developed with is about 1 GB on disk and 1.5 GB of RAM while it runs);
 - time for the model to run on every error.
 
-That is the wrong place for fixes that need no judgement. A misspelled variable with one near neighbour, a missing `;`, an `immut` that is assigned to: these have a single right answer, and a rule can produce it instantly and the same way every time. Principle III says the compiler is the authority and that diagnostics are designed, not incidental; a fix is part of that design.
+This proposal therefore moves the rule engine out of the model's pipeline, shows its result by default, and widens the classes it covers. That is the wrong place for fixes that need no judgement. A misspelled variable with one near neighbour, a missing `;`, an `immut` that is assigned to: these have a single right answer, and a rule can produce it instantly and the same way every time. Principle III says the compiler is the authority and that diagnostics are designed, not incidental; a fix is part of that design.
 
 ## Design
 
@@ -61,7 +62,7 @@ A diagnostic gains an optional fix: a description and one or more edits, each a 
   3 │     printline("Hello, " + name + "!");
     │                           ~~~~
 
-  Run `turf explain E040` for more details.
+  Run `turf --explain E040` for more details.
 ```
 
 The `Hint:` is kept. It explains; the `Fix:` shows. A diagnostic with no fix prints exactly what it prints today.
@@ -99,7 +100,7 @@ The runner compares the printed fix, and also applies it and confirms the progra
 
 ### What does not change
 
-`--smart` works as it does now. The order becomes: the compiler's own fix first, the model only when the compiler has none. `turf explain` pages do not change.
+`--smart` works as it does now. The order becomes: the compiler's own fix first, the model only when the compiler has none. `turf --explain` pages do not change. (The command is spelled `turf explain` once [TDP-2-019](/tdp/2-019/) (a pure compiler) moves it out of `turfc`.)
 
 ## Constitution check
 
@@ -141,7 +142,10 @@ Nothing breaks. Source code is unaffected. A tool that matches the exact text of
 ## Unresolved questions
 
 - Should the same fixes be offered as quick fixes by `turf-lsp`? Probably yes, from the same declarations, as a follow-up.
-- Is there a machine-readable form, and should `--smart-write-fix=<path>` gain a non-smart twin that writes the first validated fix?
+- The machine-readable form and the apply command are now [TDP-2-004](/tdp/2-004/) (machine-readable diagnostics and applying fixes). It lands first, so tools never need to read the `Fix:` text.
+- Does the rule fix work in a `--no-smart` build? The sandbox and rule layer are compiled in every build, but this has not been tested and must be verified before relying on it.
+- Does a missing `;` print with a code at all? E102 exists, but the benchmark's semicolon case showed no code in its output, so confirm before listing E102 in the first set.
+- The 136-of-149 count uses a different method from a count of distinct `EXPECT-DIAG` codes (140). The checked-in script settles it.
 - When there are two or three candidates, do we list them all as numbered fixes, or only name them in the hint?
 - A bound on the work: at most one fix check per error, and a cap on the number of errors that get one in a single compile.
 - The wording: `Fix:`, `Did you mean`, or something else. It must work for a one-character change and for a multi-line one.

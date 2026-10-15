@@ -1,8 +1,9 @@
 ---
+major: 2
 number: 2
 title: Checked arithmetic and auto-vectorization
 description: Keep integer overflow trapping by default, remove more of the checks by proof, and give hot loops an explicit way to ask for wrapping.
-status: draft
+status: accepted
 date: 2026-10-15
 authors:
   - Turf Team
@@ -139,7 +140,7 @@ Nothing breaks. No existing program changes behaviour, and no existing name is t
 
 ## Unresolved questions
 
-- How are the wrapping functions declared so that the compiler treats them specially without recognizing their name? Does the existing declaration mechanism (annotations, the closed intrinsic list in the Constitution) cover this, or does it need a small addition? If the answer is the closed list, adding three names to it is a deliberate, published change.
+- How are the wrapping functions declared so that the compiler treats them specially without recognizing their name? The compiler's intrinsic registry has three kinds today (language-level intrinsics, LLVM intrinsics, runtime entry points), and none is "a module function the compiler lowers specially". The smallest addition that keeps Principle V is a fourth kind in the same registry, keyed by the module and function of the *resolved declaration*, so a program that defines its own `wrapping_add` gets its own function. That is a closed-list change, so it needs a change record, which together with this proposal is the deliberate, published change. At `-O0` a call must still lower to a plain `add`, `sub` or `mul` with no overflow flag, never to a real call.
 - Should there be `int32` forms, given `int32` exists only for ABI declarations?
 - What about shifts and negation, which are also checked (`EmitCheckedShl`, `EmitCheckedIntNegate`)? Probably out of scope until a measurement shows the same effect.
 - Is interval analysis enough for direction 1, or does it need induction-variable reasoning, and is the added compile time acceptable?
