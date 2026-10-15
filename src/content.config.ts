@@ -77,7 +77,7 @@ const releases = defineCollection({
         tag: z.string().regex(/^v\d+\.\d+\.\d+$/),
         title: z.string(),
         description: z.string(),
-        date: z.coerce.date(),
+        date: z.coerce.date().optional(),
         highlights: z.array(z.string()).optional(),
     }),
 });

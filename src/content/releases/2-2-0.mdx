@@ -1,0 +1,59 @@
+---
+tag: "v2.2.0"
+title: "Contract and quick wins"
+description: "The next release builds the promises everything after it relies on: lint levels, deprecation, a compatibility test suite, machine-readable diagnostics, type arguments at the call site and tests in source files."
+highlights:
+  - "Lint levels and `@deprecated`, so warnings and removals follow rules you can read."
+  - "A 2.0 compatibility test suite and a registry of every diagnostic code."
+  - "`--diagnostics=json`, the first machine-readable form of the compiler's output."
+  - "`List<int>::default()` and `f::<int>(...)`: say the type argument where you use it."
+  - "`@test` functions that live next to the code they test."
+---
+
+<Callout tone="note" title="Not released yet">
+This page is a preview. It describes what the 2.2.0 line is planned to carry, in the order the maintainers are building it. Items can move to a later release, and this page is rewritten with the real notes when 2.2.0 ships.
+</Callout>
+
+Version 2.2.0 is the release that makes later releases safe. Most of what it adds is a set of promises and the tools that keep them, so that the bigger features planned for 2.3 onward can land without breaking your programs.
+
+## The compatibility contract
+
+This is [TDP-2-003](/tdp/2-003/). It gives the 2.x promise something to stand on.
+
+- **Lint levels.** You choose, per project, whether a warning is allowed, shown or an error. A new warning in a later release cannot surprise you, because `lint-set` can freeze the set of warnings to those that existed in the version you name.
+- **`@deprecated`.** A library or the standard library can mark something as on its way out. Users see a warning that names the replacement, long before anything is removed.
+- **A prelude-shadow check.** A warning when your own name hides something the prelude already provides.
+- **A compatibility test suite.** The compiler's own tests will run a collection of 2.0 programs and check they still behave the same.
+- **A diagnostic-code registry.** One list of every error and warning code, so a code is never reused for something else.
+
+## Diagnostics that tools can read
+
+This is [TDP-2-004](/tdp/2-004/). Tools that read the compiler's output scrape its text today, and the text is not part of the compatibility promise.
+
+- **`--diagnostics=json`** prints every diagnostic as structured data an editor or script can read without guessing.
+- **More hints.** Errors that have no hint yet get one.
+- **An interface manifest** that describes what the compiler offers to tools, and test programs from tools that use it run in the compiler's own checks.
+
+## Say the type where you use it
+
+This is [TDP-2-005](/tdp/2-005/). Sometimes the compiler cannot work out a generic type from the call, and today you have to restructure the code. In 2.2.0 you can name it.
+
+- `List<int>::default()` creates an empty list of a type you name.
+- `f::<int>(...)` calls a generic function with the type argument given.
+- Better hints when the compiler cannot infer a type.
+
+## Tests in source files
+
+This is [TDP-2-006](/tdp/2-006/).
+
+- **`@test` functions** sit in the same file as the code they test, and `turf test` finds them.
+- **A stack-overflow hint** that tells you how deep the recursion got.
+- **An unsafe-surface report** in `turf`, listing where a project uses `unsafe`.
+
+## Numbers
+
+This is the first part of [TDP-2-002](/tdp/2-002/), checked arithmetic.
+
+- **A baseline benchmark**, so later changes to arithmetic are measured against something.
+- **`math::wrapping_*`**, for the places where you want a number to wrap around on purpose.
+- **A measurement of trap blocks**, to see what the overflow checks cost.

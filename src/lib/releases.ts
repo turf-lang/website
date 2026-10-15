@@ -68,7 +68,7 @@ export async function getReleaseEntries(): Promise<ReleaseEntries> {
             tag: entry.data.tag,
             title: entry.data.title,
             summary: entry.data.description,
-            date: existing?.date ?? entry.data.date,
+            date: existing?.date ?? entry.data.date ?? new Date(0),
             prerelease: existing?.prerelease ?? false,
             released: existing ? true : !github.ok,
             href: releaseHref(entry.data.tag),
@@ -77,7 +77,9 @@ export async function getReleaseEntries(): Promise<ReleaseEntries> {
         });
     }
 
-    const entries = [...byTag.values()].sort((a, b) => b.date.getTime() - a.date.getTime());
+    const entries = [...byTag.values()].sort(
+        (a, b) => Number(a.released) - Number(b.released) || b.date.getTime() - a.date.getTime() || b.tag.localeCompare(a.tag, undefined, { numeric: true }),
+    );
     return {
         entries,
         latest: entries.find((entry) => entry.released),
