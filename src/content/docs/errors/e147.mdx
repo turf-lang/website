@@ -4,6 +4,8 @@ description: "What compiler error E147 means, and how to fix it."
 order: 147
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E147.txt. */}
+
 `T::default()` gives every field its default: 0, false, "", an empty collection. A `&U` field can never be null, so its default is a new `U::default()` of its own, made on the heap. That is what lets every collection share one header from the moment it is created.
 
 A type that reaches itself through `&` fields cannot be defaulted this way, because each new value would need another new value inside it, forever:

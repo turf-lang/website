@@ -4,6 +4,8 @@ description: "What compiler error E010 means, and how to fix it."
 order: 10
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E010.txt. */}
+
 A recursive function is one that calls itself to solve a smaller version of the same problem -- like `factorial(n)` calling `factorial(n - 1)`. For that to ever finish, there needs to be a "stop here" case: some condition where the function just returns an answer instead of calling itself again. Turf looked at this function and couldn't find one -- every path through it calls itself again, no matter what.
 
 Here's a `factorial` function with a proper stopping point:

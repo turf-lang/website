@@ -4,6 +4,8 @@ description: "What compiler error E142 means, and how to fix it."
 order: 142
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E142.txt. */}
+
 `x[1..3]` takes part of an array: a view of the elements from 1 up to (not including) 3. It only makes sense for a built-in array (`int[5]`, a row of a 2D array, an `int[]` parameter or another slice). Anything else is refused:
 
 <Code title="Example">

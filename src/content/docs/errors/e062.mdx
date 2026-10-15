@@ -4,6 +4,8 @@ description: "What compiler error E062 means, and how to fix it."
 order: 62
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E062.txt. */}
+
 `null` means "no value yet," and in Turf that concept only applies to pointer types -- variables declared with a `*` in their type, like `int*`. A plain `int`, `double`, `bool`, `string`, `char`, or ordinary struct always holds a real value; there's no such thing as an "empty" one of those, so `null` doesn't make sense for them.
 
 This is fine, because `ptr` is a pointer type:

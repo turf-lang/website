@@ -4,6 +4,8 @@ description: "What compiler error E068 means, and how to fix it."
 order: 68
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E068.txt. */}
+
 Every struct in Turf only has the fields you declared for it -- nothing more. If you write `something.some_field` and `some_field` was never listed in that struct's `{ }` block, the compiler stops you right here, before your program can run with a value that was never really there.
 
 The most common reason this happens is a simple typo. Here's a struct with a `password` field:

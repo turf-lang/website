@@ -4,6 +4,8 @@ description: "What compiler error E024 means, and how to fix it."
 order: 24
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E024.txt. */}
+
 Turf lets you import a specific name straight out of a module with `import module::name;`, so you can call it without qualifying it every time. But if two different modules you import both happen to have something with the same bare name, Turf can't guess which one you mean when you just write the name by itself -- so it stops and asks you to be specific.
 
 <Code title="Example">

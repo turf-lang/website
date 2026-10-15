@@ -4,6 +4,8 @@ description: "What compiler error E053 means, and how to fix it."
 order: 53
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E053.txt. */}
+
 `static` is a keyword that only makes sense for a struct's method -- it means "this method doesn't take an implicit `self`." An ordinary, free-standing function was never going to receive a `self` in the first place, so putting `static` on one doesn't mean anything, and Turf rejects it.
 
 Here's the difference between the two shapes: a struct method (where `static` is meaningful) looks like this:

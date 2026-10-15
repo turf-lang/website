@@ -4,6 +4,8 @@ description: "What compiler error E067 means, and how to fix it."
 order: 67
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E067.txt. */}
+
 A function declared with `: void` doesn't hand back a value when it finishes -- it just does something (like printing a message) and returns to whoever called it. Because there's genuinely no value produced, you can't store it, pass it along, or use it in a bigger expression.
 
 Calling a `void` function on its own line is exactly what it's for:

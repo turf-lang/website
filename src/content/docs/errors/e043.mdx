@@ -4,6 +4,8 @@ description: "What compiler error E043 means, and how to fix it."
 order: 43
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E043.txt. */}
+
 Turf runs your code from top to bottom, one statement at a time -- so a variable has to be declared with `mut` or `immut` BEFORE you can use it, not after. This error means Turf found a real, valid declaration for the name you used... it's just further down in the same block, after the line that tried to use it.
 
 <Code title="Example">

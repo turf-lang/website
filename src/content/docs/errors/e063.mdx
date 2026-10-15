@@ -4,6 +4,8 @@ description: "What compiler error E063 means, and how to fix it."
 order: 63
 ---
 
+{/* Text from the turf-lang repository: docs/errors/codes/E063.txt. */}
+
 Older versions of Turf treated `power` as a compiler built-in with an error of its own. It is an ordinary function in the standard library now (`math::power`), like every other, so nothing produces E063 any more. The number is kept so that an old log or tutorial that mentions it still has somewhere to land, and is never reused for anything else.
 
 Passing `power` something that isn't a number is reported like any other call with the wrong argument types:
