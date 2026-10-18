@@ -1,0 +1,210 @@
+---
+title: "Function and type formatting"
+description: "Braces, conditions, operator spacing, trailing commas and compare arms."
+lead: "These rules decide how a function, a type and the blocks inside them are laid out: where the braces go, where the spaces go, and how a list of fields or arms lines up."
+outcomes:
+  - "Place braces and `else` the Turf way."
+  - "Write conditions without extra brackets."
+  - "Space operators, commas and type colons evenly."
+  - "Lay out a struct, an enum and a `compare`."
+---
+
+## TSG-401 Opening braces go on the same line
+
+<RuleMeta level="recommended" />
+
+The `{` that opens a block sits at the end of the line that starts it: the `fn`, `if`, `while`, `for`, `struct` or `compare`. The closing `}` gets its own line, lined up with the start of that line. `else` and `elseif` go on the same line as the `}` before them.
+
+<DoDont file="tsg_401">
+```turf
+fn sign(n: int): int {
+    if n > 0 {
+        return 1;
+    } elseif n < 0 {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+fn main(): int {
+    printline(sign(-7));
+    return 0;
+}
+```
+```turf
+fn sign(n: int): int
+{
+    if n > 0
+    {
+        return 1;
+    }
+    elseif n < 0
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+fn main(): int
+{
+    printline(sign(-7));
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-402 No brackets around a condition
+
+<RuleMeta level="recommended" />
+
+A condition in Turf is a bare expression: `if x > 0 {`, `while i < n {`, `compare kind {`. Turf accepts `if (x > 0) {` too, but the brackets add nothing, and mixing both styles in one file makes it look like they mean something different. Keep brackets for grouping inside the condition, as in `if (a || b) && c {`.
+
+<DoDont file="tsg_402">
+```turf
+fn main(): int {
+    mut i: int = 0;
+    while i < 3 {
+        if i != 1 {
+            printline(i);
+        }
+        i++;
+    }
+    return 0;
+}
+```
+```turf
+fn main(): int {
+    mut i: int = 0;
+    while (i < 3) {
+        if (i != 1) {
+            printline(i);
+        }
+        i++;
+    }
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-403 Spaces around operators and after commas
+
+<RuleMeta level="recommended" />
+
+Put one space on each side of a binary operator (`a + b`, `x == y`, `n = 5`) and one space after each comma and each type colon (`x: int`, `fn f(): int`). Put no space between a function's name and its `(`, inside brackets, or before a `;`. Unary operators stay attached: `-x`, `!done`, `i++`.
+
+<DoDont file="tsg_403">
+```turf
+fn mix(a: int, b: int): int {
+    return a * 2 + b;
+}
+
+fn main(): int {
+    immut total: int = mix(3, -1);
+    printline(total);
+    return 0;
+}
+```
+```turf
+fn mix (a:int,b : int):int {
+    return a*2+b ;
+}
+
+fn main():int {
+    immut total:int=mix( 3,- 1 );
+    printline( total );
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-404 Trailing comma on the last line of a list
+
+<RuleMeta level="recommended" />
+
+When the fields of a `struct`, the variants of an `enum` or `error`, or the moves of a `machine` are written one per line, end the last one with a comma too. Then adding an item touches one line, not two. When the whole list fits on one line, leave the trailing comma off.
+
+<DoDont file="tsg_404">
+```turf
+enum Size { Small, Medium, Large }
+
+struct Parcel {
+    weight: int,
+    size: Size,
+    label: string,
+}
+
+fn main(): int {
+    mut p: Parcel = Parcel::default();
+    p.weight = 3;
+    return 0;
+}
+```
+```turf
+enum Size { Small, Medium, Large, }
+
+struct Parcel {
+    weight: int,
+    size: Size,
+    label: string
+}
+
+fn main(): int {
+    mut p: Parcel = Parcel::default();
+    p.weight = 3;
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-405 Lay out compare arms on their own lines
+
+<RuleMeta level="recommended" />
+
+Inside a `compare`, each `matches` is indented one level. Its body is indented one more, and its `done` lines up with the `matches`. The `otherwise:` arm, if there is one, is last and lines up with the other arms. Stacked headers that share a body go one per line.
+
+<DoDont file="tsg_405">
+```turf
+fn word(n: int): string {
+    mut s: string = "";
+    compare n {
+        matches 0:
+            s = "none";
+        done
+        matches 1:
+        matches 2:
+            s = "few";
+        done
+        otherwise:
+            s = "many";
+    }
+    return s;
+}
+
+fn main(): int {
+    printline(word(2));
+    return 0;
+}
+```
+```turf
+fn word(n: int): string {
+    mut s: string = "";
+    compare n {
+    matches 0: s = "none"; done
+    matches 1: matches 2:
+    s = "few";
+    done
+    otherwise: s = "many";
+    }
+    return s;
+}
+
+fn main(): int {
+    printline(word(2));
+    return 0;
+}
+```
+</DoDont>

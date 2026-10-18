@@ -1,0 +1,26 @@
+---
+import { getCollection, render } from "astro:content";
+import { learnComponents } from "../../components/learn";
+import LearnGuide from "../../components/learn/LearnGuide.astro";
+
+export async function getStaticPaths() {
+    const pages = await getCollection("tsg", ({ id }) => id !== "overview");
+    return pages.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+---
+
+<LearnGuide
+    sectionKey="tsg"
+    menuLabel="Style guide menu"
+    href={`/tsg/${entry.id}/`}
+    title={entry.data.title}
+    description={entry.data.description}
+    lead={entry.data.lead}
+    outcomes={entry.data.outcomes}
+    headings={headings.filter((h) => h.depth === 2 || h.depth === 3)}
+>
+    <Content components={learnComponents} />
+</LearnGuide>

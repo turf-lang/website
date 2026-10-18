@@ -1,0 +1,111 @@
+---
+title: "Error-handling conventions"
+description: "When to return !T, when to panic and when to return bool, how to write an error message, and why not to hide failures."
+lead: "Things go wrong: a file is missing, a number is not a number. How a function tells its caller about it decides whether the caller can do something sensible. These rules pick the right shape for each kind of problem."
+outcomes:
+  - "Choose between `!T`, a panic and a `bool` by asking why something fails."
+  - "Write error messages that help the person reading them."
+  - "Know when `recover produce` is safe and when it hides a bug."
+---
+
+New to errors in Turf? Read [Error handling](/docs/language/error-handling/) first. It explains `!T`, `recover` and `try`.
+
+## TSG-501 Pick the failure shape by why it fails
+
+<RuleMeta level="recommended" />
+
+A function reports a problem in the shape that matches *why* it went wrong, as the [standard library does](/stdlib/conventions/#2-failure-three-kinds-three-shapes):
+
+- **The world was not as expected** (a missing file, text that is not a number): return `!T` with an `error` variant, so the caller can decide what to do.
+- **The caller made a mistake** (an index out of range, popping an empty stack): panic, because no recovery makes a buggy call correct.
+- **It is a question** (is it there? is it empty?): return a `bool`.
+
+<DoDont file="tsg_501">
+```turf
+error InputError {
+    NotANumber,
+}
+
+fn parse_digit(c: char): !int {
+    if !c.is_digit() {
+        return InputError::NotANumber("expected a digit from 0 to 9");
+    }
+    return (c to int) - ('0' to int);
+}
+
+fn main(): int {
+    immut n: int = parse_digit('x') recover produce -1;
+    printline(n);
+    return 0;
+}
+```
+```turf
+fn parse_digit(c: char): int {
+    if !c.is_digit() {
+        return -1;
+    }
+    return (c to int) - ('0' to int);
+}
+
+fn main(): int {
+    immut n: int = parse_digit('x');
+    printline(n);
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-502 Say what failed in the error message
+
+<RuleMeta level="recommended" />
+
+When you return an error, give it a message that names the thing that failed: the path, the value, the name. `could not open config.toml` helps the person reading it. `error` does not.
+
+<DoDont file="tsg_502">
+```turf
+error MathError {
+    DivisionByZero,
+}
+
+fn divide(a: int, b: int): !int {
+    if b == 0 {
+        return MathError::DivisionByZero("dividing " + (a to string) + " by zero");
+    }
+    return a / b;
+}
+
+fn main(): int {
+    immut r: int = divide(10, 0) recover as err run {
+        printline(err.message);
+        return 1;
+    };
+    return r;
+}
+```
+```turf
+error MathError {
+    DivisionByZero,
+}
+
+fn divide(a: int, b: int): !int {
+    if b == 0 {
+        return MathError::DivisionByZero("error");
+    }
+    return a / b;
+}
+
+fn main(): int {
+    immut r: int = divide(10, 0) recover as err run {
+        printline(err.message);
+        return 1;
+    };
+    return r;
+}
+```
+</DoDont>
+
+## TSG-503 Never hide a failure that matters
+
+<RuleMeta level="recommended" />
+
+`recover produce 0` turns a failure into an ordinary-looking value, and from then on nobody can tell the difference. Use it only when the fallback really is a correct answer, such as a default setting. When the failure matters, handle it with `recover as err run { ... }` or pass it up with `try`.

@@ -1,0 +1,252 @@
+---
+title: "Idiomatic Turf"
+description: "Which form to pick when Turf has several: immut, declarations, counting, loops, choices and compare."
+lead: "Turf often gives you two ways to say the same thing. Idiomatic code is code that picks the way most Turf programmers would, so the same idea always looks the same and readers never stop to wonder why it looks different here."
+outcomes:
+  - "Choose between `mut` and `immut`."
+  - "Know when to write a type and when to let Turf work it out."
+  - "Pick the clearest loop and the clearest choice."
+  - "Let the compiler check that every enum variant is handled."
+---
+
+## TSG-701 Use immut unless the value changes
+
+<RuleMeta level="recommended" />
+
+Declare a variable with `immut` when it is set once and never changed, and with `mut` only when the code really assigns to it again. A reader who sees `immut` knows the value on that line is the value for the rest of the block, without reading the rest of the block.
+
+<DoDont file="tsg_701">
+```turf
+fn main(): int {
+    immut price: int = 20;
+    immut people: int = 4;
+    mut total: int = 0;
+    for i in 0..people {
+        total += price;
+    }
+    printline(total);
+    return 0;
+}
+```
+```turf
+fn main(): int {
+    mut price: int = 20;
+    mut people: int = 4;
+    mut total: int = 0;
+    for i in 0..people {
+        total += price;
+    }
+    printline(total);
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-702 Write mut and immut, not mutable and immutable
+
+<RuleMeta level="recommended" />
+
+Turf accepts the long spellings `mutable` and `immutable`, and they mean exactly the same thing. Use the short ones everywhere, so that one word means one thing in every file.
+
+<DoDont file="tsg_702">
+```turf
+fn main(): int {
+    mut count: int = 0;
+    immut amount: int = 2;
+    count += amount;
+    return count - 2;
+}
+```
+```turf
+fn main(): int {
+    mutable count: int = 0;
+    immutable amount: int = 2;
+    count += amount;
+    return count - 2;
+}
+```
+</DoDont>
+
+## TSG-703 Write the type unless the value makes it obvious
+
+<RuleMeta level="recommended" />
+
+Turf can work out a variable's type from its starting value. Let it do that when the value is a plain literal and the type is obvious at a glance (`mut count = 0;`). Write the type when the value comes from a call, a calculation or a conversion, because then the reader would have to go and look it up.
+
+<DoDont file="tsg_703">
+```turf
+fn ratio(a: int, b: int): double {
+    return (a to double) / (b to double);
+}
+
+fn main(): int {
+    mut attempts = 0;
+    immut share: double = ratio(1, 4);
+    attempts++;
+    printline(share);
+    return 0;
+}
+```
+```turf
+fn ratio(a: int, b: int): double {
+    return (a to double) / (b to double);
+}
+
+fn main(): int {
+    mut attempts: guess = 0;
+    immut share = ratio(1, 4);
+    attempts++;
+    printline(share);
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-704 Use the short forms for counting
+
+<RuleMeta level="recommended" />
+
+Write `i++` to add one and `total += price` to add an amount, rather than `i = i + 1` and `total = total + price`. The short form names the variable once, so it cannot be misspelled on one side.
+
+<DoDont file="tsg_704">
+```turf
+fn main(): int {
+    mut count: int = 0;
+    mut total: int = 0;
+    count++;
+    total += 15;
+    return total - count - 14;
+}
+```
+```turf
+fn main(): int {
+    mut count: int = 0;
+    mut total: int = 0;
+    count = count + 1;
+    total = total + 15;
+    return total - count - 14;
+}
+```
+</DoDont>
+
+## TSG-705 Count with for, not while
+
+<RuleMeta level="recommended" />
+
+When a loop counts through a range of numbers, write `for i in 0..n`. The start, the end and the step are all on one line, and there is no counter to forget to increase. Keep `while` for loops that run until something happens.
+
+<DoDont file="tsg_705">
+```turf
+fn main(): int {
+    mut sum: int = 0;
+    for i in 0..5 {
+        sum += i;
+    }
+    printline(sum);
+    return 0;
+}
+```
+```turf
+fn main(): int {
+    mut sum: int = 0;
+    mut i: int = 0;
+    while i < 5 {
+        sum += i;
+        i++;
+    }
+    printline(sum);
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-706 One give / otherwise per expression
+
+<RuleMeta level="recommended" />
+
+`condition give a otherwise b` is perfect for a quick choice between two values. Chaining several in one line makes the reader keep a stack of conditions in their head. For three or more outcomes, use `if` / `elseif` or `compare`.
+
+<DoDont file="tsg_706">
+```turf
+fn label(n: int): string {
+    if n > 10 {
+        return "big";
+    } elseif n > 5 {
+        return "medium";
+    }
+    return "small";
+}
+
+fn main(): int {
+    immut n: int = 7;
+    immut parity: string = n % 2 == 0 give "even" otherwise "odd";
+    printline(label(n) + " and " + parity);
+    return 0;
+}
+```
+```turf
+fn main(): int {
+    immut n: int = 7;
+    immut size: string = n > 10 give "big" otherwise n > 5 give "medium" otherwise "small";
+    printline(size);
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-707 Name every variant when you compare an enum
+
+<RuleMeta level="recommended" />
+
+When you `compare` an `enum` or a `machine`, give each variant its own arm and leave `otherwise` out. Turf then checks that every variant is covered ([E093](/docs/errors/e093/)). The day someone adds a new variant, the compiler points at every `compare` that needs a new arm. An `otherwise` would quietly swallow the new variant instead.
+
+<DoDont file="tsg_707">
+```turf
+enum Light { Red, Amber, Green }
+
+fn action(l: Light): string {
+    compare l {
+        matches Light::Red:
+            return "stop";
+        done
+        matches Light::Amber:
+            return "wait";
+        done
+        matches Light::Green:
+            return "go";
+        done
+    }
+    return "";
+}
+
+fn main(): int {
+    printline(action(Light::Amber));
+    return 0;
+}
+```
+```turf
+enum Light { Red, Amber, Green }
+
+fn action(l: Light): string {
+    compare l {
+        matches Light::Red:
+            return "stop";
+        done
+        otherwise:
+            return "go";
+    }
+    return "";
+}
+
+fn main(): int {
+    printline(action(Light::Amber));
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-708 Keep main short
+
+<RuleMeta level="recommended" />
+
+`main` should read like a table of contents: set things up, call the functions that do the work, and return. Move the work itself into well-named functions, and into modules once a file gets long.

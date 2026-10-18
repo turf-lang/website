@@ -28,6 +28,7 @@ export async function getOgPages(): Promise<Map<string, string>> {
     add("/community/projects/", "Made with Turf");
     add("/community/maintainers/", "Maintainers");
     add("/stdlib/", getSection("stdlib").heading);
+    add("/tsg/", getSection("tsg").heading);
     add("/tdp/", "Constitution · TDP");
     add("/tdp/process/", "Process · TDP");
 
@@ -41,6 +42,7 @@ export async function getOgPages(): Promise<Map<string, string>> {
     for (const entry of await getCollection("learn")) add(`/learn/${entry.id}/`, entry.data.title);
     for (const entry of await getCollection("stdlib")) add(`/stdlib/${entry.id}/`, entry.data.title);
     for (const entry of await getCollection("resources")) add(`/resources/${entry.id}/`, entry.data.title);
+    for (const entry of await getCollection("tsg", ({ id }) => id !== "overview")) add(`/tsg/${entry.id}/`, entry.data.title);
     for (const proposal of await getCollection("tdp")) {
         add(`/tdp/${tdpSlug(proposal.data)}/`, `${formatTdpNumber(proposal.data)} ${proposal.data.title}`);
     }

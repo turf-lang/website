@@ -1,0 +1,32 @@
+---
+import checkIcon from "@phosphor-icons/core/assets/regular/check-circle.svg?raw";
+import crossIcon from "@phosphor-icons/core/assets/regular/x-circle.svg?raw";
+import { fences } from "../../lib/fences";
+import { tokenize } from "../../lib/turf-tokens";
+import CodeWindow from "../ui/CodeWindow.astro";
+
+interface Props {
+    file: string;
+}
+
+const { file } = Astro.props;
+const [good = "", bad = ""] = fences(await Astro.slots.render("default"));
+const sides = [
+    { label: "Do", icon: checkIcon, color: "text-term-hint", title: `${file}.tr`, source: good },
+    { label: "Don't", icon: crossIcon, color: "text-code-string", title: `${file}_avoid.tr`, source: bad },
+];
+---
+
+<div class="learn-block grid gap-4">
+    {
+        sides.map((side) => (
+            <figure class="min-w-0">
+                <figcaption class:list={["mb-2 flex items-center gap-2 font-mono text-xs", side.color]}>
+                    <span class="size-4 shrink-0 [&>svg]:size-full" set:html={side.icon} />
+                    {side.label}
+                </figcaption>
+                <CodeWindow title={side.title} code={tokenize(side.source)} />
+            </figure>
+        ))
+    }
+</div>

@@ -1,0 +1,153 @@
+---
+title: "Import organization"
+description: "File names, where imports go and in what order, the prelude, and the order of things inside a file."
+lead: "A project is a set of files, and each file starts by saying which other files it needs. These rules keep that part tidy, so a reader can see at a glance what a file depends on and find anything in it."
+outcomes:
+  - "Name files so the `import` line matches."
+  - "Group and sort the `import` lines at the top of a file."
+  - "Know which modules never need an `import`."
+  - "Put a file's declarations in the order readers expect."
+---
+
+## TSG-301 Files are named in snake_case
+
+<RuleMeta level="required" />
+
+A file's name becomes its module's name: `src/route_plan.tr` is imported as `import route_plan;`. Name files the way you name modules, in lower case with `_` between words, so the `import` line and the file name are spelled the same.
+
+<FileTree title="my_project/">
+  <TreeItem name="src/" dir>your code</TreeItem>
+  <TreeItem name="main.tr" depth={1}>the entry point: what `turf run` runs</TreeItem>
+  <TreeItem name="route_plan.tr" depth={1}>imported as `import route_plan;`</TreeItem>
+  <TreeItem name="price_table.tr" depth={1}>imported as `import price_table;`</TreeItem>
+  <TreeItem name="tests/" dir>the tests `turf test` runs</TreeItem>
+  <TreeItem name="route_plan_test.tr" depth={1}>tests for `route_plan`</TreeItem>
+</FileTree>
+
+## TSG-302 Imports go at the top, in groups
+
+<RuleMeta level="recommended" />
+
+All `import` lines come first in the file, before any declaration, one module per line. Group them in this order, with a blank line between groups, and sort each group alphabetically:
+
+1. modules from the standard library,
+2. modules from other packages your project depends on,
+3. modules from your own project.
+
+<DoDont file="tsg_302">
+```turf
+import list::List;
+import map::Map;
+
+fn main(): int {
+    mut names: List<string> = List::default();
+    mut ages: Map<string, int> = Map::default();
+    names.push("Mira");
+    ages.put("Mira", 34);
+    printline(names.length());
+    return 0;
+}
+```
+```turf
+import map::Map;
+fn main(): int {
+    mut names: List<string> = List::default();
+    mut ages: Map<string, int> = Map::default();
+    names.push("Mira");
+    ages.put("Mira", 34);
+    printline(names.length());
+    return 0;
+}
+import list::List;
+```
+</DoDont>
+
+## TSG-303 Do not import the prelude
+
+<RuleMeta level="recommended" />
+
+Nine modules are already loaded into every file: `io`, `math`, `sys`, `int`, `double`, `bool`, `char`, `strings` and `array` (the [prelude](/stdlib/conventions/#the-prelude)). Do not `import` them, and call the `io`, `math` and `sys` functions by their bare names: `printline`, `abs`, `max`, `panic`. Write the qualified form, such as `math::max`, only when one of your own functions has the same name.
+
+<DoDont file="tsg_303">
+```turf
+fn main(): int {
+    printline(abs(-5));
+    printline("turf".length());
+    return 0;
+}
+```
+```turf
+import io;
+import math;
+import strings;
+
+fn main(): int {
+    io::printline(math::abs(-5));
+    io::printline(strings::length("turf"));
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-304 Put things in a file in a fixed order
+
+<RuleMeta level="recommended" />
+
+Inside a file, put things in this order, so that a reader always knows where to look:
+
+1. imports,
+2. constants (`export immut`),
+3. types: `struct`, `enum`, `error` and `machine`, each followed straight away by its own methods,
+4. other functions,
+5. `main`, last.
+
+<DoDont file="tsg_304">
+```turf
+export immut START: int = 10;
+
+struct Counter {
+    n: int,
+}
+
+fn Counter.bump(): void {
+    self.n++;
+}
+
+fn make_counter(): Counter {
+    mut c: Counter = Counter::default();
+    c.n = START;
+    return c;
+}
+
+fn main(): int {
+    mut c: Counter = make_counter();
+    c.bump();
+    printline(c.n);
+    return 0;
+}
+```
+```turf
+fn Counter.bump(): void {
+    self.n++;
+}
+
+fn main(): int {
+    mut c: Counter = make_counter();
+    c.bump();
+    printline(c.n);
+    return 0;
+}
+
+struct Counter {
+    n: int,
+}
+
+export immut START: int = 10;
+
+fn make_counter(): Counter {
+    mut c: Counter = Counter::default();
+    c.n = START;
+    return c;
+}
+```
+</DoDont>

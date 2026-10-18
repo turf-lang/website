@@ -1,0 +1,130 @@
+---
+title: "Indentation"
+description: "Four-space indentation, no trailing spaces, single blank lines, one final newline and a 100-character line."
+lead: "Indentation is how far in a line starts. It shows which lines belong inside which, the way a list inside a list is pushed further in. These rules decide the empty space in a file, and `turf fmt` already applies four of them for you."
+outcomes:
+  - "Indent Turf code the way everyone else does."
+  - "Use blank lines to split code into steps."
+  - "Know which of these rules `turf fmt` fixes today."
+---
+
+Spaces and empty lines are invisible to the compiler and very visible to people. A tool can fix all of them, so they are the easiest rules to follow: run `turf fmt --write` and they are done.
+
+## TSG-101 Indent with four spaces
+
+<RuleMeta level="required" tool="turf fmt" />
+
+Each level of nesting is four spaces deeper than the one around it. Never use tabs: a tab looks two spaces wide on one screen and eight on another, so the same file looks different for everyone.
+
+<DoDont file="tsg_101">
+```turf
+fn main(): int {
+    for i in 0..3 {
+        if i == 1 {
+            printline(i);
+        }
+    }
+    return 0;
+}
+```
+```turf
+fn main(): int {
+  for i in 0..3 {
+          if i == 1 {
+     printline(i);
+          }
+  }
+  return 0;
+}
+```
+</DoDont>
+
+## TSG-102 No spaces at the end of a line
+
+<RuleMeta level="required" tool="turf fmt" />
+
+Spaces after the last character of a line are invisible, so nobody adds them on purpose. They only show up as noise when someone else's editor removes them and every line looks changed.
+
+## TSG-103 Never more than one blank line in a row
+
+<RuleMeta level="required" tool="turf fmt" />
+
+A blank line is a paragraph break: it separates one idea from the next. Put one blank line between top-level declarations, and use single blank lines inside a function to split it into steps. Two or more in a row say nothing a single one does not.
+
+<DoDont file="tsg_103">
+```turf
+fn twice(n: int): int {
+    return n * 2;
+}
+
+fn main(): int {
+    immut n: int = 4;
+
+    printline(twice(n));
+    return 0;
+}
+```
+```turf
+fn twice(n: int): int {
+    return n * 2;
+}
+
+
+
+fn main(): int {
+    immut n: int = 4;
+
+
+    printline(twice(n));
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-104 End every file with one newline
+
+<RuleMeta level="required" tool="turf fmt" />
+
+The last line of a file ends with a newline character, and there is exactly one. Many tools expect it, and without it the last line shows up as changed every time someone adds a line after it.
+
+<Callout tone="try" title="Let the formatter do the four rules above">
+
+Run `turf fmt --write` in a project and rules 101 to 104 are applied to every file in `src/` and `tests/`. `turf fmt --check` changes nothing and fails if a file needs fixing, which is the form to run in CI. See [Projects](/docs/guides/projects/).
+
+</Callout>
+
+## TSG-105 Keep lines to 100 characters
+
+<RuleMeta level="recommended" />
+
+A line of code fits in 100 characters, counting the indentation. Long lines push the end of a thought off the side of the screen, and side-by-side views in code review cut them off. When a call or a signature gets too long, break it after a comma and indent the continuation by one level.
+
+<DoDont file="tsg_105">
+```turf
+fn describe(name: string, age: int, city: string, job: string): string {
+    return name + " is " + (age to string) + ", lives in " + city
+        + " and works as " + job;
+}
+
+fn main(): int {
+    printline(describe("Mira", 34, "Lisbon", "a carpenter"));
+    return 0;
+}
+```
+```turf
+fn describe(name: string, age: int, city: string, job: string): string {
+    return name + " is " + (age to string) + ", lives in " + city + " and works as " + job + "." + "";
+}
+
+fn main(): int {
+    printline(describe("Mira", 34, "Lisbon", "a carpenter"));
+    return 0;
+}
+```
+</DoDont>
+
+<Callout tone="note" title="Why 100 and not 80?">
+
+Turf names are often long and qualified (`strings::last_index_of`), and 80 characters forces awkward breaks. 100 still fits two files side by side on a laptop. This number is open for discussion until 3.0.
+
+</Callout>

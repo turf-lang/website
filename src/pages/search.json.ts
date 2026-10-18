@@ -16,6 +16,7 @@ export async function GET() {
         { area: "Learn", entries: await getCollection("learn"), href: (id: string) => `/learn/${id}/` },
         { area: "Standard library", entries: await getCollection("stdlib"), href: (id: string) => `/stdlib/${id}/` },
         { area: "Resources", entries: await getCollection("resources"), href: (id: string) => `/resources/${id}/` },
+        { area: "Style guide", entries: await getCollection("tsg"), href: (id: string) => (id === "overview" ? "/tsg/" : `/tsg/${id}/`) },
         {
             area: "Docs",
             entries: await getCollection("docs", ({ data }) => !data.draft),

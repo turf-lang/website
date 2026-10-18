@@ -1,0 +1,231 @@
+---
+title: "Identifier naming"
+description: "snake_case for values and functions, PascalCase for types and variants, UPPER_CASE for constants, and names that say what they mean."
+lead: "An identifier is a name you make up: for a variable, a function, a type. A good name is the cheapest documentation there is, and the way it is spelled tells the reader what kind of thing it is before they look it up."
+outcomes:
+  - "Pick the right spelling for every kind of name."
+  - "Name a `bool` so that an `if` reads as a sentence."
+  - "Know when a short name is fine and when it is not."
+---
+
+Turf uses three spellings:
+
+| Spelling | Looks like | Used for |
+|---|---|---|
+| `snake_case` | `total_price`, `is_ready` | variables, parameters, functions, methods, fields, modules, files |
+| `PascalCase` | `TcpConnection`, `NotFound` | types (`struct`, `enum`, `error`, `machine`) and their variants |
+| `UPPER_CASE` | `MAX_USERS`, `PI` | top-level constants |
+
+The [standard library](/stdlib/conventions/#1-naming) already follows these rules, and a script checks it on every CI run. The rules below make them the rules for all Turf code.
+
+## TSG-201 Values and functions are snake_case
+
+<RuleMeta level="required" />
+
+Variables, parameters, functions, methods and struct fields are written in lower case, with words joined by `_`.
+
+<DoDont file="tsg_201">
+```turf
+struct Order {
+    unit_price: int,
+    item_count: int,
+}
+
+fn Order.total_price(): int {
+    return self.unit_price * self.item_count;
+}
+
+fn main(): int {
+    mut order: Order = Order::default();
+    order.unit_price = 5;
+    order.item_count = 3;
+    printline(order.total_price());
+    return 0;
+}
+```
+```turf
+struct Order {
+    UnitPrice: int,
+    itemcount: int,
+}
+
+fn Order.TotalPrice(): int {
+    return self.UnitPrice * self.itemcount;
+}
+
+fn main(): int {
+    mut myOrder: Order = Order::default();
+    myOrder.UnitPrice = 5;
+    myOrder.itemcount = 3;
+    printline(myOrder.TotalPrice());
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-202 Types and variants are PascalCase
+
+<RuleMeta level="required" />
+
+Every word starts with a capital letter and nothing joins them: `Parcel`, `ConnectionState`, `IOError`. The variants of an `enum`, an `error` and a `machine` are spelled the same way, so `Light::Red` and `IOError::NotFound` read as "a value of this type".
+
+<DoDont file="tsg_202">
+```turf
+enum TrafficLight { Red, Amber, Green }
+
+error ParseError {
+    Empty,
+    BadDigit,
+}
+
+fn main(): int {
+    immut light: TrafficLight = TrafficLight::Green;
+    return light to int - 2;
+}
+```
+```turf
+enum traffic_light { RED, amber, Green }
+
+error parseError {
+    EMPTY,
+    bad_digit,
+}
+
+fn main(): int {
+    immut light: traffic_light = traffic_light::Green;
+    return light to int - 2;
+}
+```
+</DoDont>
+
+## TSG-203 Constants are UPPER_CASE
+
+<RuleMeta level="required" />
+
+A top-level constant, declared with `export immut`, is written in capitals with words joined by `_`. The shouting is on purpose: it tells the reader that this value is fixed for the whole program and lives outside the function they are reading. A local `immut` inside a function is an ordinary variable and stays `snake_case`.
+
+<DoDont file="tsg_203">
+```turf
+export immut MAX_RETRIES: int = 3;
+
+fn main(): int {
+    immut attempts: int = 2;
+    printline(MAX_RETRIES - attempts);
+    return 0;
+}
+```
+```turf
+export immut maxRetries: int = 3;
+
+fn main(): int {
+    immut ATTEMPTS: int = 2;
+    printline(maxRetries - ATTEMPTS);
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-204 Type parameters are single capital letters
+
+<RuleMeta level="recommended" />
+
+Use `T` for one type parameter. Use `K` and `V` for a key and a value, as `Map<K, V>` does. Use a longer `PascalCase` name only when there are several type parameters and single letters would be confusing.
+
+<DoDont file="tsg_204">
+```turf
+fn<T> first(items: T[]): T {
+    return items[0];
+}
+
+fn main(): int {
+    mut nums: int[3] = [4, 5, 6];
+    printline(first(nums));
+    return 0;
+}
+```
+```turf
+fn<item_type> first(items: item_type[]): item_type {
+    return items[0];
+}
+
+fn main(): int {
+    mut nums: int[3] = [4, 5, 6];
+    printline(first(nums));
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-205 A bool reads as a yes-or-no question
+
+<RuleMeta level="recommended" />
+
+Name a `bool` variable, field or function so that it reads as a question with a yes-or-no answer: `is_empty`, `has_header`, `can_retry`. Then `if is_empty {` reads as a sentence, and nobody wonders what `if status {` might mean.
+
+<DoDont file="tsg_205">
+```turf
+fn is_even(n: int): bool {
+    return n % 2 == 0;
+}
+
+fn main(): int {
+    immut has_items: bool = true;
+    if has_items && is_even(4) {
+        printline("ready");
+    }
+    return 0;
+}
+```
+```turf
+fn even(n: int): bool {
+    return n % 2 == 0;
+}
+
+fn main(): int {
+    immut items: bool = true;
+    if items && even(4) {
+        printline("ready");
+    }
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-206 Spell names out
+
+<RuleMeta level="recommended" />
+
+Write `count`, not `cnt`; `message`, not `msg`; `connection`, not `conn2`. A short name is fine when its whole life fits on the screen, such as `i` in a short loop or `n` for a number in a three-line function. The further a name travels from where it is declared, the more it should say.
+
+<DoDont file="tsg_206">
+```turf
+fn average(total: int, count: int): int {
+    return total / count;
+}
+
+fn main(): int {
+    for i in 1..3 {
+        printline(average(10 * i, 2));
+    }
+    return 0;
+}
+```
+```turf
+fn avg(tot: int, cnt: int): int {
+    return tot / cnt;
+}
+
+fn main(): int {
+    for index_of_the_loop in 1..3 {
+        printline(avg(10 * index_of_the_loop, 2));
+    }
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-207 A recoverable twin starts with try_
+
+<RuleMeta level="recommended" />
+
+When a function panics on bad input and you also offer a version that returns `!T` instead, give the second one the same name with `try_` in front, as `Map.get` and `Map.try_get` do. A reader then knows from the name alone which one can fail quietly and which one stops the program.

@@ -1,0 +1,29 @@
+---
+import sealIcon from "@phosphor-icons/core/assets/regular/seal-check.svg?raw";
+import wrenchIcon from "@phosphor-icons/core/assets/regular/wrench.svg?raw";
+
+type Level = "required" | "recommended";
+
+interface Props {
+    level: Level;
+    tool?: string;
+}
+
+const { level, tool } = Astro.props;
+const look: Record<Level, { label: string; color: string }> = {
+    required: { label: "Required", color: "text-accent" },
+    recommended: { label: "Recommended", color: "text-fg-soft" },
+};
+const { label, color } = look[level];
+---
+
+<p class="learn-block flex flex-wrap items-center gap-2 font-mono text-xs">
+    <span class:list={["inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-raised px-3 py-1", color]}>
+        <span class="size-3.5 shrink-0 [&>svg]:size-full" set:html={sealIcon} />
+        {label}
+    </span>
+    <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-raised px-3 py-1 text-fg-muted">
+        <span class="size-3.5 shrink-0 [&>svg]:size-full" set:html={wrenchIcon} />
+        {tool ? `Checked by ${tool}` : "No tool checks this yet"}
+    </span>
+</p>

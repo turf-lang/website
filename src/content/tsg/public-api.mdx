@@ -1,0 +1,112 @@
+---
+title: "Public API documentation"
+description: "How to write comments, what they should say, and how to document and limit what a module makes public."
+lead: "A public API is everything a module lets other files use: the parts marked `pub`. Other people build on it without opening your file, so it needs to explain itself. These rules cover comments in general and the public parts in particular."
+outcomes:
+  - "Write comments in the Turf style."
+  - "Say why in a comment, not what."
+  - "Document every `pub` item."
+  - "Keep the public part of a module small."
+---
+
+## TSG-601 Write // comments with one space after the slashes
+
+<RuleMeta level="recommended" />
+
+Turf comments start with `//`. Put one space after the slashes. A comment on its own line is indented like the code under it. A comment at the end of a line has at least two spaces before the `//`.
+
+<DoDont file="tsg_601">
+```turf
+fn main(): int {
+    // Ten seconds, in milliseconds.
+    immut timeout: int = 10_000;
+    printline(timeout);  // 10000
+    return 0;
+}
+```
+```turf
+fn main(): int {
+//Ten seconds, in milliseconds.
+    immut timeout: int = 10_000;
+    printline(timeout);//10000
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-602 Say why, not what
+
+<RuleMeta level="recommended" />
+
+The code already says *what* it does. A comment is for what the code cannot say: *why* it does it that way, what it is careful about, or what would go wrong if it were changed. A comment that repeats the line under it is one more thing to keep up to date.
+
+<DoDont file="tsg_602">
+```turf
+fn main(): int {
+    mut retries: int = 0;
+    // The server drops the first request after a restart, so allow one extra try.
+    immut limit: int = 3 + 1;
+    retries++;
+    return limit - retries - 3;
+}
+```
+```turf
+fn main(): int {
+    mut retries: int = 0;
+    // Set limit to 3 plus 1.
+    immut limit: int = 3 + 1;
+    // Add one to retries.
+    retries++;
+    return limit - retries - 3;
+}
+```
+</DoDont>
+
+## TSG-603 Describe the code as it is now
+
+<RuleMeta level="recommended" />
+
+A comment describes the code that is in front of the reader, not how it got there. "Used to be a loop", "fixed the bug from last week" and "new version" belong in the commit message, where they are tied to a date and a change. In the file, they go stale the moment they are written.
+
+## TSG-604 Comment every pub item
+
+<RuleMeta level="recommended" />
+
+Anything marked `pub` is used by other files, by people who may never open yours. Put a comment directly above it saying what it does, what it needs, and how it fails, in full sentences.
+
+<DoDont file="tsg_604">
+```turf
+// Returns the number of whole boxes needed for `items`, putting `per_box`
+// in each. Panics if `per_box` is not above zero.
+pub fn boxes_needed(items: int, per_box: int): int {
+    if per_box <= 0 {
+        panic("per_box must be above zero");
+    }
+    return (items + per_box - 1) / per_box;
+}
+
+fn main(): int {
+    printline(boxes_needed(10, 4));
+    return 0;
+}
+```
+```turf
+pub fn boxes_needed(items: int, per_box: int): int {
+    if per_box <= 0 {
+        panic("per_box must be above zero");
+    }
+    return (items + per_box - 1) / per_box;
+}
+
+fn main(): int {
+    printline(boxes_needed(10, 4));
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-605 Make pub only what other files need
+
+<RuleMeta level="recommended" />
+
+Everything in a module is private unless it is marked `pub`, and that is the right default. Mark a function, type or field `pub` only when another file really uses it. Every `pub` item is a promise to the files that use it, and a private one can be changed freely.

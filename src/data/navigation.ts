@@ -55,6 +55,21 @@ export const navigation: NavItem[] = [
         ],
     },
     {
+        label: "TSG",
+        heading: "Turf Style Guide",
+        links: [
+            { label: "Overview", href: "/tsg/", description: "What the guide is and how it grows." },
+            { label: "Indentation", href: "/tsg/indentation/", description: "Spaces, blank lines and line length." },
+            { label: "Identifier naming", href: "/tsg/naming/", description: "What to call things." },
+            { label: "Import organization", href: "/tsg/imports/", description: "Files, imports and their order." },
+            { label: "Function and type formatting", href: "/tsg/functions-and-types/", description: "Braces, spacing and lists." },
+            { label: "Error-handling conventions", href: "/tsg/errors/", description: "!T, panics and messages." },
+            { label: "Public API documentation", href: "/tsg/public-api/", description: "Comments and pub." },
+            { label: "Idiomatic Turf", href: "/tsg/idioms/", description: "Which form to pick." },
+            { label: "Safety", href: "/tsg/safety/", description: "unsafe, C code and resources." },
+        ],
+    },
+    {
         label: "TDP",
         heading: "Turf Design Proposals",
         links: (await getTdpTabs()).map(({ label, href, description }) => ({ label, href, description })),

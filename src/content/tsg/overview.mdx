@@ -1,0 +1,171 @@
+---
+title: "Turf Style Guide"
+description: "The Turf Style Guide (TSG): how to lay out, name, comment and organise Turf code so that anyone can read it."
+lead: "A program can be correct and still hard to read. The Turf Style Guide is the shared set of house rules for writing Turf, so that code written by anyone looks like code written by everyone."
+outcomes:
+  - "Know what the style guide is for, and how it differs from the language reference and the design proposals."
+  - "Read a rule: its number, whether it is required, and which tool checks it."
+  - "Find the page for what you are writing: layout, names, imports, errors, comments or safety."
+  - "Know how the guide grows before Turf 3.0, and what `turf fmt` does with it at 3.0."
+---
+
+## What a style guide is
+
+Think of a classroom where everyone keeps notes in the same way: the date in the top corner, headings underlined, one idea per line. None of that changes what the notes *say*. It means you can pick up a friend's notebook and find your way around it at once.
+
+A **style guide** does the same for code. The compiler does not care whether you indent with two spaces or eight, or whether a function is called `TotalPrice` or `total_price`. People do. Code is read many more times than it is written, and most of those reads are by someone who did not write it, including you, six months later.
+
+Here is one program written twice. Both compile and both print `12`.
+
+<DoDont file="tsg_intro">
+```turf
+fn area(width: int, height: int): int {
+    return width * height;
+}
+
+fn main(): int {
+    immut w: int = 3;
+    immut h: int = 4;
+    printline(area(w, h));
+    return 0;
+}
+```
+```turf
+fn AREA(W:int,H:int):int{
+return W*H;}
+fn main():int{immut a:int=3;immut B:int=4;
+printline(AREA(a,B));return 0;}
+```
+</DoDont>
+
+The second one works. It is just tiring to read, and every reader pays that cost again.
+
+### Three documents, three jobs
+
+Turf has three kinds of official writing. It helps to know which one answers which question.
+
+<Cards>
+  <Card tag="What is allowed" title="Language reference" href="/docs/language/">
+    What a program means and what the compiler accepts. Break it and the program does not compile.
+  </Card>
+  <Card tag="How to write it well" title="Style guide">
+    This guide. How readable, idiomatic Turf is written. Break it and the program still works.
+  </Card>
+  <Card tag="How Turf changes" title="Design proposals" href="/tdp/">
+    How a new feature is proposed, argued over and accepted, and why.
+  </Card>
+</Cards>
+
+<Callout tone="warn" title="A style rule never breaks a program">
+
+Nothing in this guide makes code invalid. If a convention ever needs to become a rule of the language, it goes through a [design proposal](/tdp/) first, never quietly through this guide.
+
+</Callout>
+
+## How to read a rule
+
+Every rule in the guide has the same four parts:
+
+1. **A number**, such as `TSG-101`. The number never changes and is never reused for another rule, so you can quote it in a code review, a commit message or a diagnostic and it always means the same thing.
+2. **A level.**
+   - **Required** means everyone follows it, and a tool will eventually check it for you.
+   - **Recommended** means it is good advice, and you can break it when you have a reason.
+3. **Which tool checks it**, if any. Today only `turf fmt` checks anything, and only four rules.
+4. **Two examples**: one to copy (**Do**) and one to avoid (**Don't**). Both are real programs, and both compile.
+
+The first digit of the number tells you which page the rule is on:
+
+| Numbers | Page | What it covers |
+|---|---|---|
+| `TSG-1xx` | [Indentation](/tsg/indentation/) | spaces, blank lines, line length |
+| `TSG-2xx` | [Identifier naming](/tsg/naming/) | what to call things |
+| `TSG-3xx` | [Import organization](/tsg/imports/) | file names, imports and the order of a file |
+| `TSG-4xx` | [Function and type formatting](/tsg/functions-and-types/) | braces, spacing, lists and `compare` |
+| `TSG-5xx` | [Error-handling conventions](/tsg/errors/) | `!T`, panics and error messages |
+| `TSG-6xx` | [Public API documentation](/tsg/public-api/) | comments and `pub` |
+| `TSG-7xx` | [Idiomatic Turf](/tsg/idioms/) | which form to pick when there are several |
+| `TSG-8xx` | [Safety](/tsg/safety/) | `unsafe`, C code and resources |
+
+## Where the guide is going
+
+The guide is **new**. It is written now, it grows and settles during Turf 2.x, and at Turf 3.0 the formatter learns it.
+
+<Flow caption="From a draft today to a formatter that applies it.">
+<FlowStep label="Now">the rules are written down and discussed</FlowStep>
+<FlowStep label="Turf 2.x">rules are added, argued over and settled</FlowStep>
+<FlowStep label="Before 3.0">the formatting rules are frozen</FlowStep>
+<FlowStep label="Turf 3.0">`turf fmt` applies every required formatting rule</FlowStep>
+</Flow>
+
+- **Until 3.0, `turf fmt` does not change.** It keeps doing exactly the four things it does today ([TSG-101](/tsg/indentation/#tsg-101-indent-with-four-spaces) to [TSG-104](/tsg/indentation/#tsg-104-end-every-file-with-one-newline)), so the formatter's output stays the same across every 2.x release while the guide is still moving.
+- **Before 3.0, any rule can still change.** No tool enforces the new rules yet, so changing one breaks nobody's build.
+- **At 3.0**, the formatting rules are frozen and `turf fmt` is updated to apply them, all at once. A project adopts them by running `turf fmt --write` one time.
+- **After 3.0**, a new formatting rule lands in this guide and in `turf fmt` together, and a rule that changes what `turf fmt` outputs is listed in the release notes.
+
+<Callout tone="note" title="This guide is a draft">
+
+The rules in this guide describe Turf as it is today, in 2.x. The plan is tracked in [turf-lang#281](https://github.com/turf-lang/turf-lang/issues/281); comment there if you disagree with a rule or want a new one.
+
+</Callout>
+
+## All rules at a glance
+
+| Rule | In short | Level | Checked by |
+|---|---|---|---|
+| [TSG-101](/tsg/indentation/#tsg-101-indent-with-four-spaces) | Indent with four spaces | Required | `turf fmt` |
+| [TSG-102](/tsg/indentation/#tsg-102-no-spaces-at-the-end-of-a-line) | No spaces at the end of a line | Required | `turf fmt` |
+| [TSG-103](/tsg/indentation/#tsg-103-never-more-than-one-blank-line-in-a-row) | Never more than one blank line in a row | Required | `turf fmt` |
+| [TSG-104](/tsg/indentation/#tsg-104-end-every-file-with-one-newline) | End every file with one newline | Required | `turf fmt` |
+| [TSG-105](/tsg/indentation/#tsg-105-keep-lines-to-100-characters) | Keep lines to 100 characters | Recommended | none yet |
+| [TSG-201](/tsg/naming/#tsg-201-values-and-functions-are-snake_case) | Values and functions are snake_case | Required | none yet |
+| [TSG-202](/tsg/naming/#tsg-202-types-and-variants-are-pascalcase) | Types and variants are PascalCase | Required | none yet |
+| [TSG-203](/tsg/naming/#tsg-203-constants-are-upper_case) | Constants are UPPER_CASE | Required | none yet |
+| [TSG-204](/tsg/naming/#tsg-204-type-parameters-are-single-capital-letters) | Type parameters are single capital letters | Recommended | none yet |
+| [TSG-205](/tsg/naming/#tsg-205-a-bool-reads-as-a-yes-or-no-question) | A bool reads as a yes-or-no question | Recommended | none yet |
+| [TSG-206](/tsg/naming/#tsg-206-spell-names-out) | Spell names out | Recommended | none yet |
+| [TSG-207](/tsg/naming/#tsg-207-a-recoverable-twin-starts-with-try_) | A recoverable twin starts with try_ | Recommended | none yet |
+| [TSG-301](/tsg/imports/#tsg-301-files-are-named-in-snake_case) | Files are named in snake_case | Required | none yet |
+| [TSG-302](/tsg/imports/#tsg-302-imports-go-at-the-top-in-groups) | Imports go at the top, in groups | Recommended | none yet |
+| [TSG-303](/tsg/imports/#tsg-303-do-not-import-the-prelude) | Do not import the prelude | Recommended | none yet |
+| [TSG-304](/tsg/imports/#tsg-304-put-things-in-a-file-in-a-fixed-order) | Put things in a file in a fixed order | Recommended | none yet |
+| [TSG-401](/tsg/functions-and-types/#tsg-401-opening-braces-go-on-the-same-line) | Opening braces go on the same line | Recommended | none yet |
+| [TSG-402](/tsg/functions-and-types/#tsg-402-no-brackets-around-a-condition) | No brackets around a condition | Recommended | none yet |
+| [TSG-403](/tsg/functions-and-types/#tsg-403-spaces-around-operators-and-after-commas) | Spaces around operators and after commas | Recommended | none yet |
+| [TSG-404](/tsg/functions-and-types/#tsg-404-trailing-comma-on-the-last-line-of-a-list) | Trailing comma on the last line of a list | Recommended | none yet |
+| [TSG-405](/tsg/functions-and-types/#tsg-405-lay-out-compare-arms-on-their-own-lines) | Lay out compare arms on their own lines | Recommended | none yet |
+| [TSG-501](/tsg/errors/#tsg-501-pick-the-failure-shape-by-why-it-fails) | Pick the failure shape by why it fails | Recommended | none yet |
+| [TSG-502](/tsg/errors/#tsg-502-say-what-failed-in-the-error-message) | Say what failed in the error message | Recommended | none yet |
+| [TSG-503](/tsg/errors/#tsg-503-never-hide-a-failure-that-matters) | Never hide a failure that matters | Recommended | none yet |
+| [TSG-601](/tsg/public-api/#tsg-601-write--comments-with-one-space-after-the-slashes) | Write // comments with one space after the slashes | Recommended | none yet |
+| [TSG-602](/tsg/public-api/#tsg-602-say-why-not-what) | Say why, not what | Recommended | none yet |
+| [TSG-603](/tsg/public-api/#tsg-603-describe-the-code-as-it-is-now) | Describe the code as it is now | Recommended | none yet |
+| [TSG-604](/tsg/public-api/#tsg-604-comment-every-pub-item) | Comment every pub item | Recommended | none yet |
+| [TSG-605](/tsg/public-api/#tsg-605-make-pub-only-what-other-files-need) | Make pub only what other files need | Recommended | none yet |
+| [TSG-701](/tsg/idioms/#tsg-701-use-immut-unless-the-value-changes) | Use immut unless the value changes | Recommended | none yet |
+| [TSG-702](/tsg/idioms/#tsg-702-write-mut-and-immut-not-mutable-and-immutable) | Write mut and immut, not mutable and immutable | Recommended | none yet |
+| [TSG-703](/tsg/idioms/#tsg-703-write-the-type-unless-the-value-makes-it-obvious) | Write the type unless the value makes it obvious | Recommended | none yet |
+| [TSG-704](/tsg/idioms/#tsg-704-use-the-short-forms-for-counting) | Use the short forms for counting | Recommended | none yet |
+| [TSG-705](/tsg/idioms/#tsg-705-count-with-for-not-while) | Count with for, not while | Recommended | none yet |
+| [TSG-706](/tsg/idioms/#tsg-706-one-give--otherwise-per-expression) | One give / otherwise per expression | Recommended | none yet |
+| [TSG-707](/tsg/idioms/#tsg-707-name-every-variant-when-you-compare-an-enum) | Name every variant when you compare an enum | Recommended | none yet |
+| [TSG-708](/tsg/idioms/#tsg-708-keep-main-short) | Keep main short | Recommended | none yet |
+| [TSG-801](/tsg/safety/#tsg-801-keep-unsafe-blocks-small) | Keep unsafe blocks small | Recommended | none yet |
+| [TSG-802](/tsg/safety/#tsg-802-wrap-c-functions-in-a-turf-function) | Wrap C functions in a Turf function | Recommended | none yet |
+| [TSG-803](/tsg/safety/#tsg-803-use-t-unless-nothing-is-a-real-answer) | Use &T unless nothing is a real answer | Recommended | none yet |
+| [TSG-804](/tsg/safety/#tsg-804-close-a-resource-with-defer-on-the-next-line) | Close a resource with defer, on the next line | Recommended | none yet |
+
+## Changing the guide
+
+The guide belongs to everyone who writes Turf. To suggest a new rule or argue against one, open an issue on [turf-lang/turf-lang](https://github.com/turf-lang/turf-lang/issues) or comment on [turf-lang#281](https://github.com/turf-lang/turf-lang/issues/281). A good suggestion says which rule, what should change, and shows a short piece of real code where the change helps.
+
+Rules are changed carefully, not on a timetable:
+
+- A settled rule stays settled unless there is a strong reason to change it.
+- New syntax gets its rules in the same release that ships it, never before.
+- A rule that is removed keeps its number, marked as withdrawn, so old references still lead somewhere.
+
+### Changelog
+
+| Date | Change |
+|---|---|
+| 19 October 2026 | First draft: 41 rules in six areas. |

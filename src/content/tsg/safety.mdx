@@ -1,0 +1,106 @@
+---
+title: "Safety"
+description: "Small unsafe blocks, wrapped C functions, non-null references and resources closed with defer."
+lead: "Turf checks a lot for you, but some code steps outside those checks: `unsafe` blocks, C functions and things like files that must be closed. These rules keep that code small, easy to find and hard to get wrong."
+outcomes:
+  - "Keep `unsafe` code as small as it can be."
+  - "Put C functions behind checked Turf functions."
+  - "Choose between `&T` and `&?T`."
+  - "Close files and connections so it cannot be forgotten."
+---
+
+## TSG-801 Keep unsafe blocks small
+
+<RuleMeta level="recommended" />
+
+Inside an `unsafe` block, the compiler stops checking some of your work for you. Put only the lines that need it inside the block, and keep everything else outside, where the checks still apply. A small `unsafe` block is easy to check by eye.
+
+<DoDont file="tsg_801">
+```turf
+enum Direction { North, East, South, West }
+
+fn main(): int {
+    mut first: string = "";
+    unsafe {
+        immut names: string* = Direction::NAMES;
+        first = names[0];
+    }
+    printline(first.length());
+    printline(first);
+    return 0;
+}
+```
+```turf
+enum Direction { North, East, South, West }
+
+fn main(): int {
+    unsafe {
+        immut names: string* = Direction::NAMES;
+        immut first: string = names[0];
+        printline(first.length());
+        printline(first);
+        return 0;
+    }
+}
+```
+</DoDont>
+
+## TSG-802 Wrap C functions in a Turf function
+
+<RuleMeta level="recommended" />
+
+When you call C with `extern fn`, keep the binding private and give the rest of your program a small Turf function that does the conversions and checks. The rest of the code then calls ordinary, checked Turf, and the one place that talks to C is easy to find. The standard library does the same with `fopen`, `getenv` and `socket`.
+
+<DoDont file="tsg_802">
+```turf
+extern fn abs(n: int32): int32;
+
+fn distance(a: int, b: int): int {
+    return abs((a - b) to int32) to int;
+}
+
+fn main(): int {
+    printline(distance(3, 10));
+    return 0;
+}
+```
+```turf
+extern fn abs(n: int32): int32;
+
+fn main(): int {
+    immut a: int = 3;
+    immut b: int = 10;
+    printline(abs((a - b) to int32) to int);
+    printline(abs((b - a) to int32) to int);
+    return 0;
+}
+```
+</DoDont>
+
+## TSG-803 Use &T unless nothing is a real answer
+
+<RuleMeta level="recommended" />
+
+`&T` is a reference that can never be `null`, and `&?T` is one that can. Use `&?T` only when "nothing" is a real answer, such as the next node at the end of a list. Every `&?T` makes each reader check for `null`, and makes them wonder what `null` means here.
+
+## TSG-804 Close a resource with defer, on the next line
+
+<RuleMeta level="recommended" />
+
+When you open something that has to be closed, such as a file or a connection, write `defer x.close();` on the line straight after you open it. `defer` runs however the block ends, so the close cannot be skipped by an early `return`, and the reader sees the opening and the closing together.
+
+<Code title="tsg_804.tr">
+```turf
+import net;
+
+fn main(): int {
+    mut conn: net::TcpConnection = net::TcpConnection::connect(127, 0, 0, 1, 8080) recover run {
+        printline("could not connect");
+        return 1;
+    };
+    defer conn.close();
+    conn.write("ping");
+    return 0;
+}
+```
+</Code>
