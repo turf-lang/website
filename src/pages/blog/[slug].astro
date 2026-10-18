@@ -14,7 +14,7 @@ export async function getStaticPaths() {
 }
 
 const { post, newer, older } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 const link = (p?: typeof post) => (p ? { label: p.data.title, href: `/blog/${p.id}/` } : undefined);
 ---
 
@@ -28,6 +28,7 @@ const link = (p?: typeof post) => (p ? { label: p.data.title, href: `/blog/${p.i
         prevText="← Older"
         nextText="Newer →"
         back={{ label: "All posts", href: "/blog/" }}
+        headings={headings.filter((h) => h.depth === 2 || h.depth === 3)}
     >
         <div slot="meta" class="grid gap-3 font-mono text-sm">
             <p class="flex justify-center text-fg-soft hover:[&>a]:text-fg">

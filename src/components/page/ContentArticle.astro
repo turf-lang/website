@@ -1,5 +1,7 @@
 ---
 import type { NavLink } from "../../data/navigation";
+import type { Heading } from "../../lib/docs";
+import DocsToc from "../docs/DocsToc.astro";
 import PageHeader from "./PageHeader.astro";
 import type { Crumb } from "./PageHeader.astro";
 import PrevNext from "./PrevNext.astro";
@@ -14,9 +16,11 @@ interface Props {
     prevText?: string;
     nextText?: string;
     back: NavLink;
+    headings?: Heading[];
 }
 
-const { crumbs, title, lead, prev, next, prevText, nextText, back } = Astro.props;
+const { crumbs, title, lead, prev, next, prevText, nextText, back, headings = [] } = Astro.props;
+const hasToc = headings.length > 0;
 ---
 
 <PageHeader crumbs={crumbs} title={title} lead={lead} align="center">
@@ -25,19 +29,29 @@ const { crumbs, title, lead, prev, next, prevText, nextText, back } = Astro.prop
     </div>
 </PageHeader>
 
-<main class="container-page py-12 md:py-16">
-    <article class="prose-turf prose-justify mx-auto max-w-3xl px-2 md:px-8">
-        <slot />
-    </article>
+<main class:list={["container-page py-12 md:py-16", hasToc && "xl:grid xl:grid-cols-[13rem_minmax(0,1fr)_13rem] xl:gap-x-8"]}>
+    {hasToc && <div class="hidden xl:block" aria-hidden="true" />}
+    <div class="min-w-0">
+        <article class="prose-turf prose-justify mx-auto max-w-3xl px-2 md:px-8">
+            <slot />
+        </article>
 
-    <div class="mx-auto mt-16 max-w-3xl px-2 md:px-8">
-        <PrevNext prev={prev} next={next} prevText={prevText} nextText={nextText} />
-        <a
-            href={back.href}
-            class="group mt-8 inline-flex items-center gap-2 font-mono text-sm text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
-        >
-            <span aria-hidden="true" class="transition-transform group-hover:-translate-x-1 motion-reduce:transition-none">←</span>
-            {back.label}
-        </a>
+        <div class="mx-auto mt-16 max-w-3xl px-2 md:px-8">
+            <PrevNext prev={prev} next={next} prevText={prevText} nextText={nextText} />
+            <a
+                href={back.href}
+                class="group mt-8 inline-flex items-center gap-2 font-mono text-sm text-fg-soft transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+            >
+                <span aria-hidden="true" class="transition-transform group-hover:-translate-x-1 motion-reduce:transition-none">←</span>
+                {back.label}
+            </a>
+        </div>
     </div>
+    {
+        hasToc && (
+            <aside class="hidden xl:sticky xl:top-20 xl:block xl:max-h-[calc(100dvh-5rem)] xl:self-start xl:overflow-y-auto">
+                <DocsToc headings={headings} />
+            </aside>
+        )
+    }
 </main>
