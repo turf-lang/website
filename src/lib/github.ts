@@ -198,3 +198,32 @@ export function getMaintainers(): Promise<Loaded<Maintainer[]>> {
             .sort((a, b) => a.login.localeCompare(b.login));
     });
 }
+
+export function getWeeklyContributors(): Promise<Loaded<Contributor[]>> {
+    return cached("contributors-weekly", [], async () => {
+        const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const perRepo = await Promise.all(
+            communityRepos.map(async (repo) => {
+                const raw = (await request(`/repos/${githubOrg}/${repo.name}/commits?since=${since}&per_page=100`)) as any[];
+                return { repo: repo.name, raw: Array.isArray(raw) ? raw : [] };
+            }),
+        );
+        const byLogin = new Map<string, Contributor>();
+        for (const { repo, raw } of perRepo) {
+            for (const c of raw) {
+                if (c.author?.type !== "User") continue;
+                const entry = byLogin.get(c.author.login) ?? {
+                    login: c.author.login,
+                    avatar: c.author.avatar_url,
+                    url: c.author.html_url,
+                    commits: 0,
+                    repos: [],
+                };
+                entry.commits += 1;
+                if (!entry.repos.includes(repo)) entry.repos.push(repo);
+                byLogin.set(c.author.login, entry);
+            }
+        }
+        return [...byLogin.values()].sort((a, b) => b.commits - a.commits || a.login.localeCompare(b.login));
+    });
+}
