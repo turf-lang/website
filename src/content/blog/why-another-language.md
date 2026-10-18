@@ -3,6 +3,7 @@ title: Why another language?
 description: We started as a research project and ended up as a fully programmable systems programming language. This is the question we set out to answer, the bets we made along the way, and what we still don't know.
 date: 2026-10-15
 author: Aayush Shukla
+github: a2ys
 ---
 
 There are already a lot of programming languages, and many of them are very good. So why build another one?

@@ -2,6 +2,7 @@
 import { render } from "astro:content";
 import BaseLayout from "../../components/layout/BaseLayout.astro";
 import ContentArticle from "../../components/page/ContentArticle.astro";
+import Author from "../../components/ui/Author.astro";
 import { formatDate, getPosts, isoDate, readingTime } from "../../lib/content";
 
 export async function getStaticPaths() {
@@ -28,8 +29,10 @@ const link = (p?: typeof post) => (p ? { label: p.data.title, href: `/blog/${p.i
         nextText="Newer →"
         back={{ label: "All posts", href: "/blog/" }}
     >
-        <div slot="meta" class="grid gap-1.5 font-mono text-sm">
-            <p class="text-fg-soft">{post.data.author}</p>
+        <div slot="meta" class="grid gap-3 font-mono text-sm">
+            <p class="flex justify-center text-fg-soft hover:[&>a]:text-fg">
+                <Author name={post.data.author} github={post.data.github} />
+            </p>
             <p class="flex items-center justify-center gap-x-3 text-fg-muted">
                 <time datetime={isoDate(post.data.date)}>{formatDate(post.data.date)}</time>
                 <span aria-hidden="true" class="text-fg-faint">·</span>
