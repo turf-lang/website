@@ -9,11 +9,11 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-accent";
     id="site-header"
     class="group/header sticky top-0 z-40 w-full border-b border-line bg-surface/95 text-fg backdrop-blur-md"
 >
-    <div class="container-page relative flex h-20 items-center justify-between">
+    <div class="container-page relative flex h-20 items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr]">
         <Wordmark collapsible />
 
-        <nav aria-label="Main" class="absolute left-1/2 hidden -translate-x-1/2 md:block">
-            <ul class="flex items-center gap-8 font-medium tracking-[-0.01em] text-fg-muted">
+        <nav aria-label="Main" class="hidden lg:block">
+            <ul class="flex items-center gap-5 font-medium xl:gap-8 tracking-[-0.01em] text-fg-muted">
                 {
                     navigation.map((item, i) => (
                         <li class="group relative" data-nav-item={item.links ? "" : undefined}>
@@ -90,7 +90,7 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-accent";
             </ul>
         </nav>
 
-        <div class="ml-auto flex items-center gap-3">
+        <div class="ml-auto flex items-center gap-3 lg:justify-self-end">
             <button
                 type="button"
                 data-search-open
@@ -109,7 +109,7 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-accent";
                 aria-expanded="false"
                 aria-controls="mobile-menu"
                 aria-label="Menu"
-                class:list={["box-border inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line text-fg-soft transition-colors hover:bg-tint hover:text-fg focus-visible:outline-offset-2 md:hidden", focusRing]}
+                class:list={["box-border inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line text-fg-soft transition-colors hover:bg-tint hover:text-fg focus-visible:outline-offset-2 lg:hidden", focusRing]}
             >
                 <svg
                     aria-hidden="true"
@@ -136,7 +136,7 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-accent";
     <div
         id="mobile-menu"
         hidden
-        class="absolute inset-x-0 top-full max-h-[calc(100dvh-5rem)] overflow-y-auto border-b border-line bg-surface md:hidden"
+        class="absolute inset-x-0 top-full max-h-[calc(100dvh-5rem)] overflow-y-auto border-b border-line bg-surface lg:hidden"
     >
         <nav aria-label="Mobile" class="container-page py-2">
             <ul class="divide-y divide-line">
@@ -276,7 +276,7 @@ const focusRing = "focus-visible:outline-2 focus-visible:outline-accent";
         if (!menu.hidden && !header.contains(target)) setMenu(false);
     });
 
-    window.matchMedia("(min-width: 768px)").addEventListener("change", (e) => {
+    window.matchMedia("(min-width: 1024px)").addEventListener("change", (e) => {
         if (e.matches) setMenu(false);
     });
 </script>
