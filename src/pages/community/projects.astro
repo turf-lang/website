@@ -18,9 +18,9 @@ const list = result.data;
 const topicUrl = `https://github.com/topics/${projectTopic}`;
 ---
 
-<BaseLayout title="Made with Turf · Community" description={lead}>
+<BaseLayout title="Made with Turf · Open Source" description={lead}>
     <PageHeader
-        crumbs={[{ label: "Community", href: "/community/" }, { label: "Made with Turf" }]}
+        crumbs={[{ label: "Open Source", href: "/community/" }, { label: "Made with Turf" }]}
         title="Made with Turf"
         lead={lead}
         meta={result.ok && list.length > 0 ? [`${list.length} ${list.length === 1 ? "project" : "projects"}`] : undefined}
@@ -30,7 +30,7 @@ const topicUrl = `https://github.com/topics/${projectTopic}`;
     <main class="container-page py-12 md:py-16">
         {
             !result.ok ? (
-                <FetchNotice href={topicUrl} what="community projects" />
+                <FetchNotice href={topicUrl} what="projects" />
             ) : list.length === 0 ? (
                 <EmptyState title="No projects listed yet">
                     <p>

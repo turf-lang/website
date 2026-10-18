@@ -1,0 +1,68 @@
+---
+import CommunityTabs from "../../components/community/CommunityTabs.astro";
+import EmptyState from "../../components/community/EmptyState.astro";
+import FetchNotice from "../../components/community/FetchNotice.astro";
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import PageHeader from "../../components/page/PageHeader.astro";
+import { githubOrg, leadRole, roleOf } from "../../data/community";
+import { getMaintainers } from "../../lib/github";
+
+const href = "/community/maintainers/";
+const lead = "The people who review pull requests, triage issues and cut releases for Turf.";
+const result = await getMaintainers();
+const rank = (login: string) => (roleOf(login) === leadRole ? 0 : 1);
+const list = [...result.data].sort((a, b) => rank(a.login) - rank(b.login) || a.login.localeCompare(b.login));
+---
+
+<BaseLayout title="Maintainers · Open Source" description={lead}>
+    <PageHeader
+        crumbs={[{ label: "Open Source", href: "/community/" }, { label: "Maintainers" }]}
+        title="Maintainers"
+        lead={lead}
+        meta={result.ok && list.length > 0 ? [`${list.length} ${list.length === 1 ? "maintainer" : "maintainers"}`] : undefined}
+    />
+    <CommunityTabs current={href} />
+
+    <main class="container-page py-12 md:py-16">
+        {
+            !result.ok ? (
+                <FetchNotice href={`https://github.com/orgs/${githubOrg}/people`} what="maintainers" />
+            ) : list.length === 0 ? (
+                <EmptyState title="No maintainers listed yet">
+                    <p>Maintainers appear here once they make their membership of the {githubOrg} organization public.</p>
+                </EmptyState>
+            ) : (
+                <>
+                    <ul class="flex flex-wrap justify-center gap-4">
+                        {list.map((person) => (
+                            <li class="grow basis-64 sm:max-w-[calc(50%-0.5rem)] lg:max-w-[calc(25%-0.75rem)]">
+                                <a
+                                    href={person.url}
+                                    rel="noopener"
+                                    class="group flex h-full flex-col rounded-2xl border border-line bg-surface p-8 transition-colors hover:bg-surface-raised focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent"
+                                >
+                                    <img
+                                        src={`${person.avatar}&s=160`}
+                                        alt=""
+                                        width="80"
+                                        height="80"
+                                        loading="lazy"
+                                        class="size-20 rounded-full border border-line bg-tint"
+                                    />
+                                    <span class="mt-6 text-2xl font-black tracking-[-0.03em] text-fg">{person.login}</span>
+                                    <span class:list={["mt-2 font-mono text-sm", roleOf(person.login) === leadRole ? "text-accent" : "text-fg-muted"]}>
+                                        {roleOf(person.login)}
+                                    </span>
+                                    <span class="mt-auto pt-6 font-mono text-sm text-fg-faint">@{person.login}</span>
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                    <p class="mt-10 max-w-xl leading-7 text-fg-muted">
+                        This list comes from the public members of the {githubOrg} organization on GitHub and refreshes each time the site is built.
+                    </p>
+                </>
+            )
+        }
+    </main>
+</BaseLayout>

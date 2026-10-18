@@ -39,6 +39,12 @@ export interface Contributor {
     repos: string[];
 }
 
+export interface Maintainer {
+    login: string;
+    avatar: string;
+    url: string;
+}
+
 export interface Project {
     name: string;
     owner: string;
@@ -181,5 +187,14 @@ export function getProjects(): Promise<Loaded<Project[]>> {
                 updated: new Date(r.pushed_at),
                 topics: (r.topics as string[]).filter((t) => t !== projectTopic),
             }));
+    });
+}
+
+export function getMaintainers(): Promise<Loaded<Maintainer[]>> {
+    return cached("maintainers", [], async () => {
+        const raw = (await request(`/orgs/${githubOrg}/members?per_page=100`)) as any[];
+        return raw
+            .map((m) => ({ login: m.login as string, avatar: m.avatar_url as string, url: m.html_url as string }))
+            .sort((a, b) => a.login.localeCompare(b.login));
     });
 }

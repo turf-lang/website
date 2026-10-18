@@ -67,13 +67,14 @@ export const navigation: NavItem[] = [
         ],
     },
     {
-        label: "Community",
+        label: "Open Source",
         heading: "Open Source",
         links: [
             { label: "Release notes", href: "/community/releases/", description: "What changed in every version." },
             { label: "Open issues", href: "/community/issues/", description: "Every open issue, across all five repositories." },
             { label: "Top contributors", href: "/community/contributors/", description: "The people building Turf." },
             { label: "Made with Turf", href: "/community/projects/", description: "Projects the community has built." },
+            { label: "Maintainers", href: "/community/maintainers/", description: "The people who look after Turf." },
         ],
     },
     { label: "Blog", href: "/blog/" },

@@ -17,9 +17,9 @@ const older = entries.filter((entry) => entry.released && entry !== latest);
 const highlights = latest?.notes?.data.highlights ?? [];
 ---
 
-<BaseLayout title="Release notes · Community" description={lead}>
+<BaseLayout title="Release notes · Open Source" description={lead}>
     <PageHeader
-        crumbs={[{ label: "Community", href: "/community/" }, { label: "Release notes" }]}
+        crumbs={[{ label: "Open Source", href: "/community/" }, { label: "Release notes" }]}
         title="Release notes"
         lead={lead}
         meta={latest ? [`${entries.length - upcoming.length} releases`, `Latest ${latest.tag}`] : undefined}

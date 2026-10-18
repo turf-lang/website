@@ -21,11 +21,12 @@ export async function getOgPages(): Promise<Map<string, string>> {
     add("/blog/", getSection("blog").label);
     add("/learn/", getSection("learn").label);
     add("/resources/", getSection("resources").label);
-    add("/community/", "Open Source · Community");
+    add("/community/", "Open Source");
     add("/community/releases/", "Release notes");
     add("/community/issues/", "Open issues");
     add("/community/contributors/", "Top contributors");
     add("/community/projects/", "Made with Turf");
+    add("/community/maintainers/", "Maintainers");
     add("/stdlib/", getSection("stdlib").heading);
     add("/tdp/", "Constitution · TDP");
     add("/tdp/process/", "Process · TDP");

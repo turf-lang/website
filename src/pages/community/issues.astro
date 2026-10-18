@@ -15,9 +15,9 @@ const repos = result.data;
 const total = repos.reduce((sum, r) => sum + r.issues.length, 0);
 ---
 
-<BaseLayout title="Open issues · Community" description={lead}>
+<BaseLayout title="Open issues · Open Source" description={lead}>
     <PageHeader
-        crumbs={[{ label: "Community", href: "/community/" }, { label: "Open issues" }]}
+        crumbs={[{ label: "Open Source", href: "/community/" }, { label: "Open issues" }]}
         title="Open issues"
         lead={lead}
         meta={result.ok ? [`${total} open`, `${repos.length} repositories`] : undefined}

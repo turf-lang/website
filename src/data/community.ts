@@ -18,3 +18,13 @@ export const communityRepos: CommunityRepo[] = [
 export const releaseRepo = "turf-lang";
 
 export const repoUrl = (name: string) => `https://github.com/${githubOrg}/${name}`;
+
+export const leadRole = "Project Lead";
+export const defaultRole = "Maintainer";
+
+export const maintainerRoles: Record<string, string> = {
+    a2ys: leadRole,
+    puang59: leadRole,
+};
+
+export const roleOf = (login: string) => maintainerRoles[login.toLowerCase()] ?? defaultRole;
