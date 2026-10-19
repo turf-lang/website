@@ -1,0 +1,38 @@
+---
+title: "E151: A generic struct declared inside a function"
+description: "What compiler error E151 means, and how to fix it."
+order: 151
+---
+
+{/* Text from the turf-lang repository: docs/errors/codes/E151.txt. */}
+
+A struct can be declared inside a function body, for a type only that function uses:
+
+<Code title="Example">
+```turf
+fn area(w: int, h: int): int {
+    struct Rect { w: int, h: int }
+    mut r: Rect = Rect::default();
+    r.w = w;
+    r.h = h;
+    return r.w * r.h;
+}
+```
+</Code>
+
+Such a local struct can't have type parameters. A local type has no methods, so a
+type parameter would have nothing to use it, and E151 is writing one anyway:
+
+<Code title="Example">
+```turf
+fn f(): int {
+    struct Box<T> { v: T }   // E151
+    ...
+}
+```
+</Code>
+
+Declare the generic struct at the top level of the file instead, where its methods
+can be written too, or give the local struct's fields concrete types.
+
+Run `turf --explain E151` in a terminal to read this again.
