@@ -1,0 +1,65 @@
+---
+tag: "v2.1.1"
+title: "Run-time checks you can rely on"
+description: "A bug-fix release. Overflow and bounds checks are no longer removed when a variable changes in a way the compiler did not follow, generic structs pair their type arguments correctly, and three compiler crashes are fixed."
+date: 2026-10-19
+highlights:
+  - "No breaking changes: a program that compiled with 2.1.0 and ran correctly behaves the same."
+  - "Overflow and bounds checks stay in whenever a variable changes in a way the compiler does not follow. 2.1.0 could remove them, so a sum wrapped silently and an index read past its array."
+  - "A generic struct's type arguments go to its parameters in declaration order."
+  - "`Box::default().get()` on a generic `Box` is a clear E138, and a generic struct inside a function is the new E151."
+  - "Three compiler crashes fixed."
+---
+
+Turf 2.1.1 is a bug-fix release. A program that compiled with 2.1.0 and ran correctly compiles and behaves the same. Programs that 2.1.0 miscompiled now stop where they should. A few programs that 2.1.0 rejected or crashed on now compile, or get a diagnostic that says what is wrong.
+
+## Run-time checks are kept whenever a variable changes in a way the compiler does not follow
+
+Every `int` operation that can overflow, and every array index, is checked at run time. The compiler removes a check only when it can prove the check never fires. For example, `mut i: int = 2;` followed by `a[i]` on a four-element array needs no bounds check.
+
+That proof followed a variable's value through four kinds of statement: `mut x = ...`, `x = ...`, `x op= ...` and `x++`. When a variable changed any other way, 2.1.0 could miss the change, keep the old value, and remove a check the program needed. The operation then wrapped around, at every `-O` level, with no panic:
+
+```turf
+fn main(): int {
+    mut x: int = 1;
+    if true {
+        defer x = 9223372036854775807;
+    }
+    mut y: int = x + 1;
+    printline(y);
+    return 0;
+}
+```
+
+```text
+panic: runtime check: Integer overflow (main.tr:6)
+```
+
+2.1.0 printed `-9223372036854775808` here and exited with status 0. The same happened when:
+
+- `x++` was written inside a call argument, as in `f(x++)`;
+- a variable changed through `&x` was copied (`y = x`) or used inside a larger expression (`(x * 1) + 1`);
+- a `defer` changed an array index, so `a[i]` read past the end of the array instead of panicking.
+
+Now a variable's value is used only when every write to it in the function is one of those four statements, written as a whole statement. Anything else keeps the check.
+
+The compile-time error for a constant index out of range (E001) used the same reasoning, so it also rejected valid programs. One example is `a[i]` after `i--` statements, or after a `defer` that changes `i`. Those programs now compile.
+
+These checks are now also tested every night. Programs are generated with values near the limits of `int`, and their output and panics are compared with an exact reference.
+
+## Generic structs
+
+- A generic struct's type arguments go to its parameters in the order the parameters are declared. In 2.1.0, `struct Pair<A, B> { b: B, a: A }` used as `Pair<int, string>` gave `a` the type `string`. A method call on a generic struct whose fields do not mention its parameter, such as `struct Tag<T> {}`, was an internal compiler error.
+- `Box::default().get()` and `Box::default().v` on a generic `Box` are now E138. Nothing in the expression says which `Box` to build, so declare the value first: `mut b: Box<int> = Box::default();`. 2.1.0 gave an internal compiler error.
+- A struct declared inside a function cannot have type parameters. This is the new error E151. In 2.1.0, `Box<int>` was rejected with a misleading E148, and a bare `Box` gave an internal compiler error.
+- A diagnostic about a generic function names it as you wrote it (`'Box.size'`), not by its internal name (`'Box.size_gen1_int'`).
+
+## Compiler crashes fixed
+
+- An `if`/`else`, or a `give`/`otherwise`, whose branches call methods with different numbers of arguments.
+- A statement inside a top-level `unsafe { }` block, such as `unsafe { mut p: int* = null; }` outside any function. A top-level `unsafe { }` holds only declarations, so a statement there is now E118, like any other statement outside a function. In 2.1.0, a statement such as a call there compiled and never ran.
+
+## Documentation
+
+- [E151](/docs/errors/e151/) is new.
+- The structs reference says that a struct declared inside a function cannot be generic, and the `unsafe` reference says that a top-level `unsafe { }` holds only declarations.
