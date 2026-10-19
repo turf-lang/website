@@ -1,0 +1,31 @@
+---
+title: "E156: A variable is assigned to itself"
+description: "What compiler error E156 means, and how to fix it."
+order: 156
+---
+
+{/* Text from the turf-lang repository: docs/errors/codes/E156.txt. */}
+
+Assigning a variable to itself changes nothing:
+
+<Code title="Example">
+```turf
+mut total: int = 3;
+total = total;         // WARNING: does nothing
+```
+</Code>
+
+It is nearly always a slip. Either a leftover from an edit, or the right-hand side was meant to be something else, like `total = total + 1;` or `total = other;`. Write the assignment you meant:
+
+<Code title="Example">
+```turf
+mut total: int = 3;
+total = total + 1;
+```
+</Code>
+
+If the line is only a leftover, delete it.
+
+This is a warning, not an error -- compilation still succeeds. To silence it for a whole build, set its lint level to allow: `turf build --allow E156` (or `[lints] E156 = "allow"` in turf.toml).
+
+Run `turf --explain E156` in a terminal to read this again.

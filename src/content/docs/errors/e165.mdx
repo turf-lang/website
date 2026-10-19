@@ -1,0 +1,36 @@
+---
+title: "E165: This branch of an if is empty"
+description: "What compiler error E165 means, and how to fix it."
+order: 165
+---
+
+{/* Text from the turf-lang repository: docs/errors/codes/E165.txt. */}
+
+An `if`, `elseif` or `else` whose block holds no statements does nothing:
+
+<Code title="Example">
+```turf
+immut n: int = 3;
+if n > 2 {
+} else {                    // the 'then' branch is empty -- WARNING
+    printline("small");
+}
+```
+</Code>
+
+The usual fix is to flip the condition so the work lives in the `if` and the empty branch goes away:
+
+<Code title="Example">
+```turf
+immut n: int = 3;
+if n <= 2 {
+    printline("small");
+}
+```
+</Code>
+
+If you simply haven't written the code yet, put a comment such as `// TODO` in the block. Turf counts a block holding only comments as empty too, so that does not silence the warning, but it does tell the next reader the branch is deliberate. An empty `else` can simply be deleted.
+
+This is a warning, not an error -- compilation still succeeds. To silence it for a whole build, set its lint level to allow: `turf build --allow E165` (or `[lints] E165 = "allow"` in turf.toml).
+
+Run `turf --explain E165` in a terminal to read this again.

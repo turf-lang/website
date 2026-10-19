@@ -1,0 +1,36 @@
+---
+title: "E166: A value is compared with itself"
+description: "What compiler error E166 means, and how to fix it."
+order: 166
+---
+
+{/* Text from the turf-lang repository: docs/errors/codes/E166.txt. */}
+
+Comparing a variable with itself gives an answer that never changes:
+
+<Code title="Example">
+```turf
+immut a: int = 3;
+if a == a {              // WARNING: always true
+    printline("same");
+}
+```
+</Code>
+
+`a == a`, `a <= a` and `a >= a` are always true; `a != a`, `a < a` and `a > a` are always false. (For a `double`, `x != x` is the classic NaN check, and Turf's warning says "unless the value can be NaN" there.) It is nearly always a typo for a comparison with a different variable:
+
+<Code title="Example">
+```turf
+immut a: int = 3;
+immut b: int = 3;
+if a == b {
+    printline("same");
+}
+```
+</Code>
+
+If the self-comparison really is intentional, such as an `x != x` NaN test, allowing the warning is the right tool.
+
+This is a warning, not an error -- compilation still succeeds. To silence it for a whole build, set its lint level to allow: `turf build --allow E166` (or `[lints] E166 = "allow"` in turf.toml).
+
+Run `turf --explain E166` in a terminal to read this again.

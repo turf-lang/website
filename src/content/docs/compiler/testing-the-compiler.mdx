@@ -136,7 +136,7 @@ The markers, all matched literally against the output with colour stripped:
 | Marker | Holds when |
 |---|---|
 | `// EXPECT-DIAG: E011` | the compile output contains `[E011` |
-| `// EXPECT-DIAG: some text` | ... contains this text (use it for a warning, which has no code) |
+| `// EXPECT-DIAG: some text` | ... contains this text (a warning has a code too, so `// EXPECT-DIAG: E163` pins one) |
 | `// EXPECT-NO-DIAG: some text` | ... does not contain it (the shape of a false-positive or cascade fix) |
 | `// EXPECT-RUNTIME: some text` | the program's own output contains it (abort tests) |
 | `// EXPECT-EXIT: 134` | the program exits with this status (an abort that prints nothing) |

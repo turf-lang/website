@@ -33,4 +33,6 @@ fn main(): int {
 
 If a file has statements at the top level because it was meant to be a script, wrap them in `fn main(): int { ... return 0; }`.
 
+A top-level `unsafe { }` block is the same: it can wrap declarations (a struct with a raw-pointer field, an `fn`), but a statement inside it is still outside any function. Put the statement in a function, inside an `unsafe { }` of its own.
+
 Run `turf --explain E118` in a terminal to read this again.
