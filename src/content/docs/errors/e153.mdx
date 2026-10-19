@@ -1,0 +1,38 @@
+---
+title: "E153: A machine state has no way to be entered"
+description: "What compiler error E153 means, and how to fix it."
+order: 153
+---
+
+{/* Text from the turf-lang repository: docs/errors/codes/E153.txt. */}
+
+A `machine` lists the transitions it allows. Turf counts the arrows that point INTO each state, and warns about any state that nothing points at:
+
+<Code title="Example">
+```turf
+machine Door {
+    Closed -> Open,
+    Open -> Closed,
+    Locked -> Closed,   // WARNING: no transition leads to 'Locked'
+}
+```
+</Code>
+
+Once a `Door` leaves its starting value, there is no arrow that can bring it to `Locked`, so every use of that state after the first move is dead weight. It is usually a forgotten edge. Add the arrow:
+
+<Code title="Example">
+```turf
+machine Door {
+    Closed -> Open,
+    Open -> Closed,
+    Locked -> Closed,
+    Closed -> Locked,
+}
+```
+</Code>
+
+One case is a false positive: the state a machine STARTS in. A machine begins in whatever state you construct it with, so that state may legitimately have no incoming arrow, and Turf has no way to know which state you mean to start in. If `Locked` is only ever a starting state, the warning is expected and safe to ignore. Allowing the warning is the right tool for that.
+
+This is a warning, not an error -- compilation still succeeds. To silence it for a whole build, set its lint level to allow: `turf build --allow E153` (or `[lints] E153 = "allow"` in turf.toml).
+
+Run `turf --explain E153` in a terminal to read this again.

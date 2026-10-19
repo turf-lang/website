@@ -1,0 +1,38 @@
+---
+title: "E154: This compare has no arms"
+description: "What compiler error E154 means, and how to fix it."
+order: 154
+---
+
+{/* Text from the turf-lang repository: docs/errors/codes/E154.txt. */}
+
+A `compare` picks an arm by matching a value against its `matches` headers. One with no arms and no `otherwise` has nothing to pick, so it does nothing at all:
+
+<Code title="Example">
+```turf
+immut n: int = 1;
+compare n {
+}                      // WARNING: no `matches` arms and no `otherwise`
+```
+</Code>
+
+It is almost always a stub that was never filled in. Add the arms you meant:
+
+<Code title="Example">
+```turf
+immut n: int = 1;
+compare n {
+    matches 1:
+        printline("one");
+    done
+    otherwise:
+        printline("other");
+}
+```
+</Code>
+
+If you are only sketching and want the program to keep compiling cleanly, delete the empty `compare` until you have the arms.
+
+This is a warning, not an error -- compilation still succeeds. To silence it for a whole build, set its lint level to allow: `turf build --allow E154` (or `[lints] E154 = "allow"` in turf.toml).
+
+Run `turf --explain E154` in a terminal to read this again.

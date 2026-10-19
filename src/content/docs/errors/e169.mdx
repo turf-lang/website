@@ -1,0 +1,50 @@
+---
+title: "E169: This function returns !T but can never fail"
+description: "What compiler error E169 means, and how to fix it."
+order: 169
+---
+
+{/* Text from the turf-lang repository: docs/errors/codes/E169.txt. */}
+
+A return type of `!int` promises that the function can fail with an error. Turf warns when a function declared that way never returns an error and nothing it calls can fail either:
+
+<Code title="Example">
+```turf
+fn double_it(n: int): !int {     // WARNING: never actually returns an error
+    return n * 2;
+}
+```
+</Code>
+
+Every caller has to handle a `!int` with `recover` or `try`, so a function that cannot fail makes all of them do needless work. The fix is to drop the `!`:
+
+<Code title="Example">
+```turf
+fn double_it(n: int): int {
+    return n * 2;
+}
+```
+</Code>
+
+If the function does fail somewhere, return an error value on that path:
+
+<Code title="Example">
+```turf
+error MathError {
+    Negative,
+}
+
+fn checked_double(n: int): !int {
+    if n < 0 {
+        return MathError::Negative;
+    }
+    return n * 2;
+}
+```
+</Code>
+
+Sometimes the `!` is deliberate: a function that will fail later, or one that must match a signature other code expects. In that case allowing the warning is the right tool.
+
+This is a warning, not an error -- compilation still succeeds. To silence it for a whole build, set its lint level to allow: `turf build --allow E169` (or `[lints] E169 = "allow"` in turf.toml).
+
+Run `turf --explain E169` in a terminal to read this again.
