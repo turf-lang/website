@@ -5,6 +5,7 @@ title: Tests in source files
 description: Let a function marked `@test` live beside the code it checks, and run it with `turf test`.
 status: accepted
 date: 2026-10-15
+updated: 2026-10-25
 authors:
   - Turf Team
 ---
@@ -54,6 +55,29 @@ fn parse_port_rejects_zero() {
 
 In a normal `turf build` or `turf run`, a `@test` function is parsed and checked so that it cannot rot, but it is not emitted into the program. A program built without tests contains no test code.
 
+### Tests that expect a failure
+
+`@test` takes an optional argument that says how the test is expected to fail. Without one, a test passes if it returns.
+
+```turf
+@test(Error::E041, "Unknown function")
+fn calling_an_undeclared_function_is_an_error() {
+    undeclared(1);
+}
+
+@test(panic, "Division by zero")
+fn dividing_by_zero_panics() {
+    immut zero: int = 0;
+    io::printline(10 / zero);
+}
+```
+
+- **`@test(Error::E<code>, "text")`** expects the compiler to reject the function's body. It passes if every error reported inside the function has that code and at least one of them has a message containing `text` (`""` matches any message). The function must parse; its errors come from name resolution, type checking or flow analysis. It is never emitted or run. Its expected errors do not fail a normal build, which still checks the function; an error with a different code inside it, or one outside it, is an ordinary error.
+- **`@test(panic, "text")`** expects the function to panic. It passes if the test's process ends in a panic whose message contains `text`. A panic cannot be caught (`FREEZE.md` F-PANIC-1), so `turf test` runs each such test in a process of its own and reads its exit status and stderr.
+- `Error` and `panic` mean this only inside `@test(...)`. They reserve nothing, and the code is checked against the compiler's registry: an `E` code that does not exist is an error.
+
+These replace, for a test written in Turf, what the compiler's own suite expresses with file names (`fail_*.tr`) and `// EXPECT-DIAG:` / `// EXPECT-RUNTIME:` comments, so the expectation is part of the program instead of a comment beside it.
+
 ### Where tests may appear
 
 A `@test` function may appear at the top level of a source file. It may not be generic, and it may not be nested inside another function. These limits keep discovery simple and the rule easy to state.
@@ -81,6 +105,8 @@ Nothing breaks. Existing test-suite files keep working, and no existing code nee
 - A test that a program with `@test` functions builds to the same object code as the same program with them removed.
 - A test that a failing and a passing `@test` give the right output and exit status.
 - A test that a program with an identifier named `test` is unaffected.
+- For `@test(Error::E…, "…")`: a test passes when its body raises that code with that text, fails when the body compiles, fails when it raises a different code, and an unknown code is an error; a normal build of the file succeeds.
+- For `@test(panic, "…")`: a test passes when the body panics with that text, fails when it returns or panics with another message, and the other tests in the file still run.
 
 ## Drawbacks
 
@@ -96,7 +122,7 @@ Nothing breaks. Existing test-suite files keep working, and no existing code nee
 
 ## Unresolved questions
 
-- Whether a test can be skipped or marked as expected to fail.
+- Whether a test can be skipped. (Expected failures are `@test(Error::…)` and `@test(panic, …)` above.)
 - Whether a test may return an error value instead of panicking, so `try` works inside it.
 - How tests are ordered, and whether they may run in parallel once the runtime supports it.
 - Whether `@test` functions should show up in the generated package documentation.
