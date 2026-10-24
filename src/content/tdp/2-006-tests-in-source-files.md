@@ -44,7 +44,7 @@ fn parse_port_rejects_zero() {
 
 ### What a test function is
 
-- It takes no parameters and returns nothing.
+- It takes no parameters, and returns nothing or `!void`.
 - It passes if it returns, and fails if it panics or an assertion fails.
 - It may use everything in its file, private items included, because it is in the same file. That is the point of putting it there.
 - It is not part of the module's exports.
@@ -55,12 +55,12 @@ fn parse_port_rejects_zero() {
 
 In a normal `turf build` or `turf run`, a `@test` function is parsed and checked so that it cannot rot, but it is not emitted into the program. A program built without tests contains no test code.
 
-### Tests that expect a failure
+### How a test is expected to end
 
-`@test` takes an optional argument that says how the test is expected to fail. Without one, a test passes if it returns.
+`@test` takes an optional **outcome**: how the test is expected to end. Without one, a test passes if its body returns (or, for a `!void` test, returns without an error). The outcome comes first; options (`skip:`, `timeout:` and the rest, [TDP-2-026](/tdp/2-026/)) follow it as `name: value` pairs.
 
 ```turf
-@test(Error::E041, "Unknown function")
+@test(compile_error, E041, "Unknown function")
 fn calling_an_undeclared_function_is_an_error() {
     undeclared(1);
 }
@@ -70,13 +70,36 @@ fn dividing_by_zero_panics() {
     immut zero: int = 0;
     io::printline(10 / zero);
 }
+
+@test(error, FsError::RemoveFileFailed)
+fn removing_a_missing_file_fails(): !void {
+    try fs::remove_file("no/such/file");
+}
 ```
 
-- **`@test(Error::E<code>, "text")`** expects the compiler to reject the function's body. It passes if every error reported inside the function has that code and at least one of them has a message containing `text` (`""` matches any message). The function must parse; its errors come from name resolution, type checking or flow analysis. It is never emitted or run. Its expected errors do not fail a normal build, which still checks the function; an error with a different code inside it, or one outside it, is an ordinary error.
-- **`@test(panic, "text")`** expects the function to panic. It passes if the test's process ends in a panic whose message contains `text`. A panic cannot be caught (`FREEZE.md` F-PANIC-1), so `turf test` runs each such test in a process of its own and reads its exit status and stderr.
-- `Error` and `panic` mean this only inside `@test(...)`. They reserve nothing, and the code is checked against the compiler's registry: an `E` code that does not exist is an error.
+| Outcome | Passes when | What the compiler's own suite writes today |
+|---|---|---|
+| none | the body returns (a `!void` body: without an error) | a plain test file |
+| `compile_error, E<code>, "text"` | the compiler rejects the body: every error inside it has that code, and one message contains `text` | `fail_*.tr` + `// EXPECT-DIAG:` |
+| `compile_error, E<code>, "text", fix: "text"` | as above, and the compiler prints a `Fix:` line containing the second text | `// EXPECT-FIX:` |
+| `warning, E<code>, "text"` | the body compiles with that warning, and then runs and returns | `// EXPECT-DIAG:` on a warning |
+| `no_warnings` | the body compiles with no warning at all, and then runs and returns | `// EXPECT-NO-DIAG` |
+| `panic, "text"` | the body panics with a message containing `text` | `// EXPECT-RUNTIME:` |
+| `exit, <status>` | the body ends the program through `sys::exit(<status>)` | `// EXPECT-EXIT:` |
+| `error, <Type>::<Variant>` | the `!void` body returns that error value | nothing yet |
 
-These replace, for a test written in Turf, what the compiler's own suite expresses with file names (`fail_*.tr`) and `// EXPECT-DIAG:` / `// EXPECT-RUNTIME:` comments, so the expectation is part of the program instead of a comment beside it.
+Rules:
+
+- **`compile_error`** tests are never emitted or run. Their expected errors do not fail a normal build, which still checks the function; an error with another code inside it, or any error outside it, is an ordinary error. The body must parse: its errors come from name resolution, type checking or flow analysis. A syntax error, or an error about a declaration rather than a body, cannot be expressed this way, and stays a `fail_*.tr` file.
+- **`panic`** and **`exit`** end the process, and a panic cannot be caught (F-PANIC-1), so `turf test` runs each such test in a process of its own and reads its exit status and stderr. Every other test may share a process.
+- **`error`** needs a `!void` test. The variant is resolved like any other `E::V`, so it names a real error type of the program.
+- `""` matches any message. An `E` code is checked against the compiler's registry: a code that does not exist, or a `warning` code that is an error (or the reverse), is itself an error.
+- The outcome words (`compile_error`, `warning`, `no_warnings`, `panic`, `exit`, `error`) mean this only as the first argument of `@test(...)`. They reserve nothing.
+- Arguments are literals, codes and variant names only, never expressions: whether a test exists and what it expects is known without running anything (Principle III).
+
+**Why `compile_error` and not `Error::E041`.** `Type::Variant` is how Turf already writes an error value, so `Error::E041` would mean a variant `E041` of an error type named `Error` if a program declared one. Under Principle V a program's own declaration never loses to a built-in meaning of the same spelling, so the outcome is its own word, as `panic` and `exit` are.
+
+These forms let a test written in Turf say everything the compiler's own suite says with file names and `// EXPECT-*` comments, so the expectation is part of the program instead of a comment beside it. Moving the suite over is the roadmap's F-11e.
 
 ### Where tests may appear
 
@@ -105,8 +128,9 @@ Nothing breaks. Existing test-suite files keep working, and no existing code nee
 - A test that a program with `@test` functions builds to the same object code as the same program with them removed.
 - A test that a failing and a passing `@test` give the right output and exit status.
 - A test that a program with an identifier named `test` is unaffected.
-- For `@test(Error::E…, "…")`: a test passes when its body raises that code with that text, fails when the body compiles, fails when it raises a different code, and an unknown code is an error; a normal build of the file succeeds.
-- For `@test(panic, "…")`: a test passes when the body panics with that text, fails when it returns or panics with another message, and the other tests in the file still run.
+- For each outcome in the table, one test that passes and one that fails for each way it can fail (no error, another code, another message, no `Fix:` line, another warning, any warning, another panic message, another exit status, another error variant), with the other tests in the file still run.
+- A normal build of a file holding `compile_error` tests succeeds; an unknown code, and a `warning` code used for an error, are errors.
+- A program that declares its own error type named `Error` is unaffected.
 
 ## Drawbacks
 
@@ -122,7 +146,7 @@ Nothing breaks. Existing test-suite files keep working, and no existing code nee
 
 ## Unresolved questions
 
-- Whether a test can be skipped. (Expected failures are `@test(Error::…)` and `@test(panic, …)` above.)
-- Whether a test may return an error value instead of panicking, so `try` works inside it.
+- Skipping, time limits, optimization levels, expected output, tags and serial tests are options, in [TDP-2-026](/tdp/2-026/).
+- Table-driven tests (one function run for each row of a table) would need a test to take parameters; that is a separate amendment if it is wanted.
 - How tests are ordered, and whether they may run in parallel once the runtime supports it.
 - Whether `@test` functions should show up in the generated package documentation.
