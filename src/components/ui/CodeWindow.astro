@@ -18,7 +18,7 @@ interface Props {
 const { title, code, html, copy, command, output, class: className } = Astro.props;
 const source = code?.map((line) => line.map(([, text]) => text).join("")).join("\n");
 const copyText = copy === false ? undefined : (copy ?? source);
-const body = "max-h-[30rem] overflow-auto overscroll-contain px-5 py-5 font-mono text-sm leading-7 sm:text-[15px]";
+const body = "max-h-[30rem] overflow-auto px-5 py-5 font-mono text-sm leading-7 sm:text-[15px]";
 ---
 
 <div class:list={["overflow-hidden rounded-2xl border border-line bg-surface-raised", className]}>

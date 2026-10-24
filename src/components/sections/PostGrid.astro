@@ -4,6 +4,7 @@ import type { Post } from "../../lib/content";
 import { boxGridSpan } from "../../lib/box-grid";
 import Author from "../ui/Author.astro";
 import BoxGrid from "../ui/BoxGrid.astro";
+import Text from "../ui/Text.astro";
 
 interface Props {
     posts: Post[];
@@ -24,7 +25,7 @@ const { posts } = Astro.props;
                         <time datetime={isoDate(post.data.date)}>{formatDate(post.data.date)}</time>
                         <span class="text-fg-faint">{readingTime(post.body)}</span>
                     </span>
-                    <h3 class="mt-6 text-balance text-xl font-black tracking-[-0.03em] text-fg">{post.data.title}</h3>
+                    <Text as="h3" text={post.data.title} class="mt-6 text-balance text-xl font-black tracking-[-0.03em] text-fg" />
                     <p class="mt-3 leading-7 text-fg-muted">{post.data.description}</p>
                     <span class="mt-auto pt-8 text-fg-faint">
                         <Author name={post.data.author} github={post.data.github} link={false} />

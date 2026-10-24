@@ -11,43 +11,83 @@ export function ogKey(pathname: string): string {
     return pathname.replace(/^\/|\/$/g, "") || "index";
 }
 
-export async function getOgPages(): Promise<Map<string, string>> {
-    const pages = new Map<string, string>();
-    const add = (path: string, title: string) => pages.set(ogKey(path), title);
+export interface OgPage {
+    title: string;
+    eyebrow: string;
+    description?: string;
+    meta?: string[];
+}
 
-    add("/", "Turf");
-    add("/docs/", "Docs");
-    add("/download/", "Download");
-    add("/blog/", getSection("blog").label);
-    add("/learn/", getSection("learn").label);
-    add("/resources/", getSection("resources").label);
-    add("/community/", "Open Source");
-    add("/community/releases/", "Release notes");
-    add("/community/issues/", "Open issues");
-    add("/community/contributors/", "Top contributors");
-    add("/community/projects/", "Made with Turf");
-    add("/community/maintainers/", "Maintainers");
-    add("/stdlib/", getSection("stdlib").heading);
-    add("/tsg/", getSection("tsg").heading);
-    add("/tdp/", "Constitution · TDP");
-    add("/tdp/process/", "Process · TDP");
+const shortDate = (date: Date) => date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+export async function getOgPages(): Promise<Map<string, OgPage>> {
+    const pages = new Map<string, OgPage>();
+    const add = (path: string, page: OgPage) => pages.set(ogKey(path), page);
+
+    add("/", { title: "Turf", eyebrow: "Programming language", description: "A programming language that kinda knows what you want." });
+    add("/docs/", { title: "Docs", eyebrow: "Turf" });
+    add("/download/", { title: "Download", eyebrow: "Turf" });
+    add("/blog/", { title: getSection("blog").label, eyebrow: "Turf" });
+    add("/learn/", { title: getSection("learn").label, eyebrow: "Turf" });
+    add("/resources/", { title: getSection("resources").label, eyebrow: "Turf" });
+    add("/community/", { title: "Open Source", eyebrow: "Community" });
+    add("/community/releases/", { title: "Release notes", eyebrow: "Community" });
+    add("/community/issues/", { title: "Open issues", eyebrow: "Community" });
+    add("/community/contributors/", { title: "Top contributors", eyebrow: "Community" });
+    add("/community/projects/", { title: "Made with Turf", eyebrow: "Community" });
+    add("/community/maintainers/", { title: "Maintainers", eyebrow: "Community" });
+    add("/stdlib/", { title: getSection("stdlib").heading, eyebrow: "Turf" });
+    add("/tsg/", { title: getSection("tsg").heading, eyebrow: "Turf" });
+    add("/tdp/", { title: "Constitution", eyebrow: "TDP" });
+    add("/tdp/process/", { title: "Process", eyebrow: "TDP" });
 
     for (const status of tdpStatusOrder) {
-        if ((await getProposals(status)).length > 0) add(tdpStatusHref(status), `${tdpStatusInfo[status].label} · TDP`);
+        if ((await getProposals(status)).length > 0) {
+            add(tdpStatusHref(status), { title: tdpStatusInfo[status].label, eyebrow: "TDP", description: tdpStatusInfo[status].lead });
+        }
     }
 
     for (const post of await getCollection("blog", ({ data }) => !data.draft)) {
-        add(`/blog/${post.id}/`, post.data.title);
+        add(`/blog/${post.id}/`, {
+            title: post.data.title,
+            eyebrow: "Blog",
+            description: post.data.description,
+            meta: [post.data.author, shortDate(post.data.date)],
+        });
     }
-    for (const entry of await getCollection("learn")) add(`/learn/${entry.id}/`, entry.data.title);
-    for (const entry of await getCollection("stdlib")) add(`/stdlib/${entry.id}/`, entry.data.title);
-    for (const entry of await getCollection("resources")) add(`/resources/${entry.id}/`, entry.data.title);
-    for (const entry of await getCollection("tsg", ({ id }) => id !== "overview")) add(`/tsg/${entry.id}/`, entry.data.title);
+    for (const [collection, eyebrow] of [
+        ["learn", "Learn"],
+        ["stdlib", "Standard library"],
+        ["resources", "Resources"],
+    ] as const) {
+        for (const entry of await getCollection(collection)) {
+            add(`/${collection}/${entry.id}/`, { title: entry.data.title, eyebrow, description: entry.data.description });
+        }
+    }
+    for (const entry of await getCollection("tsg", ({ id }) => id !== "overview")) {
+        add(`/tsg/${entry.id}/`, { title: entry.data.title, eyebrow: "Style guide", description: entry.data.description });
+    }
     for (const proposal of await getCollection("tdp")) {
-        add(`/tdp/${tdpSlug(proposal.data)}/`, `${formatTdpNumber(proposal.data)} ${proposal.data.title}`);
+        const { data } = proposal;
+        add(`/tdp/${tdpSlug(data)}/`, {
+            title: data.title,
+            eyebrow: formatTdpNumber(data),
+            description: data.description,
+            meta: [capitalize(data.status), shortDate(data.date)],
+        });
     }
-    for (const release of (await getReleaseEntries()).entries) add(release.href, `${release.tag} · Release notes`);
-    for (const doc of await getFlatDocs()) add(doc.href, doc.title);
+    for (const release of (await getReleaseEntries()).entries) {
+        add(release.href, {
+            title: release.tag,
+            eyebrow: "Release notes",
+            description: release.summary || release.title,
+            meta: release.released ? [shortDate(release.date)] : undefined,
+        });
+    }
+    for (const doc of await getFlatDocs()) {
+        add(doc.href, { title: doc.title, eyebrow: "Docs", description: doc.entry.data.description });
+    }
 
     return pages;
 }

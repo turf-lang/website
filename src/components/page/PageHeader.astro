@@ -35,7 +35,7 @@ const all: Crumb[] = [{ label: "Turf", href: "/" }, ...crumbs];
                                     {crumb.label}
                                 </a>
                             ) : (
-                                <span aria-current="page" class="text-fg-soft">{crumb.label}</span>
+                                <Text as="span" text={crumb.label} aria-current="page" class="text-fg-soft" />
                             )}
                         </li>
                     ))
@@ -43,9 +43,11 @@ const all: Crumb[] = [{ label: "Turf", href: "/" }, ...crumbs];
             </ol>
         </nav>
 
-        <h1 class:list={["mt-8 text-balance text-4xl font-black leading-[0.98] tracking-[-0.05em] text-fg md:text-6xl", centered && "mx-auto max-w-4xl"]}>
-            {title}
-        </h1>
+        <Text
+            as="h1"
+            text={title}
+            class:list={["mt-8 text-balance text-4xl font-black leading-[0.98] tracking-[-0.05em] text-fg md:text-6xl", centered && "mx-auto max-w-4xl"]}
+        />
         {lead && <Text text={lead} class:list={["mt-6 max-w-xl text-base font-medium leading-7 text-fg-muted md:text-lg", centered && "mx-auto"]} />}
         {
             meta && meta.length > 0 && (

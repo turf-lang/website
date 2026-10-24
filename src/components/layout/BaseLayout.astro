@@ -15,7 +15,7 @@ const {
     description: rawDescription = "Turf is a programming language that kinda knows what you want.",
 } = Astro.props;
 const description = rawDescription.replaceAll("`", "");
-const fullTitle = title ? `${title} · Turf` : "Turf";
+const fullTitle = title ? `${title.replaceAll("`", "")} · Turf` : "Turf";
 const key = ogKey(Astro.url.pathname);
 const hasImage = (await getOgPages()).has(key);
 const imageUrl = new URL(`/og/${key}.png`, Astro.site);
@@ -92,3 +92,7 @@ const pageUrl = new URL(Astro.url.pathname, Astro.site);
         <SearchDialog />
     </body>
 </html>
+
+<script>
+    import "../../lib/scroll-chain";
+</script>

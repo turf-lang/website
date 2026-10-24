@@ -1,5 +1,6 @@
 ---
 import type { NavLink } from "../../data/navigation";
+import Text from "../ui/Text.astro";
 
 interface Props {
     prev?: NavLink;
@@ -27,13 +28,13 @@ const cell =
             {prev && (
                 <a href={prev.href} rel="prev" class={cell}>
                     <span class="font-mono text-sm text-fg-muted transition-colors group-hover:text-fg">{prevText}</span>
-                    <span class="mt-3 block text-lg font-black tracking-[-0.03em] text-fg">{prev.label}</span>
+                    <Text as="span" text={prev.label} class="mt-3 block text-lg font-black tracking-[-0.03em] text-fg" />
                 </a>
             )}
             {next && (
                 <a href={next.href} rel="next" class:list={[cell, both && "sm:text-right"]}>
                     <span class="font-mono text-sm text-fg-muted transition-colors group-hover:text-fg">{nextText}</span>
-                    <span class="mt-3 block text-lg font-black tracking-[-0.03em] text-fg">{next.label}</span>
+                    <Text as="span" text={next.label} class="mt-3 block text-lg font-black tracking-[-0.03em] text-fg" />
                 </a>
             )}
         </nav>

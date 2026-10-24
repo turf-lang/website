@@ -1,14 +1,15 @@
 ---
 interface Props {
     text: string;
-    as?: "p" | "span" | "h3";
+    as?: "p" | "span" | "h1" | "h3";
     class?: string;
+    "aria-current"?: "page";
 }
 
-const { text, as: Tag = "p", class: className } = Astro.props;
+const { text, as: Tag = "p", class: className, ...rest } = Astro.props;
 const parts = text.split("`");
 ---
 
-<Tag class={className}>
+<Tag class={className} {...rest}>
     {parts.map((part, i) => (i % 2 === 1 ? <code>{part}</code> : part))}
 </Tag>
