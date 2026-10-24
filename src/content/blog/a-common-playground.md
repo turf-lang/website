@@ -69,7 +69,7 @@ extern fn buffer_data(buf: ptr, len: int*): char*;
 extern fn buffer_free(buf: ptr): void;
 ```
 
-"This result borrows from `buf`" means that using it after `buf` is freed is a compile error inside the function. "This length comes from `len`" means the data is copied with its real length, never with a guess.
+"This result borrows from `buf`" means that using it after `buf` is freed is a compile error inside the function. "This length comes from `len`" means the data is copied using the length the contract names, never with a guess like searching for a zero byte. The wrapper checks what it can, such as a null pointer or a negative length, and the rest is a trust you wrote down: the compiler cannot prove that the C function really hands back that many bytes.
 
 **The safe wrapper is written for you, as plain Turf.** `turf bind --wrap` turns the rules into a module of ordinary Turf code that you can read, review and change. The C pointer is hidden inside a handle. Using a handle after closing it is a panic with the type's name, not a corrupted heap. Closing it twice in the same function does not compile.
 
@@ -117,10 +117,10 @@ You get a static library, a shared library, a C header, and a small JSON file th
 ```python
 import fastsum, numpy as np
 
-fastsum.total(np.arange(5.0))   # 10.0, and the array is not copied
+fastsum.total(np.arange(5.0))   # 10.0; a contiguous, aligned float64 array is not copied
 ```
 
-Turf errors arrive as Python exceptions. A Turf object becomes a Python object that is cleaned up when Python is done with it. Turf code runs without holding Python's global lock, so your other Python threads keep going.
+Zero-copy comes with conditions, and the tool checks every one: the element type must match, the bytes must be laid out the way Turf expects, and the array is held in place for the whole call. An array that does not qualify is copied or refused with a clear error, never misread. Turf errors arrive as Python exceptions. A Turf object becomes a Python object that is cleaned up when Python is done with it. Turf code runs without holding Python's global lock, so your other Python threads keep going.
 
 **From Node.js** ([TDP-2-032](/tdp/2-032/)), the same library becomes an npm package with a prebuilt binary for each platform, so `npm install` needs no compiler, plus TypeScript types:
 
@@ -177,12 +177,12 @@ Turf **cannot** make another language's code memory-safe. If a C library has a b
 
 What Turf **can** promise is that its own side holds, whoever is calling:
 
-- **A Turf object handed out is a handle, never a raw pointer.** Turf keeps it alive while the other language holds it. If a released or forged handle comes back, it is caught with a panic that names the type, before any memory is touched.
+- **A Turf object handed out is a handle, never a raw pointer.** Turf keeps it alive while the other language holds it. If a released, forged or wrong handle comes back, it is refused with an error the caller can handle, before any memory is touched. A caller's mistake never takes down the host program.
 - **Every value coming in is checked at the door.** Null pointers are refused, buffers come with their length, and strings are copied into Turf's memory.
 - **One thread at a time.** Until Turf's runtime supports threads, a lock lets one thread into a Turf library at a time. Any thread can call, and the calls simply take turns. Later, in 3.3, libraries can opt into calls running truly in parallel ([TDP-3-003](/tdp/3-003/)), which is what Java, C#, Go and Erlang will want.
 - **Errors are values.** A Turf function that can fail gives the caller an error it can handle: an exception in Python and JavaScript, an error code in C.
 
-One sharp edge remains, and we would rather you hear it from us. **A Turf panic ends the process**, and that includes a Python interpreter or a Node.js server that loaded the library. Turf panics cannot be caught, by design. The answer is that a library should return errors for everything it expects to go wrong, and keep panics for real bugs.
+One sharp edge remains, and we would rather you hear it from us. We draw a line between two kinds of failure. **A mistake by the caller**, such as a closed handle, a null or a bad buffer, is always an error the caller gets back: an exception in Python and JavaScript, an error code in C. **A bug inside the Turf library**, such as an index out of bounds, is a panic, and **a Turf panic ends the process**, including a Python interpreter or a Node.js server that loaded the library. Turf panics cannot be caught, by design. So a library should return errors for everything it expects to go wrong, and keep panics for real bugs.
 
 ## Which languages, and when
 

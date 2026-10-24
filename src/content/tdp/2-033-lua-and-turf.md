@@ -5,6 +5,7 @@ title: Lua and Turf
 description: "`turf-lua`: Lua modules written in Turf, loadable with `require`; and a `lua` package that embeds a sandboxed Lua in a Turf program for configuration, scripting and plugins, with no `longjmp` ever crossing a Turf frame."
 status: draft
 date: 2026-10-25
+updated: 2026-10-25
 authors:
   - Turf Team
 ---
@@ -57,6 +58,8 @@ print(slug.make("Hello World"))   -- hello-world
 | `Slice<char>` | string | Copied, since Lua strings are immutable |
 | `&T` handle | full userdata with a metatable | `__gc` releases it; `__close` runs the method marked `@ownership(releases: self)`; `__index` holds the exported methods |
 | `!T` error | a raised error whose value is a table `{ code = "NotFound", message = "..." }` | Caught with `pcall` |
+
+A caller's mistake, such as a closed handle, a handle of the wrong type or a missing argument, is a Lua error raised by the glue after the library refuses the call ([TDP-2-030](/tdp/2-030/), Boundary errors). It never ends the host. A panic is reserved for a bug inside the library.
 
 With Lua 5.4's to-be-closed variables, `local img <close> = png.open(path)` closes the handle when the block ends.
 

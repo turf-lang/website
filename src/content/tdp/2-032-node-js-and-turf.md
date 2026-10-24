@@ -5,6 +5,7 @@ title: Node.js and Turf
 description: "`turf-node`: build a Node-API addon and an npm package with prebuilt binaries from a Turf library, with TypeScript declarations, errors as JavaScript exceptions, typed arrays without copies, and handles released by the JavaScript collector."
 status: draft
 date: 2026-10-25
+updated: 2026-10-25
 authors:
   - Turf Team
 ---
@@ -46,7 +47,7 @@ console.log(size.width());
 | `bool` | `boolean` | |
 | `string` | `string` | Copied, UTF-8 |
 | `Slice<char>` | `Buffer`, `Uint8Array` | Not copied |
-| `Slice<int32>`, `Slice<double>`, … | the matching typed array | Not copied; `TypeError` on a mismatch |
+| `Slice<int32>`, `Slice<double>`, … | the matching typed array | Not copied when it meets the contract below; `TypeError` on a mismatch |
 | `&T` handle | an instance of a generated class `T` | Released by a finalizer, or by `[Symbol.dispose]` |
 | `!T` error | an exception class per error, extending `Error`, with a `code` property | |
 
@@ -59,7 +60,14 @@ console.log(size.width());
 
 **Packages.** `turf-node pack` writes the layout esbuild and swc use: a main package with the JavaScript and `.d.ts`, plus one optional dependency per platform (`imgsize-linux-x64-gnu`, `imgsize-darwin-arm64`, …) carrying that platform's `.node` binary. npm installs only the one that matches. Cross-linking ([TDP-2-030](/tdp/2-030/)) builds every platform's binary from one machine.
 
-**Panics.** A Turf panic ends the Node process (F-PANIC-1). The generated documentation says so, and recommends `!T` for every expected failure.
+**The buffer contract.** A typed array is passed without a copy only when:
+
+- **Its type is exactly the slice's** (`Float64Array` for `Slice<double>`, `Int32Array` for `Slice<int32>`, `BigInt64Array` for `Slice<int>`, `Uint8Array` or `Buffer` for `Slice<char>`). A `DataView` or a typed array of another type is a `TypeError`; nothing is reinterpreted.
+- **Its layout is native.** Typed arrays are always contiguous and in the machine's byte order, and JavaScript requires a view's offset to be a multiple of its element size, so alignment holds by construction.
+- **Its memory cannot move or shrink during the call.** A synchronous call runs on the JavaScript thread, so no JavaScript on that thread can detach, transfer or resize the buffer until it returns. An `*Async` call copies every slice first, because JavaScript keeps running while it waits.
+- **Other threads.** A typed array over a `SharedArrayBuffer` can be written by a worker during the call. That cannot break memory safety, since the slice holds only numbers, but the values Turf reads are then unspecified. `@export(snapshot)` makes the glue copy first, as for Python.
+
+**Caller errors and panics.** A dead or wrongly typed handle, a null, or a bad buffer is a `TypeError` thrown in JavaScript ([TDP-2-030](/tdp/2-030/), Boundary errors), and the process keeps running. A panic is reserved for a bug inside the library. It ends the Node process (F-PANIC-1), which the generated documentation says, recommending `!T` for every expected failure.
 
 ## Constitution check
 
@@ -81,7 +89,9 @@ Nothing breaks.
 ## Verification
 
 - The package installed with npm, pnpm and Yarn on every Tier 1 platform, under the oldest and newest supported Node.js, and run under Bun and Deno's Node-API support where it is available.
-- Every conversion row, including a `Buffer` written by Turf and read by JavaScript, a mistyped typed array rejected, and `bigint` round trips.
+- Every conversion row, including a `Buffer` written by Turf and read by JavaScript, a mistyped typed array or `DataView` rejected, and `bigint` round trips.
+- An `*Async` call whose buffer is transferred or resized while it waits still sees its copy; a `SharedArrayBuffer` written by a worker during a call causes no crash or sanitizer report.
+- A dead handle passed in throws `TypeError`, and the process keeps running.
 - A handle released by the JavaScript collector (`--expose-gc`, `global.gc()`) while Turf collections are forced; `using` disposing it.
 - A hundred concurrent `*Async` calls and four worker threads: correct results, no two inside Turf at once, the event loop free while they run.
 

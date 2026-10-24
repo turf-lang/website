@@ -17,7 +17,7 @@ Today C can call Turf only through a callback that Turf handed it first, and onl
 - `@export` on a function gives it a C symbol and a C signature.
 - `turf build --lib` writes the library, a C header, and a JSON description of the exports that glue generators read instead of parsing C.
 - The runtime starts itself on the first call and scans the right stack. Any thread may call, one at a time: a lock lets one thread into the library while the others wait, so the runtime keeps a single mutator until the thread-aware runtime (3.1) lets them run in parallel.
-- A Turf object handed to C becomes a handle the collector keeps alive until C releases it. A released or forged handle coming back is a named panic, not a corrupted heap.
+- A Turf object handed to C becomes a handle the collector keeps alive until C releases it. A released, forged or foreign handle coming back is refused with an error the caller can handle, never a read of freed memory and never an end to the host process.
 - C, C++, Rust, Zig, Swift and every other language with a C FFI call Turf through the same header. What each of them needs is stated per language.
 - Languages that deserve richer glue get their own proposals, each in its own repository: Python ([TDP-2-031](/tdp/2-031/)), Node.js ([TDP-2-032](/tdp/2-032/)) and Lua ([TDP-2-033](/tdp/2-033/)). Calls in parallel from many threads, which the JVM, .NET, Go and the BEAM want for speed, wait for [TDP-3-003](/tdp/3-003/).
 - `--target` links a runnable program or library for another supported platform, using per-target runtimes.
@@ -53,10 +53,10 @@ pub fn open(path: string): !&Image {
 | Turf type | C form | At the boundary |
 |---|---|---|
 | `int`, `int32`, `double`, `bool`, `char` | `int64_t`, `int32_t`, `double`, `bool`, `char` | Passed as is |
-| `string` parameter | `const char *` | Copied into the GC heap on entry; a null is a panic naming the parameter |
+| `string` parameter | `const char *` | Copied into the GC heap on entry; a null is `TURF_E_NULL` |
 | `string` result | `char *` | Copied into `malloc` memory; the caller frees it with `<package>_free_string` |
-| `Slice<T>` parameter | `const T *ptr, int64_t len` | A view valid for the call only; storing it is an escape error, like a stack reference (F-MEM-5) |
-| `&T` / `&?T` with `T` `@layout(c)` | `T *` | `&T` is checked for null on entry |
+| `Slice<T>` parameter | `const T *ptr, int64_t len` | A view valid for the call only; storing it is an escape error, like a stack reference (F-MEM-5). A negative length, or a null pointer with a length above zero, is `TURF_E_BAD_LENGTH` |
+| `&T` / `&?T` with `T` `@layout(c)` | `T *` | `&T` is checked for null on entry (`TURF_E_NULL`) |
 | `&T` / `&?T` with any other `T` | `<package>_T *`, an opaque handle | See Handles |
 | `fn(...)` with C-form types | a C function pointer | Only a function without captures |
 | `!T` result | `int32_t f(..., T *out)` | 0 on success, otherwise the error's ordinal plus one, named in the header |
@@ -74,7 +74,21 @@ typedef struct png_tool_Image png_tool_Image;
 void png_tool_Image_release(png_tool_Image *image);
 ```
 
-When a handle comes back in as a parameter, the runtime looks it up in its table of live handles. A released, forged or foreign handle is a panic naming the type ("png_tool_Image used after release"), not a read of freed memory. Turf code never sees the handle, only `&Image`.
+When a handle comes back in as a parameter, the runtime looks it up in its table of live handles. A released, forged or foreign handle is refused with `TURF_E_DEAD_HANDLE`, and one of another type with `TURF_E_WRONG_HANDLE` (see Boundary errors). No memory is read through it. Turf code never sees the handle, only `&Image`. A release function returns a status too, so releasing a handle twice is `TURF_E_DEAD_HANDLE`, not a crash.
+
+### Boundary errors
+
+A failure at the boundary has one of two causes, and they are treated differently.
+
+**The caller made a mistake.** A dead, forged, foreign or wrongly typed handle; a null where a value is required; a negative length or a null buffer with a length. None of these is a bug in the Turf library, so none ends the host process. They are error results:
+
+- Every exported function that takes a handle, a non-null `&T`, a `string` or a `Slice` uses the status form `int32_t f(..., T *out)`, whether or not its Turf signature is `!T`. Functions that take only scalars keep their direct return, since nothing about their arguments can be invalid.
+- The status codes for caller mistakes are fixed and the same in every library: `TURF_E_NULL`, `TURF_E_BAD_LENGTH`, `TURF_E_DEAD_HANDLE`, `TURF_E_WRONG_HANDLE`. They are negative. A function's own errors (`!T`) are its error's ordinal plus one, so the two never collide. The header defines both, and `<package>_status_message(int32_t)` gives the text.
+- The checks run before any Turf code, so a refused call has no effect.
+- Glue turns caller errors into the host's own errors: `ValueError` and `TypeError` in Python, `TypeError` in JavaScript, a Lua error.
+- A returned status, rather than a thread-local "last error" in the style of `errno`, is used because it is hard to ignore and needs no thread-local state.
+
+**The library has a bug.** A failed bounds or overflow check, a `panic(...)`, a broken invariant inside Turf code. That is a panic, and a panic ends the process (FREEZE §6.30, F-PANIC-1), as in a program. The distinction is the one the reference draws for every Turf API: errors for what a caller can get wrong, panics for what the library got wrong.
 
 ### `turf build --lib`
 
@@ -125,6 +139,8 @@ A C header is written for a C compiler. It loses what a generator of Python, Jav
 
 - The schema is versioned like the diagnostics and package-graph schemas (IF-2): `docs/reference/schemas/exports.schema.json`, where a minor version adds fields and a major version changes or removes one.
 - `@layout(c)` structs are listed with each field's offset and size, so a generator does not recompute C's layout rules.
+- Each `Slice` parameter records whether the function can write through it. The compiler decides this conservatively: a write to an element, or passing the slice to any other function, counts as a write. Glue uses it to accept read-only host buffers for slices that are only read.
+- `@export(snapshot)` and `@export(copy_mismatched)` are recorded per function. They are instructions to glue: copy slices before the call, or copy a host buffer whose layout does not match instead of refusing it.
 - The header and the description are written from the same table in the compiler, so they cannot disagree. A test compares them.
 - Glue generators (`turf-python`, `turf-node`, `turf-lua`) read only this file and the built library. They need no compiler headers and no `libturf`, so each repository moves at its own pace (Part 4.3 of the roadmap).
 
@@ -136,8 +152,8 @@ A C header is written for a C compiler. It loses what a generator of Python, Jav
 - **Deadlock at the boundary.** If Turf calls back into the host while another host thread waits for the entry lock, and the callback waits for that thread, the two deadlock. The rule is stated in the reference: a callback from Turf must not wait for another thread that may call Turf. Glue that holds its own lock (Python's GIL) releases it while waiting for the entry lock, so the common case cannot deadlock.
 - `<package>_set_entry_mode(PANIC_ON_CONTENTION)` turns waiting into a named panic, for a host that wants to know it is calling from two threads at once. Glue that can report it more gently, like `turf-python`'s, checks first and raises its own error.
 - **Signals.** A program installs a handler that turns a stack overflow into a panic. A library does not, because signal handlers belong to the host. `<package>_install_signal_handlers()` opts in.
-- **Panics.** A panic still prints its message and ends the process (FREEZE §6.30, F-PANIC-1). Inside Python that ends the interpreter. Expected failures should be `!T` results, which reach C as error codes and Python as exceptions. The reference says so where it introduces `@export`.
-- **Two Turf libraries in one process** each carry their own runtime and heap. A handle from one passed to the other fails the live-handle check.
+- **Panics.** A panic still prints its message and ends the process (FREEZE §6.30, F-PANIC-1). Inside Python that ends the interpreter, so a panic is reserved for a bug in the library (Boundary errors). Caller mistakes are status codes, and expected failures are `!T` results, which reach C as error codes and Python as exceptions. The reference says so where it introduces `@export`.
+- **Two Turf libraries in one process** each carry their own runtime and heap. A handle from one passed to the other is `TURF_E_WRONG_HANDLE`.
 
 ### Python, Node.js and Lua
 
@@ -156,7 +172,7 @@ Before any of them exists, Python's `ctypes` and `cffi`, Node's FFI packages, an
 
 ### Which languages can call Turf safely
 
-Turf's side of the boundary is protected whoever calls it: handles are checked against a live table, `&T` and `string` parameters are checked for null, and threads enter one at a time. Whether a host language is *safe to use* depends on four questions:
+Turf's side of the boundary is protected whoever calls it: handles are checked against a live table, `&T` and `string` parameters are checked for null, every such mistake is an error result rather than a panic, and threads enter one at a time. Whether a host language is *safe to use* depends on four questions:
 
 1. Does it have a C FFI that loads a shared library?
 2. Do its calls tolerate being **serialized**? Before the 3.1 runtime, two threads never run Turf code at the same moment.
@@ -188,7 +204,7 @@ Today `--target=<triple>` writes an object file and stops, because `libturfrt` e
 
 ## Constitution check
 
-- **I. Safe by default, unsafe by declaration.** C callers are outside Turf's guarantees, as C always is. The boundary checks keep the Turf side safe against them: null checks on `&T` and `string`, a length that comes with every slice, handles validated against a live table, one thread inside at a time. A C bug that reaches Turf becomes a named panic, not corruption inside Turf's heap.
+- **I. Safe by default, unsafe by declaration.** C callers are outside Turf's guarantees, as C always is. The boundary checks keep the Turf side safe against them: null checks on `&T` and `string`, a length that comes with every slice, handles validated against a live table, one thread inside at a time. A caller's mistake becomes an error result, and a bug inside the library a panic; neither becomes corruption inside Turf's heap.
 - **II. Native performance, with costs you can read.** Every copy at the boundary is in the type table above. A slice parameter is a view, not a copy. The per-call cost is a load and a compare for start-up and an uncontended lock, which the header documents.
 - **III. The compiler is the authority.** Whether a signature can be exported is the compiler's decision, with stable codes. The header is generated, not hand-maintained.
 - **IV. Nothing crosses a boundary implicitly.** Only `@export` functions are visible to C, under names the header lists. Strings, slices and handles cross with stated rules.
@@ -205,7 +221,8 @@ Nothing breaks.
 
 ## Verification
 
-- **C.** A C program links the static and the shared library, calls every row of the type table, and passes under ASan and `TURF_GC_STRESS`: strings and slices round-trip, a `!T` error arrives as its code, a handle survives forced collections while only C holds it, and a released handle passed back panics with its type name.
+- **C.** A C program links the static and the shared library, calls every row of the type table, and passes under ASan and `TURF_GC_STRESS`: strings and slices round-trip, a `!T` error arrives as its code, a handle survives forced collections while only C holds it, and a released, forged or wrongly typed handle passed back returns its status code with no other effect.
+- **Boundary errors.** Every caller-error code from every row that can produce one, from C, Python and JavaScript, with the host process still running afterwards; a deliberate bounds failure inside the library still panics.
 - **Re-entry.** C calls Turf, which calls a C callback, which calls Turf again. Collections inside the inner call keep the outer call's objects alive.
 - **Threads.** Many threads calling at once, under `TURF_GC_STRESS`, never have two inside Turf, and every object survives; a callback that re-enters on the same thread does not deadlock; `PANIC_ON_CONTENTION` panics with its name.
 - **The export description.** It validates against its schema and agrees with the header for every test library; `ctypes` loads a library using only names read from it.
@@ -215,7 +232,8 @@ Nothing breaks.
 
 ## Drawbacks
 
-- **A panic ends the host process.** That is harsh inside a Python service. Making panics catchable at the boundary would contradict F-PANIC-1, so the answer is `!T` for expected failures.
+- **A panic still ends the host process.** Caller mistakes no longer do, but a bug inside a library does. Making panics catchable would contradict F-PANIC-1 (see Unresolved questions).
+- **A status return on more functions.** Any function that takes a handle, reference, string or slice returns a status, which is less convenient from C. Glue hides it in every other language.
 - **Serialized until 3.1.** A thread pool can call a Turf library, but its Turf calls do not run in parallel.
 - **Copies of strings at the boundary.** Small for typical arguments; slices exist for bulk data.
 - **Two runtimes in one process** if two Turf libraries are loaded. A shared `libturfrt` would fix it at the cost of a versioning problem, so it waits (Unresolved questions).
@@ -234,3 +252,4 @@ Nothing breaks.
 
 - Whether a process with several Turf libraries should share one `libturfrt` shared library.
 - Whether `<package>_` as the default symbol prefix is right for a package with a long name.
+- **Poisoning instead of ending the process.** An opt-in library mode where a panic returns a fatal status to the host, and every later call into that library fails immediately without running Turf code. Memory after the panic is then never observed, which may fit F-PANIC-2, but locks and C memory the library held are leaked, and it changes how F-PANIC-1 reads for libraries. If wanted, it is its own proposal and a recorded amendment.

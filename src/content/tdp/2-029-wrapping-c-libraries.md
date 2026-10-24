@@ -5,6 +5,7 @@ title: Wrapping C libraries
 description: "Make the careful way to use a C library the normal way: ownership and length contracts the compiler checks, `turf bind` to write declarations from a header, safe wrappers as ordinary Turf code, sanitizers on a package's C code in `turf test`, and C++ and Rust libraries through the C ABI."
 status: draft
 date: 2026-10-25
+updated: 2026-10-25
 authors:
   - Turf Team
 ---
@@ -41,7 +42,7 @@ The existing annotation keeps its meaning and gains forms. Each is a fact about 
 | `@ownership(releases: p)` | The call frees what `p` holds (today) | As today |
 | `@ownership(borrows: p)` | The result points into `p`'s memory and is valid only while `p` is | A use of the result after `p` is released is E018, through the same per-function check |
 | `@ownership(keeps: p)` | The callee stores `p` beyond the call | Passing a reference to a Turf object requires that object to be rooted (`mem::root`) or a `@layout(c)` value in C memory; otherwise an error naming the collector |
-| `@length(of: buf, from: n)` | The length of buffer `buf` is the integer `n`; `n` may be an out-parameter | A `Slice<T>` built from the result takes `n` as its length; the wrapper never guesses with `strlen` |
+| `@length(of: buf, from: n)`, optionally `max: N` | The length of buffer `buf` is the integer `n`; `n` may be an out-parameter | A `Slice<T>` built from the result takes `n` as its length; the wrapper never guesses with `strlen` |
 
 ```turf
 @ownership(acquires)
@@ -58,6 +59,14 @@ extern fn buffer_free(buf: ptr): void;
 This proposal also settles TDP-2-016's open spelling of ownership. Ownership is stated only with `@ownership`, so TDP-2-016's `owned &Png` is written `@ownership(releases: img)` on `png_free` and `@ownership(acquires)` on whatever returns a `Png`. One mechanism for one idea (Principle V), and no new keyword.
 
 A contract is only as true as the declaration. The compiler checks that code obeys the contract. It cannot check that the C function does. The declaration stays the place where trust is given, which is why writing one needs the raw-pointer capability, as an `extern fn` already does.
+
+**What is checked and what is trusted.** The annotation describes the contract. The compiler and the wrapper enforce only the parts they can actually verify, and the reference lists the rest as trust:
+
+| Checked by the compiler | Checked at run time | Trusted, never checked |
+|---|---|---|
+| Turf code obeys the contract: no use of a `borrows` result after its owner is released, no second `releases`, no use after a `releases: self` method | A null result where the contract allows none; a negative length; a length above an optional `@length(..., max: N)`; use of a closed handle (the wrapper's `open` flag) | That the pointer really points at `n` readable elements; that a `borrows` result is not kept, or a `keeps` parameter not freed, by the C function; that `acquires` really is a fresh allocation |
+
+`@length` therefore gives a wrapper the length the contract names, after checking that it is not negative and not above `max:`. It cannot give the true length of the C buffer, and a wrong annotation is a wrong wrapper. `max:` is how a binding author bounds the damage of a lying length.
 
 ### `turf bind`: declarations from a header
 
@@ -110,7 +119,7 @@ pub fn Buffer.data(): char[] {
     unsafe {
         mut n: int = 0;
         immut p: char* = sys::buffer_data(self.raw, &n);
-        return mem::copy_to_array(p, n);   // a GC copy with its real length
+        return mem::copy_to_array(p, n);   // a GC copy, with the length the contract names
     }
 }
 ```

@@ -5,6 +5,7 @@ title: Python and Turf
 description: "`turf-python`: build a Python extension module and wheel from a Turf library, with type stubs, exceptions for Turf errors and objects for handles; and a `python` package that lets a Turf program call Python."
 status: draft
 date: 2026-10-25
+updated: 2026-10-25
 authors:
   - Turf Team
 ---
@@ -54,7 +55,7 @@ build-backend = "turf_python.backend"
 ```python
 import fastsum, numpy as np
 
-fastsum.total(np.arange(5.0))      # 10.0, the array is not copied
+fastsum.total(np.arange(5.0))      # 10.0; a contiguous, aligned float64 array is not copied
 cfg = fastsum.parse("a=1\nb=2")    # a fastsum.Config object
 try:
     fastsum.parse("nonsense")
@@ -71,15 +72,37 @@ except fastsum.BadLine as e:        # a subclass of fastsum.Error
 | `bool` | `bool` | |
 | `char` | `int` 0–255, or a one-byte `bytes` | |
 | `string` | `str` (UTF-8) | Copied |
-| `Slice<T>` | any object with the buffer protocol and a matching item format (`bytes`, `bytearray`, `array.array`, `memoryview`, numpy arrays) | Not copied; `TypeError` on a format mismatch or a non-contiguous buffer |
+| `Slice<T>` | any object with the buffer protocol and a matching item format (`bytes`, `bytearray`, `array.array`, `memoryview`, numpy arrays) | Not copied when the buffer meets the contract below; otherwise refused or copied, never silently reinterpreted |
 | `&T` handle | an instance of a generated class `T` | Released when Python frees the object |
 | `!T` error | an exception class per error, under one `Error` base per module | |
 
-**Handles.** A handle becomes an object whose deallocation calls the release function, so Python's reference counting decides when the Turf object can be collected. A class whose Turf type has a method marked `@ownership(releases: self)` also supports `with`, which calls that method on exit, and a call after it raises `ValueError` instead of reaching the library's panic.
+**Handles.** A handle becomes an object whose deallocation calls the release function, so Python's reference counting decides when the Turf object can be collected. A class whose Turf type has a method marked `@ownership(releases: self)` also supports `with`, which calls that method on exit, and a call after it raises `ValueError`. A dead handle that reaches the library anyway comes back as `TURF_E_DEAD_HANDLE` ([TDP-2-030](/tdp/2-030/), Boundary errors) and is raised as `ValueError` too, so a caller's mistake never ends the interpreter.
 
-**The GIL.** Arguments are converted while the GIL is held. The glue then **releases the GIL** while it waits for the library's entry lock and while the Turf code runs, so other Python threads keep running Python. A Turf callback into Python takes the GIL again. Releasing the GIL while waiting is what keeps the entry lock from deadlocking against it. On free-threaded Python (3.13t and later) there is no GIL, and the entry lock alone serializes calls into Turf.
+**The buffer contract.** A `Slice<T>` parameter takes a Python buffer without a copy only when all of these hold. The glue checks each before releasing the GIL:
 
-**Panics.** A Turf panic ends the process, Python included (F-PANIC-1). The generated docs say so, and point library authors to `!T` for every expected failure.
+| Condition | How it is checked | If it fails |
+|---|---|---|
+| The item format is `T`'s exactly (`d` for `double`, `q` for `int`, `i` for `int32`, `B` or `c` for `char`) | The buffer's `format` string | `TypeError` |
+| The byte order is the machine's | The format's byte-order prefix (`<`, `>`, `!`, `=`) | `TypeError`, or a copy with the bytes swapped if the function is marked `@export(copy_mismatched)` |
+| The buffer is C-contiguous | `PyBUF_C_CONTIGUOUS` | `TypeError`, or a copy under the same mark |
+| The data pointer is aligned for `T` | The address modulo `T`'s alignment | A copy into an aligned buffer, since a view taken at an odd byte offset is legitimate Python |
+| The buffer is writable, when the Turf function may write to the slice | `PyBUF_WRITABLE`; a `Slice` the function never writes to is marked read-only in the export description | `TypeError` (`bytes` and read-only numpy arrays are refused for writable slices) |
+
+**Lifetime.** The glue holds the buffer with `PyObject_GetBuffer` for the whole call and releases it with `PyBuffer_Release` after Turf returns. While a buffer is held, `bytearray`, `array.array` and numpy refuse to resize or reallocate it, so its address and length cannot change during the call.
+
+**Writes from other threads.** While the GIL is released, another Python thread can still write to the array's contents. A slice from a buffer holds only numbers, never pointers, so this cannot break memory safety. It does make the values Turf reads unspecified during that time. A function that needs a stable snapshot is marked `@export(snapshot)`, and the glue copies its slices before releasing the GIL.
+
+**The GIL.** These rules hold for every call:
+
+1. Every argument is converted, and every buffer checked and acquired, while the GIL is held.
+2. The glue releases the GIL **before** it waits for the library's entry lock, and keeps it released while Turf code runs. This is what stops the entry lock and the GIL from deadlocking against each other.
+3. Turf code never touches a Python object without the GIL. A Turf library called from Python holds no `PyObject` at all; arguments reach it already converted.
+4. A Turf callback into Python (a Python function passed as a callback, or the `python` package used inside a library) takes the GIL with `PyGILState_Ensure` and gives it back with `PyGILState_Release` before returning to Turf.
+5. After Turf returns, the glue takes the GIL back, releases the buffers, and converts the results.
+
+On free-threaded Python (3.13t and later) there is no GIL. Rules 1, 3 and 5 still hold, the entry lock alone serializes calls into Turf, and the paragraph on writes from other threads applies to every call.
+
+**Panics.** Caller mistakes are exceptions (rule above). A panic is reserved for a bug inside the library, and it ends the process, Python included (F-PANIC-1). The generated docs say so, and point library authors to `!T` for every expected failure.
 
 **The build.**
 - One wheel per platform, built against CPython's limited API (abi3) so it serves every supported Python version.
@@ -113,7 +136,7 @@ fn main(): int {
 ## Constitution check
 
 - **I. Safe by default, unsafe by declaration.** The glue and the `python` package hold the `unsafe` code. A Turf or Python user of either writes none. Buffers are checked for format and contiguity before Turf sees them.
-- **II. Native performance, with costs you can read.** Buffers are not copied; strings are, as the table says. Turf code runs with the GIL released.
+- **II. Native performance, with costs you can read.** Buffers that meet the contract are not copied; strings, misaligned buffers and `snapshot` slices are, as the tables say. Turf code runs with the GIL released.
 - **III. The compiler is the authority.** Not affected; the compiler only produces the library and its description.
 - **IV. Nothing crosses a boundary implicitly.** Only `@export` functions appear in Python. Python objects reach Turf only as handles.
 - **V. A few general mechanisms, not many special cases.** The glue is generated from the general export description. The `python` package uses the same contracts as any C binding.
@@ -130,7 +153,9 @@ Nothing breaks.
 ## Verification
 
 - Wheels for every Tier 1 platform installed into clean virtual environments for the oldest and newest supported CPython, and for a free-threaded build; the test suite run under `python -X dev`.
-- Every conversion row, including a numpy array passed without a copy (its memory is written by Turf and read back by numpy), a non-contiguous array rejected, and an integer that overflows.
+- Every conversion row, including a numpy array passed without a copy (its memory is written by Turf and read back by numpy), and each row of the buffer contract: a wrong format, a big-endian array, a non-contiguous view, a view at an odd byte offset (copied), `bytes` passed to a writable slice, and an integer that overflows.
+- Another Python thread writing to an array during a call: no crash and no sanitizer report, and `@export(snapshot)` sees the values from before the call.
+- A dead handle passed in raises `ValueError`, and the interpreter keeps running.
 - A handle released by Python's garbage collector while Turf collections are forced (`TURF_GC_STRESS`); `with` closing it; a call after closing raises.
 - Ten Python threads calling one library at once: results correct, Python threads not blocked while Turf code runs, no deadlock with a Turf callback into Python.
 - The `python` package: import, call, an exception turned into `py::Error`, and the compile errors for double close.
