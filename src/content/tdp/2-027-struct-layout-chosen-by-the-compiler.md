@@ -82,7 +82,7 @@ extern fn clock_gettime(clock: int32, ts: Timespec*): int32;
 
   The warning fires whether or not `compact` would move a field. A struct shared with C should say so, and a field added later must not silently change what C sees.
 
-### 2.9: migration
+### 2.11: migration
 
 `lint-set = "3.0"` reports the warning as an error, and `turf migrate 3.0` adds `@layout(c)` everywhere the warning fires.
 

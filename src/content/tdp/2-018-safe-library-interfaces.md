@@ -5,7 +5,7 @@ title: Safe library interfaces
 description: Count and report a package's unsafe code, warn when a raw pointer leaks through its public API or a method is called through one, and make both errors in 3.0.
 status: proposed
 date: 2026-10-15
-updated: 2026-10-16
+updated: 2026-10-25
 authors:
   - Turf Team
 ---
@@ -86,7 +86,7 @@ In 2.x nothing breaks: both are warnings, and they can be silenced with lint lev
 
 - Tests of the report against packages with known counts of each kind.
 - A failing and a passing test for each warning, and the false-positive record over the standard library, tests, showcase and examples.
-- A test that `lint-set = "3.0"` reports both as errors on 2.9.
+- A test that `lint-set = "3.0"` reports both as errors on 2.11.
 - A test that the migration produces code that compiles and keeps its meaning.
 
 ## Drawbacks

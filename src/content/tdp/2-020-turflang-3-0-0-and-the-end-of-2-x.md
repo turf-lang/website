@@ -2,10 +2,10 @@
 major: 2
 number: 20
 title: TurfLang 3.0.0 and the end of 2.x
-description: Define what ships in 3.0.0, how 2.9 prepares for it, and how 2.x is supported and then discontinued.
+description: Define what ships in 3.0.0, how 2.11 prepares for it, and how 2.x is supported and then discontinued.
 status: proposed
 date: 2026-10-15
-updated: 2026-10-16
+updated: 2026-10-25
 authors:
   - Turf Team
 ---
@@ -20,11 +20,11 @@ A major version is a promise to users in both directions: that breaking changes 
 
 ## Design
 
-### 2.9: ready for 3.0
+### 2.11: ready for 3.0
 
 The last 2.x minor adds no feature. It makes the upgrade easy:
 
-- `lint-set = "3.0"` reports every source-level breaking entry as an error on a 2.9 compiler.
+- `lint-set = "3.0"` reports every source-level breaking entry as an error on a 2.11 compiler.
 - `turf migrate 3.0` performs every mechanical migration.
 - Every deprecation that 3.0 removes has warned for at least two minors.
 - The 3.0 migration guide is published on the website, beside "Migrating to 2".
@@ -37,7 +37,7 @@ The last 2.x minor adds no feature. It makes the upgrade easy:
 | Promote proven warnings to errors: mutual and unreachable-base recursion, selected `unsafe` checks, and any warning with two minors of field time and no reported false positive | Rejects programs that compile in 2.x | `lint-set = "3.0"` first, then `turf migrate 3.0` annotates sites |
 | Runtime debug checks on by default at `-O0` | A program with latent memory corruption panics | `--no-debug-checks` |
 | Remove items deprecated by `@deprecated` | Removal is not allowed before 3.0 | The message names the replacement, and `turf migrate` renames where the signature matches |
-| Retire `lint-set` pins older than 2.9 | Pinned builds change | Documented |
+| Retire `lint-set` pins older than 2.11 | Pinned builds change | Documented |
 | Raw pointers in a package's `pub` API ([TDP-2-018](/tdp/2-018/), safe library interfaces) | Rejects packages that compile in 2.x | Wrap the pointer in a struct or a safe reference |
 | Raw-receiver method calls need `unsafe` ([TDP-2-018](/tdp/2-018/), safe library interfaces) | Rejects programs that compile in 2.x | `turf migrate 3.0` wraps the call |
 | `turfc` is a compiler only ([TDP-2-019](/tdp/2-019/), a pure compiler) | Scripts calling removed flags fail | The `turf` commands are unchanged |
@@ -47,13 +47,13 @@ Several other possible breaks are expected to stay **empty**: a collector write-
 
 ### Releasing
 
-1. 2.9.0 ships the pin, the migration tool and the guide.
+1. 2.11.0 ships the pin, the migration tool and the guide.
 2. 3.0.0 release candidates are cut from the main branch, as for 2.0. The registry's most-used packages are built against each candidate and their authors told of failures.
 3. 3.0.0 ships with the register applied. The website's current documentation switches to 3.0, and the 2.x documentation moves to an archived section.
 
 ### The end of 2.x
 
-The last 2.9.x receives **bug-fix and soundness patches for six months** after 3.0.0, with no features and no new warnings. Six months after 3.0.0, 2.x is end of life: no further 2.x releases, the Homebrew, Scoop and AUR recipes carry 3.x only, and the registry keeps serving existing 2.x-only versions but accepts new publishes only from packages whose `turf` requirement includes 3.x.
+The last 2.11.x receives **bug-fix and soundness patches for six months** after 3.0.0, with no features and no new warnings. Six months after 3.0.0, 2.x is end of life: no further 2.x releases, the Homebrew, Scoop and AUR recipes carry 3.x only, and the registry keeps serving existing 2.x-only versions but accepts new publishes only from packages whose `turf` requirement includes 3.x.
 
 ### 3.x
 
@@ -74,12 +74,12 @@ The Non-Goals hold. 3.0 adds no borrow checker and no no-runtime targets, and re
 
 ## Migration
 
-This proposal is the migration plan. A project can prepare early with `lint-set = "3.0"` on 2.9. After upgrading it runs `turf migrate 3.0` and fixes what the tool cannot do.
+This proposal is the migration plan. A project can prepare early with `lint-set = "3.0"` on 2.11. After upgrading it runs `turf migrate 3.0` and fixes what the tool cannot do.
 
 ## Verification
 
 - `turf migrate 3.0` run over the standard library, the tests, the showcase and the examples, and over the registry's most-used packages.
-- A test that every source-level register entry is an error under `lint-set = "3.0"` on 2.9.
+- A test that every source-level register entry is an error under `lint-set = "3.0"` on 2.11.
 - A check that each removed item warned for at least two minors.
 - Release candidates built against real packages before the release.
 

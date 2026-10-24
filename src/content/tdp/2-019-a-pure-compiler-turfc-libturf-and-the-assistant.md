@@ -5,14 +5,14 @@ title: "A pure compiler: turfc, libturf and the assistant"
 description: Reduce `turfc` to a deterministic compiler, move the front end into a versioned library, and move the model assistant, formatter, migrator and test runner into their own tools.
 status: proposed
 date: 2026-10-15
-updated: 2026-10-16
+updated: 2026-10-25
 authors:
   - Turf Team
 ---
 
 ## Summary
 
-`turfc` today is several tools in one binary. It compiles, but it also formats, migrates, runs tests, explains error codes and hosts a language model. This proposal makes it a compiler and nothing else. The front end becomes `libturf`, a library with a versioned API that `turfc`, `turf-lsp`, the formatter and the assistant all link, instead of compiling the compiler's sources. The assistant (the model runtime) becomes a separate binary and download. Format, migrate and test become one helper, and `explain` becomes data that `turf` reads. In 2.8 the old `turfc` flags forward and print a deprecation note. In 3.0 they are removed, and the separate `-smart` release flavour ends.
+`turfc` today is several tools in one binary. It compiles, but it also formats, migrates, runs tests, explains error codes and hosts a language model. This proposal makes it a compiler and nothing else. The front end becomes `libturf`, a library with a versioned API that `turfc`, `turf-lsp`, the formatter and the assistant all link, instead of compiling the compiler's sources. The assistant (the model runtime) becomes a separate binary and download. Format, migrate and test become one helper, and `explain` becomes data that `turf` reads. In 2.10 the old `turfc` flags forward and print a deprecation note. In 3.0 they are removed, and the separate `-smart` release flavour ends.
 
 ## Motivation
 
@@ -48,7 +48,7 @@ The model runtime, grammars and cache move into a separate binary and archive (w
 
 | When | What |
 |---|---|
-| 2.8 | `libturf` ships. The assistant and the helper exist. The old `turfc` flags still work and print a deprecation note naming the `turf` command. |
+| 2.10 | `libturf` ships. The assistant and the helper exist. The old `turfc` flags still work and print a deprecation note naming the `turf` command. |
 | 3.0 | `--smart`, `--smart-write-fix`, `--format`, `--migrate`, `--test` and `--explain` are removed from `turfc`. The `-smart` archives end. The driver interface major becomes 3. |
 
 ## Constitution check
@@ -59,21 +59,21 @@ The model runtime, grammars and cache move into a separate binary and archive (w
 - **IV. Nothing crosses a boundary implicitly.** The assistant is a separate download the user chooses, and tools reach the compiler through a versioned API.
 - **V. A few general mechanisms, not many special cases.** One library serves every tool, instead of each tool carrying a copy of the front end.
 - **VI. It works when you install it.** The main install needs no model. `turf` commands keep working, and a missing assistant is reported with how to get it.
-- **VII. Stability is a promise.** The additive half ships in 2.8 with deprecation notes that name replacements. The removals are 3.0 items with a published migration, and the `turf` commands never change.
+- **VII. Stability is a promise.** The additive half ships in 2.10 with deprecation notes that name replacements. The removals are 3.0 items with a published migration, and the `turf` commands never change.
 - **VIII. A claim is not true until it is demonstrated.** Reproducibility is checked in CI by building twice, and tool fixtures run in the compiler's CI.
 
 The Non-Goals hold, and this proposal is how they are enforced: no AI in the compilation path. It asks for no borrow checker and no no-runtime targets.
 
 ## Migration
 
-For `turf` users there is no change. For scripts that call `turfc --format`, `--test`, `--migrate`, `--explain` or `--smart` directly, the 2.8 notes name the `turf` command to use, and 3.0 removes the flags. Install recipes and download URLs change in 3.0.0 when the `-smart` archives end.
+For `turf` users there is no change. For scripts that call `turfc --format`, `--test`, `--migrate`, `--explain` or `--smart` directly, the 2.10 notes name the `turf` command to use, and 3.0 removes the flags. Install recipes and download URLs change in 3.0.0 when the `-smart` archives end.
 
 ## Verification
 
 - The API fixtures and each tool's own tests, run in the compiler's CI, so a compiler change that breaks a tool fails in the compiler's CI.
 - Building the corpus twice and comparing every output byte for byte.
 - A test that `turfc` links no model runtime, and that the plain build is the only build.
-- A test that each deprecated flag forwards and prints its note in 2.8.
+- A test that each deprecated flag forwards and prints its note in 2.10.
 - The model-free replay suite running against the separate assistant.
 
 ## Drawbacks
