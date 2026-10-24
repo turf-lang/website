@@ -2,9 +2,10 @@
 major: 2
 number: 30
 title: Calling Turf from other languages
-description: "Build a Turf package as a C library: `@export` functions, `turf build --lib` with a generated header, a runtime that starts on first call, handles C can hold safely, Python extension modules and embedding through `turf-python`, and cross-linking with per-target runtimes."
+description: "Build a Turf package as a C library: `@export` functions, `turf build --lib` with a generated header and a JSON export description, a runtime that starts on first call, handles C can hold safely, which languages can call it safely, and cross-linking with per-target runtimes."
 status: draft
 date: 2026-10-25
+updated: 2026-10-25
 authors:
   - Turf Team
 ---
@@ -14,11 +15,11 @@ authors:
 Today C can call Turf only through a callback that Turf handed it first, and only from inside a Turf program. This proposal lets a Turf package be built as a static or shared library that any language with a C FFI can load:
 
 - `@export` on a function gives it a C symbol and a C signature.
-- `turf build --lib` writes the library and a C header.
-- The runtime starts itself on the first call, scans the right stack, and refuses a second thread with a named error until the thread-aware runtime (3.1).
+- `turf build --lib` writes the library, a C header, and a JSON description of the exports that glue generators read instead of parsing C.
+- The runtime starts itself on the first call and scans the right stack. Any thread may call, one at a time: a lock lets one thread into the library while the others wait, so the runtime keeps a single mutator until the thread-aware runtime (3.1) lets them run in parallel.
 - A Turf object handed to C becomes a handle the collector keeps alive until C releases it. A released or forged handle coming back is a named panic, not a corrupted heap.
-- `turf-python`, its own repository, builds a CPython extension module from a Turf library and lets Turf code call Python.
-- C++ and Rust call Turf through the same header.
+- C, C++, Rust, Zig, Swift and every other language with a C FFI call Turf through the same header. What each of them needs is stated per language.
+- Languages that deserve richer glue get their own proposals, each in its own repository: Python ([TDP-2-031](/tdp/2-031/)), Node.js ([TDP-2-032](/tdp/2-032/)) and Lua ([TDP-2-033](/tdp/2-033/)). Calls in parallel from many threads, which the JVM, .NET, Go and the BEAM want for speed, wait for [TDP-3-003](/tdp/3-003/).
 - `--target` links a runnable program or library for another supported platform, using per-target runtimes.
 
 Everything here is additive. It ships in 2.9, before 3.0, because the exported ABI and how the runtime starts inside a host process are the decisions most likely to need a correction that only a major version can make.
@@ -46,6 +47,7 @@ pub fn open(path: string): !&Image {
 ```
 
 - `@export` goes on a `pub` free function. The C symbol is `<package>_<name>` by default, since C has one namespace for every library in a process. `@export(name: "...")` chooses it.
+- `@export` also goes on a `pub` method of a type that crosses as a handle. Its C symbol is `<package>_<Type>_<name>` and its first parameter is the handle. Glue generators turn these into methods of the generated class.
 - An exported function's parameter and return types must have a C form:
 
 | Turf type | C form | At the boundary |
@@ -89,62 +91,96 @@ kind = ["static", "shared"]
 
 A shared library links against the host's C library dynamically, through the system linker, and never against the bundled musl, because the process that loads it already has its own C library. `libturfrt` ships a position-independent build for this. Its symbols are hidden, so two Turf libraries in one process do not collide.
 
+### The export description
+
+A C header is written for a C compiler. It loses what a generator of Python, JavaScript or Lua glue needs to know: that a pointer and a length are one slice, that a pointer is a handle and which function releases it, which integer codes an error set uses and their names, and the doc comments. `turf build --lib` therefore also writes `build/include/<package>.json`:
+
+```json
+{
+  "schema": "1.0",
+  "package": "png_tool",
+  "version": "0.3.0",
+  "runtime_abi": "2.9",
+  "functions": [
+    {
+      "name": "open",
+      "symbol": "png_tool_open",
+      "doc": "Opens a PNG file.",
+      "params": [
+        { "name": "path", "type": "string", "c": "const char *", "nullable": false }
+      ],
+      "returns": { "type": "!&Image", "c": "int32_t", "out": "png_tool_Image **", "handle": "Image", "errors": "OpenError" }
+    }
+  ],
+  "handles": [
+    { "name": "Image", "c": "png_tool_Image", "release": "png_tool_Image_release" }
+  ],
+  "errors": [
+    { "name": "OpenError", "codes": { "NotFound": 1, "BadFormat": 2 } }
+  ],
+  "structs": [],
+  "helpers": { "free_string": "png_tool_free_string", "init": "png_tool_init" }
+}
+```
+
+- The schema is versioned like the diagnostics and package-graph schemas (IF-2): `docs/reference/schemas/exports.schema.json`, where a minor version adds fields and a major version changes or removes one.
+- `@layout(c)` structs are listed with each field's offset and size, so a generator does not recompute C's layout rules.
+- The header and the description are written from the same table in the compiler, so they cannot disagree. A test compares them.
+- Glue generators (`turf-python`, `turf-node`, `turf-lua`) read only this file and the built library. They need no compiler headers and no `libturf`, so each repository moves at its own pace (Part 4.3 of the roadmap).
+
 ### The runtime inside someone else's process
 
 - **Start-up.** No `main` runs. The first call to any exported function (or `<package>_init`) runs `turf_rt_init()`. Later calls skip it with one load and compare.
 - **The stack.** The collector scans the stack conservatively from the current frame up to a base. In a program the base is recorded once, under `main`. In a library each exported entry records the base when it is the outermost Turf frame, and a nested entry (C calls Turf, which calls C, which calls Turf) keeps the outermost one.
-- **One thread.** The thread of the first call owns the runtime. A call from any other thread is a panic: "this Turf library was called from a second thread; Turf libraries are single-threaded until the 3.1 runtime". Glue that can report it more gently, like `turf-python`'s, checks first and raises its own error.
+- **One thread at a time.** Each library has an entry lock. An outermost entry takes it; a nested entry on the same thread (C calls Turf, which calls C, which calls Turf) already holds it. A thread that finds it taken waits. This is sound because the collector only ever needs the stacks of threads that are *inside* Turf, and the lock makes that one thread: a waiting thread holds no Turf pointer except handles, and handles are rooted. FREEZE §6.5's single-threaded mutator is kept; it is simply not always the same OS thread. Calls in parallel need the thread-aware runtime (3.1) and [TDP-3-003](/tdp/3-003/).
+- **Deadlock at the boundary.** If Turf calls back into the host while another host thread waits for the entry lock, and the callback waits for that thread, the two deadlock. The rule is stated in the reference: a callback from Turf must not wait for another thread that may call Turf. Glue that holds its own lock (Python's GIL) releases it while waiting for the entry lock, so the common case cannot deadlock.
+- `<package>_set_entry_mode(PANIC_ON_CONTENTION)` turns waiting into a named panic, for a host that wants to know it is calling from two threads at once. Glue that can report it more gently, like `turf-python`'s, checks first and raises its own error.
 - **Signals.** A program installs a handler that turns a stack overflow into a panic. A library does not, because signal handlers belong to the host. `<package>_install_signal_handlers()` opts in.
 - **Panics.** A panic still prints its message and ends the process (FREEZE §6.30, F-PANIC-1). Inside Python that ends the interpreter. Expected failures should be `!T` results, which reach C as error codes and Python as exceptions. The reference says so where it introduces `@export`.
 - **Two Turf libraries in one process** each carry their own runtime and heap. A handle from one passed to the other fails the live-handle check.
 
-### Python: `turf-python`
+### Python, Node.js and Lua
 
-`turf-python` is its own repository and tool, versioned against the compiler's driver interface like `turf-lsp`, so the compiler holds no Python knowledge.
+These three get glue richer than a header, each in its own proposal and repository, built from the export description:
 
-**Python imports Turf.** `turf-python build` turns a Turf library into a CPython extension module and a wheel:
+- **Python** ([TDP-2-031](/tdp/2-031/), `turf-python`): extension modules and wheels, and a `python` package for calling Python from Turf.
+- **Node.js** ([TDP-2-032](/tdp/2-032/), `turf-node`): Node-API addons, npm packages with prebuilt binaries, and TypeScript declarations.
+- **Lua** ([TDP-2-033](/tdp/2-033/), `turf-lua`): Lua modules written in Turf, and a `lua` package that embeds Lua in a Turf program for scripting.
 
-```turf
-// src/lib.tr in package `fastsum`
-@export
-pub fn total(xs: Slice<double>): double { ... }
-```
-
-```python
-import fastsum
-fastsum.total(array.array("d", [1.5, 2.5]))   # 4.0
-```
-
-- The glue is generated C against CPython's limited API (abi3), so one wheel serves every supported Python version.
-- `int`, `float`, `bool`, `str` and objects with the buffer protocol (`bytes`, `array`, numpy arrays) convert in. A `Slice<T>` parameter takes a buffer without copying.
-- A `!T` error becomes a Python exception whose class is named after the Turf error.
-- A handle becomes a Python object whose deallocation calls the release function, so Python's reference counting decides when Turf's root goes.
-- The thread check raises `RuntimeError` instead of panicking.
-
-Before `turf-python` exists, `ctypes` and `cffi` load the shared library and its header directly.
-
-**Turf calls Python.** A `python` package, in the same repository, wraps libpython's C API using [TDP-2-029](/tdp/2-029/)'s contracts:
-
-```turf
-import python as py;
-
-fn main(): int {
-    py::start();
-    defer py::stop();
-    immut math: &py::Object = py::import("math");
-    defer math.close();
-    immut r: double = math.call("sqrt", py::float(2.0)).as_double();
-    printline(r);
-    return 0;
-}
-```
-
-`py::Object.close()` is `@ownership(releases: self)`, so a double close is a compile error. An unclosed object is a leak, since Turf has no finalizers.
+Before any of them exists, Python's `ctypes` and `cffi`, Node's FFI packages, and LuaJIT's `ffi` load the shared library and its header directly.
 
 ### C++ and Rust
 
 - **C++** includes the generated header, which is wrapped in `extern "C"`. `turf build --lib --cpp` also writes `<package>.hpp`: a header-only class per handle type whose destructor calls the release function and which cannot be copied, only moved, plus overloads that return `std::string`.
 - **Rust** runs `bindgen` on the header in a `build.rs` and links the static library. A generated `-sys` crate and a safe crate over it, as `turf-python` does for Python, could follow as their own tool.
+
+### Which languages can call Turf safely
+
+Turf's side of the boundary is protected whoever calls it: handles are checked against a live table, `&T` and `string` parameters are checked for null, and threads enter one at a time. Whether a host language is *safe to use* depends on four questions:
+
+1. Does it have a C FFI that loads a shared library?
+2. Do its calls tolerate being **serialized**? Before the 3.1 runtime, two threads never run Turf code at the same moment.
+3. Can it guarantee that no exception or `longjmp` unwinds through Turf frames?
+4. Does it have a hook (a finalizer, destructor or close) that can release a handle?
+
+| Language | How it calls Turf | Before 3.1 | Glue |
+|---|---|---|---|
+| C, C++ | The header (`.hpp` with `--cpp`) | Yes | The header |
+| Rust | `bindgen` on the header | Yes | The header |
+| Zig, Odin, Nim, D | `@cImport`, foreign imports, `c2nim`, `importC` | Yes | The header |
+| Swift | A module map over the header | Yes | The header; Swift classes release handles on deinit |
+| Python | Extension module | Yes; the glue releases the GIL while it waits for the entry lock | [TDP-2-031](/tdp/2-031/) |
+| Node.js | Node-API addon | Yes; worker threads wait their turn | [TDP-2-032](/tdp/2-032/) |
+| Lua | C API | Yes | [TDP-2-033](/tdp/2-033/) |
+| Ruby | `ffi` gem or C extension | Yes | The header |
+| R, Julia, PHP | `.Call`, `ccall`, `FFI` | Yes | The header |
+| Java, Kotlin (JVM) | Panama FFM, `jextract` on the header | Yes, serialized; in parallel from 3.x | The header; [TDP-3-003](/tdp/3-003/) |
+| C#, F# (.NET) | `LibraryImport` / P/Invoke | Yes, serialized; in parallel from 3.x | The header; [TDP-3-003](/tdp/3-003/) |
+| Go | cgo | Yes, serialized (a goroutine stays on its thread for the length of a cgo call); in parallel from 3.x | The header; [TDP-3-003](/tdp/3-003/) |
+| Erlang, Elixir | NIFs | Only as dirty NIFs: a scheduler waiting on the entry lock stalls the VM | [TDP-3-003](/tdp/3-003/) |
+| WebAssembly | — | No | Not interop but a compile target: the collector cannot scan a WebAssembly stack. It needs its own proposal. |
+
+"Serialized" costs throughput, never safety: a thread pool calling a Turf library runs its Turf calls one after another.
 
 ### Cross-linking: `--target` that links
 
@@ -152,11 +188,11 @@ Today `--target=<triple>` writes an object file and stops, because `libturfrt` e
 
 ## Constitution check
 
-- **I. Safe by default, unsafe by declaration.** C callers are outside Turf's guarantees, as C always is. The boundary checks keep the Turf side safe against them: null checks on `&T` and `string`, a length that comes with every slice, handles validated against a live table, a second thread refused. A C bug that reaches Turf becomes a named panic, not corruption inside Turf's heap.
-- **II. Native performance, with costs you can read.** Every copy at the boundary is in the type table above. A slice parameter is a view, not a copy. The per-call cost is a load and a compare for start-up and one for the thread check.
+- **I. Safe by default, unsafe by declaration.** C callers are outside Turf's guarantees, as C always is. The boundary checks keep the Turf side safe against them: null checks on `&T` and `string`, a length that comes with every slice, handles validated against a live table, one thread inside at a time. A C bug that reaches Turf becomes a named panic, not corruption inside Turf's heap.
+- **II. Native performance, with costs you can read.** Every copy at the boundary is in the type table above. A slice parameter is a view, not a copy. The per-call cost is a load and a compare for start-up and an uncontended lock, which the header documents.
 - **III. The compiler is the authority.** Whether a signature can be exported is the compiler's decision, with stable codes. The header is generated, not hand-maintained.
 - **IV. Nothing crosses a boundary implicitly.** Only `@export` functions are visible to C, under names the header lists. Strings, slices and handles cross with stated rules.
-- **V. A few general mechanisms, not many special cases.** `@export` is an annotation; handles reuse `mem::root`; Python support is a tool over the C library, not a compiler feature.
+- **V. A few general mechanisms, not many special cases.** `@export` is an annotation; handles reuse `mem::root`; language glue is tools over the export description, not compiler features.
 - **VI. It works when you install it.** `turf build --lib` needs nothing beyond what a program build needs. Cross-linking removes "install a cross toolchain" for Tier 1 targets.
 - **VII. Stability is a promise.** All additive. The exported ABI ships before 3.0 so that a correction to it, if one is needed, can be part of the 3.0 register.
 - **VIII. A claim is not true until it is demonstrated.** See Verification.
@@ -171,15 +207,16 @@ Nothing breaks.
 
 - **C.** A C program links the static and the shared library, calls every row of the type table, and passes under ASan and `TURF_GC_STRESS`: strings and slices round-trip, a `!T` error arrives as its code, a handle survives forced collections while only C holds it, and a released handle passed back panics with its type name.
 - **Re-entry.** C calls Turf, which calls a C callback, which calls Turf again. Collections inside the inner call keep the outer call's objects alive.
-- **Threads.** A call from a second thread produces the named panic.
-- **Python.** `ctypes` on the shared library; then a `turf-python` wheel installed into a clean virtual environment on each Tier 1 platform, its tests run under `python -X dev`, and a handle released by Python's garbage collector.
+- **Threads.** Many threads calling at once, under `TURF_GC_STRESS`, never have two inside Turf, and every object survives; a callback that re-enters on the same thread does not deadlock; `PANIC_ON_CONTENTION` panics with its name.
+- **The export description.** It validates against its schema and agrees with the header for every test library; `ctypes` loads a library using only names read from it.
+- **Other languages.** Each language in the table marked "Yes" has a smoke test in CI that calls one function of each kind and releases a handle; the ones with their own proposal are verified there.
 - **C++ and Rust.** The `.hpp` wrapper in a C++ test (destructor releases, copying does not compile), and a Rust crate using `bindgen` on the header.
 - **Cross-linking.** From each Tier 1 host, a program and a shared library for every other Tier 1 target, run on that target in CI.
 
 ## Drawbacks
 
 - **A panic ends the host process.** That is harsh inside a Python service. Making panics catchable at the boundary would contradict F-PANIC-1, so the answer is `!T` for expected failures.
-- **One thread until 3.1.** A Turf library cannot yet be called from a thread pool.
+- **Serialized until 3.1.** A thread pool can call a Turf library, but its Turf calls do not run in parallel.
 - **Copies of strings at the boundary.** Small for typical arguments; slices exist for bulk data.
 - **Two runtimes in one process** if two Turf libraries are loaded. A shared `libturfrt` would fix it at the cost of a versioning problem, so it waits (Unresolved questions).
 - **Release archives grow** by a runtime per target.
@@ -189,11 +226,11 @@ Nothing breaks.
 - **Export every `pub` function automatically.** Rejected: Principle IV, and C's single namespace makes the names a choice.
 - **Hand C raw pointers to Turf objects.** Rejected: the collector would free an object only C holds, and C could hand back anything.
 - **Catch panics at the boundary.** Rejected: it would change F-PANIC-1 for one kind of caller.
-- **Python support inside `turfc`.** Rejected: it couples the compiler to CPython's versions. A separate repository keeps it independent.
+- **Language support inside `turfc`.** Rejected: it couples the compiler to other languages' versions. Separate repositories, reading the export description, keep each independent.
+- **Glue generators parse the C header.** Rejected: the header has lost slices, handles and error names by then, and every generator would rewrite a C parser.
 - **Wait for 3.x.** Possible, since this is additive. It is placed before 3.0 so that the 3.0 register can correct the exported ABI or the library runtime if 2.x experience shows a mistake.
 
 ## Unresolved questions
 
 - Whether a process with several Turf libraries should share one `libturfrt` shared library.
-- How free-threaded Python (no GIL) interacts with the one-thread rule before 3.1. The proposed answer is that `turf-python` takes a lock around every call into a Turf library.
 - Whether `<package>_` as the default symbol prefix is right for a package with a long name.
