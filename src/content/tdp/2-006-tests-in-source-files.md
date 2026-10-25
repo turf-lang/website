@@ -3,11 +3,12 @@ major: 2
 number: 6
 title: Tests in source files
 description: Let a function marked `@test` live beside the code it checks, and run it with `turf test`.
-status: accepted
+status: implemented
 date: 2026-10-15
 updated: 2026-10-25
 authors:
   - Turf Team
+discussion: https://github.com/turf-lang/turf-lang/issues/299
 ---
 
 ## Summary
@@ -30,12 +31,12 @@ fn parse_port(text: string): int {
 }
 
 @test
-fn parse_port_accepts_a_valid_port() {
+fn parse_port_accepts_a_valid_port(): void {
     test::assert(parse_port("8080") == 8080);
 }
 
 @test
-fn parse_port_rejects_zero() {
+fn parse_port_rejects_zero(): void {
     test::assert(parse_port("0") == -1);
 }
 ```
@@ -44,7 +45,7 @@ fn parse_port_rejects_zero() {
 
 ### What a test function is
 
-- It takes no parameters, and returns nothing or `!void`.
+- It takes no parameters, and returns `void` or `!void`.
 - It passes if it returns, and fails if it panics or an assertion fails.
 - It may use everything in its file, private items included, because it is in the same file. That is the point of putting it there.
 - It is not part of the module's exports.
@@ -61,19 +62,20 @@ In a normal `turf build` or `turf run`, a `@test` function is parsed and checked
 
 ```turf
 @test(compile_error, E041, "Unknown function")
-fn calling_an_undeclared_function_is_an_error() {
+fn calling_an_undeclared_function_is_an_error(): void {
     undeclared(1);
 }
 
 @test(panic, "Division by zero")
-fn dividing_by_zero_panics() {
+fn dividing_by_zero_panics(): void {
     immut zero: int = 0;
     io::printline(10 / zero);
 }
 
-@test(error, FsError::RemoveFileFailed)
+@test(error, fs::FsError::RemoveFileFailed)
 fn removing_a_missing_file_fails(): !void {
     try fs::remove_file("no/such/file");
+    return;
 }
 ```
 

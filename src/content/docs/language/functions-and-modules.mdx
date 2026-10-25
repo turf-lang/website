@@ -635,7 +635,7 @@ receiver type's own prelude module (`double` for a `double`, `strings` for a
 
 <Callout tone="note" title="In plain words">
 
-An annotation is a label on the line before a function, telling the compiler something about it. There are only three, and you will rarely write them yourself: `@caller_location` (make a panic name the caller's line), `@ownership` (tell the memory checks which functions allocate and free raw memory) and `@ffi` (use a different C name on a given platform). The last two are for working with C.
+An annotation is a label on the line before a function, telling the compiler something about it. There are four, and you will rarely write them yourself: `@caller_location` (make a panic name the caller's line), `@ownership` (tell the memory checks which functions allocate and free raw memory), `@ffi` (use a different C name on a given platform) and `@test` (mark a function as a test that `turf test` runs). `@ownership` and `@ffi` are for working with C.
 
 </Callout>
 
@@ -647,8 +647,8 @@ fact about that function to the compiler:
 @name(argument, key: argument, ...)
 ```
 
-An argument is a word (a keyword counts as a word) or a string; a key is a
-word. Anything richer, such as `@ownership(1 + 2)`, is a syntax error.
+An argument is a word (a keyword counts as a word), a string, a whole number or
+a `Type::Variant` path; a key is a word. Anything richer, such as `@ownership(1 + 2)`, is a syntax error.
 Several annotations may be stacked, and they come **before** `pub`:
 
 ```turf
@@ -662,7 +662,7 @@ after an annotation"). A name the compiler does not know, or an argument that
 does not fit the declaration, is [`E146`](/docs/errors/e146/); a misspelling gets a "Did you mean"
 suggestion. An annotation is never silently ignored.
 
-The annotations are `@caller_location`, `@ownership` and `@ffi`.
+The annotations are `@caller_location`, `@ownership`, `@ffi` and `@test`.
 
 ### `@caller_location`
 
