@@ -6,7 +6,7 @@ order: 22
 
 {/* Text from the turf-lang repository: docs/errors/codes/E022.txt. */}
 
-`export immut` shares a constant with every file that imports it, but it does that by baking the literal value directly into each importing file at compile time -- there's no shared storage behind the scenes. That means the value has to be something Turf can figure out immediately, like a plain number, string, or true/false, not something computed from another variable or a function call.
+`export immut` shares a constant with every file that imports it, but it does that by baking the literal value directly into each importing file at compile time -- there's no shared storage behind the scenes. That means the value has to be something Turf can figure out immediately, like a plain number (a negative one such as -1 too), string, or true/false, not something computed from another variable or a function call.
 
 <Code title="Example">
 ```turf

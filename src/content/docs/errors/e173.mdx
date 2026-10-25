@@ -1,0 +1,49 @@
+---
+title: "E173: You're calling a test"
+description: "What compiler error E173 means, and how to fix it."
+order: 173
+---
+
+{/* Text from the turf-lang repository: docs/errors/codes/E173.txt. */}
+
+A function marked `@test` is run by `turf test`, one test at a time, and every build leaves it out of the program. So nothing else may call it, or use it as a function value:
+
+<Code title="Example">
+```turf
+@test
+fn parses_a_port(): void {
+    test::assert(parse_port("8080") == 8080, "8080 is a port");
+}
+
+fn main(): int {
+    parses_a_port();   // ERROR: 'parses_a_port' is a test
+    return 0;
+}
+```
+</Code>
+
+If the test and the program need the same steps, move them into an ordinary function and call that from both:
+
+<Code title="Example">
+```turf
+fn check_port(): bool {
+    return parse_port("8080") == 8080;
+}
+
+@test
+fn parses_a_port(): void {
+    test::assert(check_port(), "8080 is a port");
+}
+
+fn main(): int {
+    if check_port() {
+        return 0;
+    }
+    return 1;
+}
+```
+</Code>
+
+To run a test, use `turf test`.
+
+Run `turf --explain E173` in a terminal to read this again.
