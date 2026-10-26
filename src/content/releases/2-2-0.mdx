@@ -160,7 +160,7 @@ fn calls_nothing(): void {
 [src] main.tr: calls_nothing ... PASS (Rejected properly)
 ```
 
-An error inside a `compile_error` test belongs to the test, so the rest of the file still compiles and runs. Nothing else may call a test or use it as a value: that is the new error [E173](/docs/errors/e173/). A malformed `@test` is [E146](/docs/errors/e146/), with a hint that lists the outcomes. The outcome words are not keywords, so a program's own names are unaffected. The [testing guide](/docs/guides/testing/) has the details.
+An error inside a `compile_error` test belongs to the test, so the rest of the file still compiles and runs. A `warning` test owns its warning the same way: no lint level applies to it, so a project that denies `E172` still builds, and the test still sees the warning. Nothing else may call a test or use it as a value: that is the new error [E173](/docs/errors/e173/). A malformed `@test` is [E146](/docs/errors/e146/), with a hint that lists the outcomes. The outcome words are not keywords, so a program's own names are unaffected. The [testing guide](/docs/guides/testing/) has the details.
 
 ## Warnings you control
 
