@@ -411,7 +411,7 @@ could break that (`s[0] = 1` is **[E056](/docs/errors/e056/)**, "No `operator[]=
 </Callout>
 
 A collection is not a built-in array, so `for x in l` does not work on it
-(**[E005](/docs/errors/e005/)**, "for-each requires an array"). Walk a `List` by index, a `Stack` or
+(**[E005](/docs/errors/e005/)**, "for-each requires an array or a string"). Walk a `List` by index, a `Stack` or
 `Queue` by emptying it, and a `Map` through `keys()` or `values()`.
 
 <Diagnostic file="collections-e005.tr">
@@ -432,7 +432,7 @@ collections-e005.tr (1 error)
 
 ── error at line 6, col 5 [E005 · array error]
 
-  for-each requires an array!
+  for-each requires an array or a string!
   You tried to iterate over a value of type 'list::List<int>'.
 
   Hint: for-each only works on Turf's built-in fixed-size array type (T[N]). Lists, maps, structs, and scalars aren't supported yet.
