@@ -165,10 +165,31 @@ The lexer reads the text of your program character by character and cuts it into
 `Token` values (`enum Token`: negative constants for multi-character tokens
 and keywords, raw ASCII values for single-character operators).
 
+### `LexerState`
+
+Everything the lexer reads and writes lives in a `LexerState` (F-S0, issue
+#301): the stream (`Source`, an owned `File` or a caller's buffer), the
+`Filename` stamped into every location, the cursor (`LastChar`, `CurLine`,
+`CurCol`), the current token (`CurLoc`, `IdentifierStr`, `StringVal`, the
+`NumLit*` fields, `BoolVal`, `CharVal`), the previous token's end and the
+lookahead. `gettok(LexerState &)` works on the one it is given, so two
+buffers can be tokenized in turn without either seeing the other's cursor
+(`tests/api/analysis_test.cpp`, `testTwoLexersInterleave`). `Keywords` is a
+constant table.
+
+The parser reads tokens from `Lex()`, the lexer of the current `ParserState`
+(see [`ParserState`](#parserstate) below). With no parser current, or one
+with no lexer, `Lex()` is an empty lexer that yields `TOK_EOF`.
+
+Not part of `LexerState`, because `gettok()` never reads them:
+`SourceFilename`, `SourceLines`, `AllSourceLines` and `MainSourceFilename`,
+the compile's record of which file is being read and what its lines say,
+which diagnostics and the passes after parsing use.
+
 ### `gettok()` and `gettokScan()`
 
 `gettokScan()` is a hand-written maximal-munch scanner over `LastChar` and
-`SourceFile->peek()`: each branch consumes the longest token it can. The `:`
+`Source->peek()`: each branch consumes the longest token it can. The `:`
 branch peeks for a second `:` to choose between `TOK_COLON` and `TOK_SCOPE`;
 the `.` branch looks ahead to separate `.`, `..` (`TOK_RANGE`) and `...`
 (`TOK_ELLIPSIS`). Identifiers are scanned as an ordinary run and then looked
@@ -205,8 +226,8 @@ known and prints a single caret otherwise. The new fields are appended after
 `Filename` so the many `{Line, Col}` and `{Line, Col, Filename}`
 aggregate-initializers keep compiling.
 
-`Filename` is stamped at scan time from `SourceFilename`, which the import
-code repoints at each module while it is parsed. A diagnostic raised by a
+`Filename` is stamped at scan time from the lexer's own `Filename`, which is
+each import's path while that module is parsed. A diagnostic raised by a
 later pass therefore still finds the right file, through the persistent
 `AllSourceLines` cache (the single-file `SourceLines` is transient).
 
@@ -240,29 +261,62 @@ The parser takes the flat list of tokens and works out how they fit together, bu
 `ParserLiteral.cpp`, `ParserModule.cpp` (with the cross-file declarations in
 `Parser.h` and `ParserInternal.h`). Recursive descent: each production is one
 function (`ParseIfExpr()`, `ParseStructDecl()`, `ParseType()`, ...) that
-consumes tokens through the shared `CurTok`/`getNextToken()` cursor.
+consumes tokens through the current parser's `CurTok`/`getNextToken()`
+cursor.
+
+### `ParserState`
+
+Everything the parser reads and writes while it parses one file lives in a
+`ParserState` (`Parser.h`, F-S1, issue #302): the lexer it reads (`Lexer`),
+the current token (`CurTok`), the bracket depths (`BraceDepth`,
+`CurlyDepth`), the recursion depth `ParseRecursionGuard` counts
+(`RecursionDepth`), the flags one construct sets for the ones nested in it
+(`AllowGuessType`, `SizeParamsInScope`, `InPatternHeader`,
+`PatternHeadCallPending`, `FuncUsesTry`) and the file's module aliases
+(`ModuleAliases`, see `ModuleKeyFor()`). The parse functions work on
+`Parser()`, the innermost live `ParserScope`'s parser.
+
+The driver makes one current for the input file. `ParseFile()` makes a fresh
+`ParserState`, with a fresh `LexerState`, current for each import, and the
+query facade, the formatter and `--migrate=pub` do the same for their
+buffers, so the importer's or host's parser is never touched and nothing has
+to be saved and restored field by field
+(`tests/api/analysis_test.cpp`, `testTwoParsersInterleave`). With no scope
+live, `Parser()` is an idle parser with no lexer.
+
+Not part of `ParserState`: what one compile accumulates across every file it
+parses (the import caches, the import stack, the parsed top-level
+declarations, the files that declared `unsafe module;`, the source overlays:
+`ParserCompileState` in `ParserModule.cpp`, which
+`PushParserCompileState()`/`PopParserCompileState()` stack for an isolated
+compile), `g_recoverActive` (error recovery, which the Resolver and
+TypeChecker arm too) and the compile's file bookkeeping (`SourceFilename`,
+`SourceLines`, `AllSourceLines`). `BinopPrecedence` is a constant table.
 
 ### `getNextToken()`: the one advance point
 
 ```cpp
 int getNextToken() {
-  if (CurTok == '{' || CurTok == '(' || CurTok == '[')
-    g_braceDepth++;
-  else if ((CurTok == '}' || CurTok == ')' || CurTok == ']') && g_braceDepth > 0)
-    g_braceDepth--;
-  /* ... the same for g_curlyDepth, '{' and '}' only ... */
-  return CurTok = gettok();
+  ParserState &P = Parser();
+  if (P.CurTok == '{' || P.CurTok == '(' || P.CurTok == '[')
+    P.BraceDepth++;
+  else if ((P.CurTok == '}' || P.CurTok == ')' || P.CurTok == ']') && P.BraceDepth > 0)
+    P.BraceDepth--;
+  /* ... the same for P.CurlyDepth, '{' and '}' only ... */
+  if (takeLookaheadToken(P.CurTok))
+    return P.CurTok;
+  return P.CurTok = gettok(Lex());
 }
 ```
 
 Every token advance goes through it, which is why bracket depth is tracked
 here with no per-call-site bookkeeping. `SkipToNextTopLevelBoundary()` uses
-`g_braceDepth` and `g_curlyDepth` to resynchronize after an error at any
+`BraceDepth` and `CurlyDepth` to resynchronize after an error at any
 nesting depth.
 
 ### Expressions: precedence climbing
 
-A single table (`BinopPrecedence`, filled by `InitializePrecedence()`) drives
+A single constant table (`BinopPrecedence`) drives
 `ParseBinOpRHS()`; there is no per-level function chain. Low to high:
 assignment and compound assignment 10, cast (`to`) 12, `||` 15, `&&` 20,
 `==` `!=` 25, relational 30, `|` 33, `^` 35, `&` 37, shifts 38, `+` `-` 40,
@@ -607,8 +661,10 @@ above 15.
 ### Use before initialization: `DefiniteAssignmentPass`
 
 A forward dataflow analysis (`Analysis.cpp`) over the symbols declared by
-`VarDeclExprAST`/`ArrayDeclExprAST` inside the body. Parameters are always
-assigned and not tracked.
+`VarDeclExprAST` inside the body. Parameters are always assigned and not
+tracked. A fixed-size array (`ArrayDeclExprAST`) is assigned from its
+declaration: codegen zero-fills it, so a read of it is never [E008](/docs/errors/e008/) and
+elements are not tracked.
 
 ```text
 OUT[b] = IN[b] union Defs(b)
@@ -622,6 +678,19 @@ block's `IN` set as `DefiniteAssignmentError` ([E008](/docs/errors/e008/), fatal
 the declaration. `CFGBuilder` places condition and subject expressions as
 statements in their own blocks, so a variable used only in a loop guard is
 checked too.
+
+### `recover run` blocks in the CFG
+
+`CFGBuilder::branchToRecoverBlocks()` builds the `recover run { }` and
+`recover as e run { }` blocks of an ordinary statement or a `return` as CFG
+blocks. It branches from just before the statement: one edge to the run block
+(built like any block, so loops, `return`, `break` and `continue` inside it
+have their edges), one edge to the block that holds the statement. The run
+block therefore sees only what was assigned before the statement. It sets
+`RecoverExprAST::BlockInCFG`, and the statement walkers (`AnalysisVisitor` for
+liveness and definite assignment, `EscapeCheckVisitor`, `NarrowingVisitor`)
+skip a block the CFG holds. A `recover` block in a loop condition, and a
+`defer`'s statement, are not split; they are walked inside their statement.
 
 ### Dead stores and unused variables: `LivenessAnalysisPass`
 
@@ -637,7 +706,9 @@ to a fixed point. A body-declared variable that is never read anywhere is
 `UnusedVariableWarning`. That test uses a separate `EverRead` set, because
 `Gen` records only upward-exposed reads and a declare-then-use inside one block
 is never upward-exposed. A write whose target is not live afterwards is
-`DeadStoreWarning`. Both are warnings, and both exclude parameters and
+`DeadStoreWarning`; when that write is a declaration's initializer the message
+names the initial value instead. A write to one element of an array does not
+kill the array, so it never makes an earlier store to the array dead. Both are warnings, and both exclude parameters and
 variables whose name begins with `_`.
 
 ### Unbreakable loops
@@ -911,6 +982,64 @@ An `operator<T> ...` declaration is a `FuncDefExprAST` with non-empty
   `AssignmentExprAST::codegen()` for the nested `[]=` shape is an unreachable
   backstop. A new write path that calls `codegenLValue()` on an index result
   must go through that check.
+
+### Size parameters
+
+`fn<T, N: size> fill(value: T): T[N]` is a template whose `N` is an array
+length, not a type. It is monomorphized like a type parameter, with a number
+where a type would be. Which array dimensions mention `N` and what value `N`
+takes is decided per pass:
+
+- *Parser.* `ParseFuncDef()` (`ParserDecl.cpp`) reads `N: size` into
+  `FuncDefExprAST::SizeParams`, a subset of `TypeParams` in declaration order
+  (`getTypeOnlyParams()` is the rest). Anything but `size` after the colon, and
+  a size parameter on a method or an operator, is [E150](/docs/errors/e150/) here. While the
+  function's signature and body are parsed, its names are in
+  `g_SizeParamsInScope`, so `TakeSizeParamDim()` (`ParserCore.cpp`) turns an
+  identifier inside `[ ]` that is one of them into a symbolic dimension, and
+  `WrapArrayDim()` builds the `ArrayType` from it. Any other name there is [E123](/docs/errors/e123/).
+- *Types.* A symbolic dimension is an `ArrayType` with
+  `Size == ArrayType::kSymbolicSize` (-2) and the name in `getSizeParam()`;
+  `hasSymbolicSize()` tells it from a real length. A fixed length is positive
+  and an unsized `T[]` is -1, so code that tests `getSize() > 0` or `< 0` never
+  sees a symbolic one as either. `TurfSizeValueType` carries a bound length (its
+  mangled name is `n<value>`). It is never the type of a value; it travels where
+  a type argument does, in a substitution map and in an instantiation's
+  `TypeArgs`.
+- *TypeWalk.* `unify()` binds `N` when it meets a symbolic dimension against an
+  array with a real length, and binds nothing against an unsized `T[]`.
+  `substitute()` replaces a symbolic dimension with the bound value, and
+  `collectParamOrder()` lists `N` after the element type's parameters.
+- *Resolver.* `validateGenericParamsInferable()` (`ResolverCore.cpp`) lets a size
+  parameter be inferred from the return type as well as the parameters, and
+  reports [E150](/docs/errors/e150/) for `N` spelled as a type or sharing a parameter's name, and [E129](/docs/errors/e129/)
+  for one no array uses. The function's scope declares each size parameter as an
+  immutable `int` (`VariableSymbol::IsSizeParam`), so the body's reads of `N`
+  resolve, and `visitVariable()` marks them (`VariableExprAST::IsSizeParamRef`).
+- *TypeChecker.* A template with a size parameter has its body skipped
+  (`visitFuncDef()`); each instantiation's clone is checked with real lengths, so
+  a body error is reported at the call that needs it, under the usual "In this
+  instantiation" notes. `visitFuncCall()` unifies the arguments first. A size
+  parameter still unbound is taken from the type the result goes into:
+  `visitWithExpectedType()` records the call being checked and the type
+  expected of it (`ExpectedCallSite_`, `ExpectedCallType_`), and `visitFuncCall()`
+  unifies the return type with it. The callers that supply an expected type are
+  `visitVarDecl()`, `visitArrayDecl()` for its initializer, assignment, a call
+  argument against a non-generic parameter, and `return`. Still unbound is [E129](/docs/errors/e129/).
+  The request's `TypeArgs` follow the declaration's `TypeParams` order for a
+  size-generic function, since the return type can bind one the parameters do not.
+  Writing to `N` (assignment, `++`/`--`, `&`) is [E150](/docs/errors/e150/), found when the clone is
+  checked, where the read carries its value (`rejectSizeParamPlace()`).
+- *Monomorphizer.* `substituteTypesInBody()` sets `VariableExprAST::SizeValue`
+  on each marked read and `ArrayDeclExprAST`'s size from its `SizeParam`, then
+  substitutes types as for any clone. The instantiation's name is mangled with
+  `n<value>`, so `fill` at 3 and at 4 are two functions.
+- *Codegen.* `VariableExprAST::codegen()` emits `SizeValue` as an `i64`
+  constant. Arrays have their real sizes by then, so nothing else changes.
+
+A size-generic function calling another with its own `N`
+(`reversed(reversed(a))`) works because the clone is checked at a real length:
+by the time the inner call is checked, its argument is an `int[3]`.
 
 ## 8. Running the front end from a tool: the query facade
 

@@ -618,7 +618,8 @@ It can appear:
 - as a statement in a function body, nested freely inside `if`, `while` and
   other blocks (nesting is harmless);
 - around a top-level declaration (`struct`, `fn`, `enum`, `machine`), as in the
-  `Node` example above;
+  `Node` example above. At the top level it holds only declarations: a
+  statement in it is [`E118`](/docs/errors/e118/), as anywhere outside a function;
 - as an expression, whose value is its last statement, like any block:
 
 <Code title="ffi_and_unsafe_4_unsafe.tr">
@@ -745,7 +746,10 @@ in a project. The details, including the errors for a bad name, are in
 
 Granting a dependency `[unsafe] allow` is a statement that you trust its
 author to get raw memory right: such a package is outside every guarantee in
-[Memory and safety](/docs/language/memory-and-safety/).
+[Memory and safety](/docs/language/memory-and-safety/). `turf audit` shows, per package,
+the `unsafe module;` files, `unsafe { }` blocks and `extern fn`s you would be
+trusting, and which packages are granted
+([Projects and packages](/docs/tooling/projects-and-packages/#seeing-what-you-grant-turf-audit)).
 
 ## 7. Converting between pointer types
 
