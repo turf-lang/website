@@ -3,9 +3,9 @@ major: 2
 number: 3
 title: Lint levels, deprecation and the 2.x compatibility contract
 description: Give every diagnostic code a level you can set, add a way to deprecate an API, and enforce the 2.x promise with a frozen test corpus and a code registry.
-status: accepted
+status: implemented
 date: 2026-10-15
-updated: 2026-10-25
+updated: 2026-10-28
 authors:
   - Turf Team
 ---

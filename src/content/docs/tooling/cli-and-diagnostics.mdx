@@ -835,7 +835,6 @@ A **retired** code is one whose mistake is now reported under another code; the 
 
 Every code, with its kind, the 2.x release that added it, the level it starts at and its category (the word in the diagnostic header). This table is generated from the compiler's registry (`src/diagnostics/ErrorCodes.h`) by `scripts/check/diagnostic_registry.py --write`, and CI fails if it and the registry disagree, so edit the registry and regenerate; never edit the table. `scripts/check/diagnostic_registry.py --json` prints the same data for a tool.
 
-
 173 codes, [E001](/docs/errors/e001/) to [E173](/docs/errors/e173/): 149 errors and 24 warnings ([E074](/docs/errors/e074/)–[E075](/docs/errors/e075/), [E094](/docs/errors/e094/), [E152](/docs/errors/e152/)–[E172](/docs/errors/e172/)). 6 are retired ([E006](/docs/errors/e006/), [E013](/docs/errors/e013/), [E015](/docs/errors/e015/), [E037](/docs/errors/e037/), [E055](/docs/errors/e055/), [E063](/docs/errors/e063/)).
 
 | Code | Kind | Since | Level | Category | Name |
@@ -1013,7 +1012,6 @@ Every code, with its kind, the 2.x release that added it, the level it starts at
 | [E171](/docs/errors/e171/) | warning | 2.0 | warn | memory error | PossibleDoubleFreeWarning |
 | [E172](/docs/errors/e172/) | warning | 2.2 | warn | declaration | DeprecatedUseWarning |
 | [E173](/docs/errors/e173/) | error | 2.2 | error | declaration | TestFunctionUseError |
-
 
 Eleven codes are flagged **important**: concepts the one-line message alone does not teach. They get the stronger footer, `Worth reading in full`: **[E010](/docs/errors/e010/)** (infinite recursion), **[E017](/docs/errors/e017/)** (double free), **[E018](/docs/errors/e018/)** (use after free), **[E035](/docs/errors/e035/)** and **[E036](/docs/errors/e036/)** (invalid state transitions), **[E069](/docs/errors/e069/)** (a struct that contains itself), **[E086](/docs/errors/e086/)** (a reference that would outlive its target), **[E088](/docs/errors/e088/)** (a private item used from another module), **[E089](/docs/errors/e089/)** (a private type in a public signature), **[E121](/docs/errors/e121/)** (an internal compiler error: report it with the program that triggers it), and **[E130](/docs/errors/e130/)** (raw pointer outside `unsafe`).
 

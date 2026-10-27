@@ -3,8 +3,9 @@ major: 2
 number: 5
 title: Type arguments at the use site
 description: Let a program name a generic type's or function's type arguments where it uses them, with `List<int>::default()` and `f::<int>(x)`.
-status: accepted
+status: implemented
 date: 2026-10-15
+updated: 2026-10-28
 authors:
   - Turf Team
 ---
