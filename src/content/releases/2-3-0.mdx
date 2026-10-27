@@ -1,0 +1,73 @@
+---
+tag: "v2.3.0"
+title: "Diagnostics you can trust"
+description: "The next release is about messages and checks you can rely on: every error and warning reworded to one guide, labelled spans, a snapshot test for every code, new warnings that find real mistakes, and the old spellings that 3.0 will retire, each with a checked fix."
+highlights:
+  - "Every error and warning reworded to one wording guide, with labelled spans that say why the compiler expected a type."
+  - "New warnings for unused code, recursion with no way out, raw-pointer method calls and memory that is never freed. Warnings only; none of them stops a build."
+  - "The spellings 3.0 will retire (`1.5.floor()`, `export immut`, `static` after the receiver) warn now, each with a `Fix:` that writes the new form."
+  - "`@test` options: skip, timeout, levels, stdout, tag and serial."
+  - "A larger, measured `--smart` benchmark, and the website's error pages generated from the compiler's own registry."
+---
+
+<Callout tone="note" title="Not released yet">
+This page is a preview. It describes what the 2.3.0 line is planned to carry, in the order the maintainers expect to build it. Nothing here has shipped. Items can move to a later release, and this page is rewritten with the real notes when 2.3.0 ships.
+</Callout>
+
+Version 2.2.0 gave every warning a code and a level you can set. Version 2.3.0 is where the compiler starts to use that: it gets more to say, and says it more clearly. Every new warning in this release arrives at a level you can turn down, and `lint-set = "2.2"` keeps a project's build exactly as it is.
+
+## Messages that explain
+
+This is [TDP-2-028](/tdp/2-028/), first half.
+
+- **A wording guide.** One page that says how a message is written: first person, one idea to a sentence, the types named instead of "value", no exclamation marks, and every hint something the reader can do. Headings print the code's registered name.
+- **Every message rewritten to it.** Every error and every warning, and every hint.
+- **A snapshot test for every code.** Changing a message becomes a visible change in a review, not an accident.
+- **Labelled spans.** "`s` is a `string` because of this", pointing at the line that made it one.
+- **More fixes.** The compiler writes the `Fix:` itself for a call with the wrong number of arguments and for a missing return type, when it is sure.
+
+## Warnings that find real mistakes
+
+This is [TDP-2-007](/tdp/2-007/). They are warnings only. Each one stays a warning for at least two minor releases before 3.0 can consider making it an error, and 2.3 to 2.11 gives them that time.
+
+- **Recursion with no way out:** mutual recursion where no path reaches a base case, and a recursive base case that can never be reached.
+- **Unused code:** a private function, an import, or a `pub` item in a binary root that nothing uses.
+- **Raw pointers:** a method call through a raw-pointer receiver outside `unsafe`, and more compile-time checks inside `unsafe` blocks.
+- **Loops and memory:** better detection of loops that cannot end, pointer nullability that follows a value across fields, arguments and returns, and manual-heap memory that is never freed.
+- **Precision:** an opt-in warning when an `int` becomes a `double` and loses digits.
+
+## Spellings that move, with a fix
+
+These warn now so that [3.0](/tdp/2-020/) can change them without surprising anyone. Each warning carries a checked `Fix:` that writes the new form, and none of them stops a program from compiling.
+
+- **A decimal literal as a receiver.** `1.5.floor()` warns, and the fix writes `(1.5).floor()` ([TDP-2-022](/tdp/2-022/)).
+- **`function`.** It is accepted as another spelling of `fn`, in the places where it cannot be mistaken for a name ([TDP-2-023](/tdp/2-023/)).
+- **`static` in front.** `static fn T.m()` is the spelling, and the old place warns ([TDP-2-024](/tdp/2-024/)).
+- **`pub immut`.** Module constants are written `pub immut`, and `export immut` warns ([TDP-2-025](/tdp/2-025/)).
+- **Generic constructions.** A generic struct that takes its type arguments from the context warns, with a fix that writes them where it is built: `List<int>::default()`.
+
+## Tests
+
+- **`@test` options.** `skip:`, `timeout:`, `levels:`, `stdout:`, `tag:` and `serial` ([TDP-2-026](/tdp/2-026/)).
+- **The compiler's own tests** that are shaped like a function move to `@test` expectations.
+
+## `--smart`
+
+This is the measured half of [TDP-2-008](/tdp/2-008/). Rule-engine coverage grows beyond the 18 codes 2.1.0 started with, and the benchmark behind `--smart` becomes something you can measure it by.
+
+- A benchmark of several hundred cases with a held-out split, scored with a confidence interval and a rules-only baseline.
+- A Fix Score built from facts the compiler can check instead of a yes or no.
+- A check on what a suggested fix does: the capabilities it adds, what it deletes, the API it changes and the warnings it causes.
+- Checks on the model itself: qualification, determinism, drift, resource limits and prompt injection.
+- Richer context in the prompt: struct declarations, the signatures being called, parameter types.
+
+## Tools and speed
+
+- **Error pages from the registry.** The website's error pages are generated from the code registry that ships in the release archive, so a page and a code cannot disagree.
+- **Versioned schemas.** Every machine-read format has a schema and fixtures: `--diagnostics=json`, `--version --json` and the package graph.
+- **Fewer run-time checks.** The compiler proves more overflow checks unnecessary, from ranges and values carried around a loop. Checked arithmetic stays the default; a check is removed only when it is proven.
+
+## For contributors
+
+- The compiler's global symbol table goes away, so the front end holds no state in globals.
+- Flow analysis moves out of code generation into a table of facts that code generation reads.
