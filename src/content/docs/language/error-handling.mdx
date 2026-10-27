@@ -594,9 +594,71 @@ The compiler warns about a function declared `!T` that never returns an error.
 | run | `expr recover run { ... }` | the success value | the block runs and must leave (see below), unless `T` is `void` | `T` |
 | as-run | `expr recover as err run { ... }` | the success value | the block runs with the error bound to `err` | `T` |
 
-`recover` can only follow a fallible expression ([E132](/docs/errors/e132/) otherwise), and must be followed by `produce`, `run` or `as` ([E110](/docs/errors/e110/)). It binds more loosely than any operator: the fallback of `f() recover produce 10 + 1` is `11`, and `1 + f() recover produce 0` is a type error because `1 + f()` is added before `recover` is reached, so parenthesize to combine a recovered value with something else (`1 + (f() recover produce 0)`). It works anywhere an expression does, including as a call argument:
+`recover` can only follow a fallible expression ([E132](/docs/errors/e132/) otherwise), and must be followed by `produce`, `run` or `as` ([E110](/docs/errors/e110/)). It binds more loosely than any operator: the fallback of `f() recover produce 10 + 1` is `11`, and `1 + f() recover produce 0` is a type error because `1 + f()` is added before `recover` is reached, so parenthesize to combine a recovered value with something else (`1 + (f() recover produce 0)`). That includes `=` and `+=`: `v = f() recover run { ... };` is `(v = f()) recover ...`, an assignment of a `!int` to an `int` ([E066](/docs/errors/e066/)). Write the right side in parentheses. A declaration's initializer needs none.
 
-<Program file="error_handling_recover_resolving_a.tr">
+<Diagnostic file="error_handling_e066_2.tr">
+```turf
+fn parse(s: string): !int {
+    return 1;
+}
+
+fn main(): int {
+    mut v: int = 0;
+    v = parse("7") recover run { return 1; };   // E066: (v = parse("7")) recover ...
+    return v;
+}
+```
+```text
+error_handling_e066_2.tr (1 error, 1 warning)
+
+── warning at line 1, col 1 [E169 · control flow]
+
+  Warning: 'parse' is declared to return a fallible type ('!T') but never actually returns an error.
+
+  Hint: If this function can never really fail, its return type doesn't need the '!' -- drop it and return T directly.
+
+  1 │ fn parse(s: string): !int {
+    │ ^~ Here!
+
+  Run `turf --explain E169` for more details.
+
+── error at line 7, col 7 [E066 · type mismatch]
+
+  Type mismatch!
+  Cannot assign value of type '!int' to variable of type 'int'.
+  Note: declared here (line 6, col 5)
+
+  Hint: Make both sides the same type: convert one with `to` (`x to int`), or change a declaration so the types agree.
+
+  7 │     v = parse("7") recover run { return 1; };   // E066: (v = parse("7")) recover ...
+    │       ^ Here!
+
+  Run `turf --explain E066` for more details.
+```
+</Diagnostic>
+
+<Code title="error_handling_recover_resolving_a.tr">
+```turf
+error ParseError { Bad }
+
+fn parse(s: string): !int {
+    if (s == "") {
+        return ParseError::Bad;
+    }
+    return 7;
+}
+
+fn main(): int {
+    mut v: int = parse("x") recover produce 0;          // an initializer: no parentheses
+    v = (parse("") recover run { return 1; });          // an assignment: parenthesize
+    return v;
+}
+```
+</Code>
+
+A `recover` works anywhere an expression does, including as a call argument:
+
+<Program file="error_handling_recover_resolving_a_2.tr">
 ```turf
 import test;
 
@@ -656,7 +718,7 @@ fn main(): int {
 
 The fallback is checked against `T` exactly: a `string` fallback for a `!int` call, or an `int` for a `!Point`, is [E066](/docs/errors/e066/), and so is an `int` for a `!double`, since the fallback is not widened (write `0.0`, or convert with `to double`). An integer literal for a `!int32` is an `int32`. `recover produce` on a `!void` call is [E066](/docs/errors/e066/) as well, since there is no value to produce.
 
-<Diagnostic file="error_handling_e066_2.tr">
+<Diagnostic file="error_handling_e066_3.tr">
 ```turf
 error MathError { DivisionByZero }
 
@@ -673,14 +735,14 @@ fn main(): int {
 }
 ```
 ```text
-error_handling_e066_2.tr (1 error)
+error_handling_e066_3.tr (1 error)
 
 ── error at line 11, col 33 [E066 · type mismatch]
 
   Type mismatch!
   'recover produce string' doesn't match this call's success type 'int'.
 
-  Hint: Check that both sides have compatible types.
+  Hint: Make both sides the same type: convert one with `to` (`x to int`), or change a declaration so the types agree.
 
   11 │     immut x: int = divide(1, 0) recover produce "none";
      │                                 ^~~~~~~ Here!
@@ -829,6 +891,8 @@ fn main(): int {
 7
 ```
 </Program>
+
+The flow checks follow these statements: a `recover` block is part of the enclosing function's control flow, and loops, `return`, `break` and `continue` inside it count. The block runs before the statement that holds it completes, so it sees only what was assigned before that statement. In `mut x: int; x = (g() recover run { print(x); return 1; });` the read of `x` in the block is [`E008`](/docs/errors/e008/).
 
 So a block recovering a call whose success type is `Point`, inside a function returning `int`, must `return` an `int`. Returning something else is [E064](/docs/errors/e064/):
 

@@ -1,59 +1,303 @@
 ---
 tag: "v2.2.0"
 title: "Contract and quick wins"
-description: "The next release builds the promises everything after it relies on: lint levels, deprecation, a compatibility test suite, machine-readable diagnostics, type arguments at the call site and tests in source files."
+description: "No breaking changes. Lint levels and @deprecated, machine-readable diagnostics, type arguments where you use a generic, @test functions next to the code they check, for over a string, math constants and wrapping arithmetic, and a list of bug fixes."
+date: 2026-10-28
 highlights:
-  - "Lint levels and `@deprecated`, so warnings and removals follow rules you can read."
-  - "A 2.0 compatibility test suite and a registry of every diagnostic code."
-  - "`--diagnostics=json`, the first machine-readable form of the compiler's output."
-  - "`List<int>::default()` and `f::<int>(...)`: say the type argument where you use it."
-  - "`@test` functions that live next to the code they test."
+  - "No breaking changes: every program that compiled with 2.1 compiles and behaves the same, checked against the whole 2.0 test suite."
+  - "Lint levels: allow, warn or deny any warning by its code, from the command line or `[lints]` in `turf.toml`, and `@deprecated` for your own functions."
+  - "`List<int>::default()`, `identity::<int>(x)` and `x.twice::<int>()`: write a type argument where you use the generic."
+  - "`@test` functions next to the code they check, with seven outcomes, run by `turf test`."
+  - "`for c in s` walks a string, and `math` gains `INT_MAX`, `DOUBLE_EPSILON`, `NAN`, `is_nan`, `TAU` and the `wrapping_*` family."
+  - "`--diagnostics=json`, `turfc --version --json` and `turf audit` for tools and reviewers."
+  - "Bug fixes, including a wrong value for some exported constants and two compiler crashes."
 ---
 
-<Callout tone="note" title="Not released yet">
-This page is a preview. It describes what the 2.2.0 line is planned to carry, in the order the maintainers are building it. Items can move to a later release, and this page is rewritten with the real notes when 2.2.0 ships.
-</Callout>
+Turf 2.2.0 changes nothing you have already written. Every program that compiled with 2.1 compiles and behaves the same. This is now checked rather than promised: on every change, the compiler's own checks run the whole 2.0 test suite, 1,472 programs, and compare the output of each program that runs with what 2.0.0 printed. Some programs that 2.1 rejected now compile, and three of 2.1's bugs are fixed.
 
-Version 2.2.0 is the release that makes later releases safe. Most of what it adds is a set of promises and the tools that keep them, so that the bigger features planned for 2.3 onward can land without breaking your programs.
+Two messages read differently. Every warning now shows its code in its header, as in `[E152 · declaration]`. A stack-overflow panic now says how deep the recursion went. Neither changes what a program prints to stdout or its exit status.
 
-## The compatibility contract
+## Language
 
-This is [TDP-2-003](/tdp/2-003/). It gives the 2.x promise something to stand on.
+### Type arguments where you use a generic
 
-- **Lint levels.** You choose, per project, whether a warning is allowed, shown or an error. A new warning in a later release cannot surprise you, because `lint-set` can freeze the set of warnings to those that existed in the version you name.
-- **`@deprecated`.** A library or the standard library can mark something as on its way out. Users see a warning that names the replacement, long before anything is removed.
-- **A prelude-shadow check.** A warning when your own name hides something the prelude already provides.
-- **A compatibility test suite.** The compiler's own tests will run a collection of 2.0 programs and check they still behave the same.
-- **A diagnostic-code registry.** One list of every error and warning code, so a code is never reused for something else.
+When the compiler cannot work out a generic's type from the call, you can now write it at the call instead of moving it onto a variable.
 
-## Diagnostics that tools can read
+```turf
+import io;
+import list::List;
 
-This is [TDP-2-004](/tdp/2-004/). Tools that read the compiler's output scrape its text today, and the text is not part of the compatibility promise.
+fn<T> identity(x: T): T {
+    return x;
+}
 
-- **`--diagnostics=json`** prints every diagnostic as structured data an editor or script can read without guessing.
-- **More hints.** Errors that have no hint yet get one.
-- **An interface manifest** that describes what the compiler offers to tools, and test programs from tools that use it run in the compiler's own checks.
+fn<T> twice(x: T): T {
+    return x + x;
+}
 
-## Say the type where you use it
+fn main(): int {
+    mut l = List<int>::default();
+    l.push(4);
+    printline(l.length());
+    printline(identity::<int>(7));
+    mut a: int = 21;
+    printline(a.twice());
+    printline(a.twice::<int>());
+    return 0;
+}
+```
 
-This is [TDP-2-005](/tdp/2-005/). Sometimes the compiler cannot work out a generic type from the call, and today you have to restructure the code. In 2.2.0 you can name it.
+```text
+1
+7
+42
+42
+```
 
-- `List<int>::default()` creates an empty list of a type you name.
-- `f::<int>(...)` calls a generic function with the type argument given.
-- Better hints when the compiler cannot infer a type.
+- `List<int>::default()` and `Box<int>::new(...)` build the instance you name. In 2.1, `List<int>::default()` was E110.
+- `identity::<int>(7)` calls a generic function with its type argument written out.
+- A generic function can now be called with the dot form (UFCS). `a.twice()` infers `T` from `a`, and `a.twice::<int>()` writes it. In 2.1 the first was E056 and the second a syntax error. A method declared on a struct still takes no written type arguments (E148).
+- The two errors that come before these forms now say what to write, with a checked `Fix:`. `identity<int>(3)` is E110 with a fix that inserts the `::`. `mut b = Box::new(42);` is E129 with a fix that writes `Box<int>::new(42)`.
 
-## Tests in source files
+### `for` over a string
 
-This is [TDP-2-006](/tdp/2-006/).
+`for c in s` walks a string one byte at a time, and `for (i, c) in s` gives each byte's index too. `c` is a `char`. In 2.1 this was E005.
 
-- **`@test` functions** sit in the same file as the code they test, and `turf test` finds them.
-- **A stack-overflow hint** that tells you how deep the recursion got.
-- **An unsafe-surface report** in `turf`, listing where a project uses `unsafe`.
+```turf
+import io;
 
-## Numbers
+fn main(): int {
+    for (i, c) in "xy" {
+        printline(i);
+        printline(c);
+    }
+    return 0;
+}
+```
 
-This is the first part of [TDP-2-002](/tdp/2-002/), checked arithmetic.
+```text
+0
+x
+1
+y
+```
 
-- **A baseline benchmark**, so later changes to arithmetic are measured against something.
-- **`math::wrapping_*`**, for the places where you want a number to wrap around on purpose.
-- **A measurement of trap blocks**, to see what the overflow checks cost.
+The string and its length are read once, before the loop starts. An index loop over `s[i]` measures the string again on every read.
+
+### Integer literals as receivers
+
+`1.twice()` calls `twice(1)`, for ordinary functions, generic ones and the prelude's. Unary minus applies after the call, so `-1.abs()` is `-(1.abs())`, which is `-1`. Write `(-1).abs()` for `1`. Put a decimal literal in parentheses: `(1.5).floor()`.
+
+### Negative exported constants
+
+An exported constant's number may start with one `-`, as in `export immut BELOW: int = -42;`. In 2.1 this was E022.
+
+### `@deprecated`
+
+`@deprecated("message")` on a `fn` or `extern fn` marks it as on its way out. Every call to it is warning [E172](/docs/errors/e172/), with your message. The program still compiles.
+
+```turf
+import io;
+
+@deprecated("use add_all instead")
+fn sum(a: int, b: int): int {
+    return a + b;
+}
+
+fn main(): int {
+    printline(sum(1, 2));
+    return 0;
+}
+```
+
+```text
+── warning at line 9, col 18 [E172 · declaration]
+
+  Warning: 'sum' is deprecated: use add_all instead
+```
+
+## Tests next to the code they check
+
+A function marked `@test` is a test in the same file as the code it checks. `turf test` runs each one in a process of its own. A normal build checks a test and then leaves it out, so the program is the same with or without its tests. A package whose tests are all in `src/` needs no `tests/` directory.
+
+The annotation says what passing means:
+
+| Annotation | The test passes when |
+|---|---|
+| `@test` | it runs and returns (a `!void` test: with no error) |
+| `@test(compile_error, E041, "text")` | every error inside it is E041, and one mentions `text`; add `fix: "..."` to check the `Fix:` too |
+| `@test(warning, E172, "text")` | it compiles with that warning, then runs and returns |
+| `@test(no_warnings)` | it compiles with no warning, then runs and returns |
+| `@test(panic, "text")` | it panics, and the panic mentions `text` |
+| `@test(exit, 3)` | it ends through `sys::exit(3)` |
+| `@test(error, FsError::RemoveFileFailed)` | its `!void` body returns that error |
+
+```turf
+import io;
+import test;
+
+fn add(a: int, b: int): int {
+    return a + b;
+}
+
+fn main(): int {
+    printline(add(2, 3));
+    return 0;
+}
+
+@test
+fn adds(): void {
+    test::assert(add(2, 3) == 5, "2 + 3");
+}
+
+@test(compile_error, E041, "nope")
+fn calls_nothing(): void {
+    nope();
+}
+```
+
+```text
+[src] main.tr: adds ... PASS
+[src] main.tr: calls_nothing ... PASS (Rejected properly)
+```
+
+An error inside a `compile_error` test belongs to the test, so the rest of the file still compiles and runs. A `warning` test owns its warning the same way: no lint level applies to it, so a project that denies `E172` still builds, and the test still sees the warning. Nothing else may call a test or use it as a value: that is the new error [E173](/docs/errors/e173/). A malformed `@test` is [E146](/docs/errors/e146/), with a hint that lists the outcomes. The outcome words are not keywords, so a program's own names are unaffected. The [testing guide](/docs/guides/testing/) has the details.
+
+## Warnings you control
+
+### Lint levels
+
+Every warning now has a code. The twenty warnings that had none are E152 to E171, each with its own page. Any warning can be set to `allow`, `warn` or `deny`. A denied warning is an error, so it stops the build and fails `turf check`.
+
+```toml
+[lints]
+E152 = "allow"
+E172 = "deny"
+```
+
+The same works on the command line, and a flag there wins over the table:
+
+- `--allow <code>`, `--warn <code>` and `--deny <code>`.
+- `--lint-set 2.N` starts every warning added after release 2.N at `allow`, so a newer compiler's new warnings cannot fail your build. In `turf.toml` this is `lint-set = "2.N"` in `[lints]`.
+
+An error's code cannot be allowed, an unknown code is a usage error, and a warning inside the standard library is never denied. The [lint levels reference](/docs/tooling/cli-and-diagnostics/#lint-levels) has the rules.
+
+### Every error has a hint
+
+Every error the compiler's own tests produce now ends with a `Hint:` that names the thing at hand, rather than general advice. The check runs on every change, so a new error cannot land without one.
+
+## Standard library
+
+### `math` constants and limits
+
+- Limits: `INT_MAX`, `INT_MIN`, `INT32_MAX`, `INT32_MIN`, `DOUBLE_MAX`, `DOUBLE_MIN`, `DOUBLE_MIN_POSITIVE` and `DOUBLE_EPSILON`. `DOUBLE_MIN` is the most negative double, so `MIN` means the same thing for every type. C's `DBL_MIN` is `DOUBLE_MIN_POSITIVE`.
+- Constants beside `PI` and `E`: `TAU`, `PHI`, `SQRT2`, `SQRT1_2`, `LN2`, `LN10`, `LOG2E` and `LOG10E`.
+- `INFINITY`, `NEG_INFINITY` and `NAN`, with `is_nan`, `is_infinite` and `is_finite`. A NaN equals nothing, itself included, so `x == math::NAN` is always `false`. Use `math::is_nan(x)`.
+
+```turf
+import io;
+
+fn main(): int {
+    printline(math::INT_MAX);
+    printline(math::is_nan(math::sqrt(-1.0)));
+    printline(math::NAN == math::NAN);
+    printline(math::is_infinite(math::log(0.0)));
+    return 0;
+}
+```
+
+```text
+9223372036854775807
+true
+false
+true
+```
+
+All of them are written with `math::`, so no name in your program changes meaning.
+
+### Wrapping arithmetic
+
+`int` arithmetic panics on overflow. The new `math::wrapping_*` functions wrap around instead, for hashes, checksums and random-number generators that want it: `wrapping_add`, `wrapping_sub`, `wrapping_mul`, `wrapping_shl`, `wrapping_shr`, `wrapping_neg`, `wrapping_abs`, `wrapping_div`, `wrapping_rem` and `wrapping_pow`.
+
+```turf
+import io;
+
+fn main(): int {
+    printline(math::wrapping_add(math::INT_MAX, 1));
+    printline(math::wrapping_mul(math::INT_MAX, 2));
+    mut big: int = math::INT_MAX;
+    printline(big.wrapping_add(1));
+    return 0;
+}
+```
+
+```text
+-9223372036854775808
+-2
+-9223372036854775808
+```
+
+`wrapping_add`, `wrapping_sub` and `wrapping_mul` compile to a single instruction, at every `-O` level. Division by zero and a negative exponent still panic, at the line that called the function.
+
+## Performance
+
+At `-O2` and `-O3` the compiler runs LLVM's SLP vectorizer, as clang does, so straight-line code over neighbouring fields can become vector instructions. A particle-update loop written with `math::wrapping_add` takes 18.1 ms instead of 24.1 ms, against 17.9 ms for the same program in C with `clang -O3`. `-O1` and `-Os` leave it off, as clang does.
+
+## Tools
+
+### Diagnostics as JSON
+
+`--diagnostics=json` prints each diagnostic as one line of JSON on stderr: its code, severity, category, message, hint, source span, related locations, and the checked fix as edits. The format is versioned (schema 1.0), and its schema is described in the [reference](/docs/tooling/cli-and-diagnostics/). The `@deprecated` example above prints:
+
+```json
+{"category":"declaration","code":"E172","denied":false,"file":"main.tr","fix":null,"hint":null,"message":"'sum' is deprecated: use add_all instead","related":[],"severity":"warning","span":{"end":{"column":19,"line":9},"start":{"column":18,"line":9}},"title":null,"version":"1.0"}
+```
+
+### What the compiler offers
+
+`turfc --version --json` prints one JSON object: the driver interface version, the version of each output format, and a list of the features this build has. Tools read it instead of the text of `--version`. The driver interface is now 1.12.
+
+### Unsafe code in a project
+
+`turf audit` shows, for each package of a project and for the standard library, how many files it has, how many declare `unsafe module;`, its `unsafe { }` blocks, its `extern fn` declarations, the C libraries they name, and whether the project grants it `unsafe`:
+
+```text
+package  granted  files  unsafe module  unsafe { }  extern fn  C libraries
+app      own          1              0           0          0  -
+std      always      25             12           0         75  m
+```
+
+Keywords inside comments and strings are not counted, and a project whose code does not compile can still be audited. `turf graph --unsafe` adds the same counts to the package graph's JSON, and `turfc --unsafe-report` prints them for a list of files or a package graph.
+
+### How deep a stack overflow went
+
+A stack-overflow panic says roughly how many calls were on the stack:
+
+```text
+panic: stack overflow: the call stack exceeded its limit at about 522664 nested calls -- check for unbounded or missing-base-case recursion
+```
+
+So a recursion that lost its base case now looks different from one that is legitimately deep and needs a loop. The depth is shown on Linux and macOS (x86-64 and arm64) and on Windows x64. Elsewhere the message is the one 2.1 printed.
+
+## Bug fixes
+
+- `export immut X: double = 3;` compiled, but every use of `X` read `0`. It now reads `3`.
+- `b.label()` with `b: Box<string>` and `fn label(b: Box<string>)` was E054, "no such method": an instance of a generic struct did not reach its UFCS functions. It now calls `label(b)`.
+- A stray statement at the top level, such as `immut K: int = 3;` outside any function, was not reported when the file also used `K`: only the E040 for `K` printed. Both errors are now reported.
+- `fn<Holder> Holder.count()`, a method declared on its own type parameter, was an internal compiler error. It is now [E131](/docs/errors/e131/): the receiver names the type parameter, not a struct.
+- In an editor, a lexer error right after a `;` at the top level of a file, such as `;` followed by `.0.5`, stopped the language server. It is now an ordinary diagnostic.
+- E005's message says what can be iterated: "an array or a string".
+
+## Documentation
+
+- New error pages: [E152](/docs/errors/e152/) to [E173](/docs/errors/e173/).
+- [E131](/docs/errors/e131/) covers a method declared on its own type parameter, and [E110](/docs/errors/e110/), [E129](/docs/errors/e129/) and [E146](/docs/errors/e146/) cover the new type-argument and `@test` forms.
+- The [testing guide](/docs/guides/testing/) covers `@test` functions and their outcomes. The reference covers lint levels, the `[lints]` table, `--diagnostics=json`, `turfc --version --json` and `turf audit`.
+
+## For contributors
+
+- `tests/compat/2.0/` holds the 2.0.0 test suite and what 2.0.0 printed. A change that rejects any program in it, or changes its output, fails the compiler's checks. The few programs 2.0 rejected that later releases accept are listed with their reasons in `RELAXED.txt`.
+- The diagnostic-code registry generates the code table in the reference. A check fails when a code has no page, a page has no code, or the two disagree.
+- `scripts/check/prelude_shadow_check.sh` lists every program that declares a given name. Run it before adding a name to `io`, `math` or `sys`, whose functions programs call without a module name.
+- The lexer and parser keep their state in `LexerState` and `ParserState` objects instead of globals, a first step towards analysing several files at once.
+- The compiler's CI runs the test fixtures of `turf`, the language server and the fuzzer against every compiler change.

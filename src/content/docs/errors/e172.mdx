@@ -1,0 +1,40 @@
+---
+title: "E172: You're calling a deprecated item"
+description: "What compiler error E172 means, and how to fix it."
+order: 172
+---
+
+{/* Text from the turf-lang repository: docs/errors/codes/E172.txt. */}
+
+A function (or `extern fn`) marked `@deprecated("...")` warns at every call to it, showing the message its declaration wrote:
+
+<Code title="Example">
+```turf
+@deprecated("use new_sort() instead")
+fn old_sort(l: List<int>): List<int> {
+    return l;
+}
+
+fn main(): int {
+    old_sort(List::default());   // WARNING: 'old_sort' is deprecated: use new_sort() instead
+    return 0;
+}
+```
+</Code>
+
+The message names what to use instead, so the fix is usually to call that instead:
+
+<Code title="Example">
+```turf
+fn main(): int {
+    new_sort(List::default());
+    return 0;
+}
+```
+</Code>
+
+The item itself still works exactly as before -- this is advance notice, not a removal. Turf never removes a deprecated item on its own; that only happens across a major version (`docs/planning/ROADMAP_v3.0.0.md`).
+
+This is a warning, not an error -- compilation still succeeds. To silence it for a whole build, set its lint level to allow: `turf build --allow E172` (or `[lints] E172 = "allow"` in turf.toml).
+
+Run `turf --explain E172` in a terminal to read this again.
