@@ -3,8 +3,9 @@ major: 2
 number: 21
 title: Iterating over a string
 description: Let `for c in s` run over the bytes of a `string`, each as a `char`, panicking where `s[i]` would.
-status: accepted
+status: implemented
 date: 2026-10-25
+updated: 2026-10-28
 authors:
   - Turf Team
 ---
