@@ -70,7 +70,7 @@ export async function getReleaseEntries(): Promise<ReleaseEntries> {
             summary: entry.data.description,
             date: existing?.date ?? entry.data.date ?? new Date(0),
             prerelease: existing?.prerelease ?? false,
-            released: existing ? true : !github.ok,
+            released: existing ? true : !github.ok && entry.data.date !== undefined,
             href: releaseHref(entry.data.tag),
             github: existing?.github,
             notes: entry,
