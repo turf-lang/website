@@ -7,9 +7,10 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/convert-errors.mjs --check && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "errors": "node scripts/convert-errors.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-satteri": "^0.4.3",
