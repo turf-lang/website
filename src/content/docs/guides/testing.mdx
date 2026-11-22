@@ -285,15 +285,14 @@ fn main(): int {
 ```text
 testing_e124.tr (1 error)
 
-── error at line 11, col 20 [E124 · type mismatch]
+── error at line 11, col 20 [E124 · values can't be compared]
 
-  Values can't be compared!
-  Cannot compare struct values with '=='.
+  I cannot compare two `Point` structs with `==`: a struct has no built-in comparison.
 
-  Hint: Structs have no built-in comparison: compare the fields you care about (e.g. `a.x == b.x`), or declare `operator ==` for the type.
+  Hint: Compare the fields you care about, e.g. `a.x == b.x`, or declare `operator ==` for the type.
 
   11 │     test::assert(a == b, "same point");
-     │                    ^~ Here!
+     │                    ^~ these values cannot be compared
 
   Run `turf --explain E124` for more details.
 ```
@@ -520,15 +519,14 @@ fn main(): int {
 ```text
 testing_e001.tr (1 error)
 
-── error at line 5, col 23 [E001 · array error]
+── error at line 5, col 23 [E001 · array bounds]
 
-  Array index out of bounds!
-  You tried to access 'readings[3]', but 'readings' only has 3 elements (indices 0 to 2, or -1 to -3 counting from the end).
+  I cannot use `readings[3]`, because `readings` has only 3 elements.
 
-  Hint: Array indices start at 0 and go up to size - 1; a negative index counts back from the end (-1 is the last element).
+  Hint: Use an index from 0 to 2, or `-1` to `-3` to count from the end.
 
   5 │     printline(readings[i]);
-    │                       ^ Here!
+    │                       ^ this index is outside the array
 
   Run `turf --explain E001` for more details.
 ```
@@ -571,9 +569,9 @@ first line, the same file fails:
 EXPECT-DIAG missed: no [E066] in the compiler output
 fail_typo.tr (1 error)
 
-── error at line 5, col 44 [E026 · general]
+── error at line 5, col 44 [E026 · module method not found]
 
-  Oops! Module 'temperature' has no function named 'to_kelvn'.
+  I cannot find a function named `to_kelvn` in the module `temperature`.
   ...
 ```
 </Terminal>
@@ -597,8 +595,7 @@ mixed_up.tr (1 error)
 
 ── error at line 4, col 5 [E066 · type mismatch]
 
-  Type mismatch!
-  Cannot initialise 'double' variable 'k' with value of type '!double'.
+  I cannot store a `!double` in `k`, which is a `double`.
   ...
   Run `turf --explain E066` for more details.
 ```
@@ -759,9 +756,9 @@ shows the warning:
 EXPECT-NO-DIAG violated: the compiler output contains 'warning'
 ~/code/temperature/src/temperature.tr (1 warning)
 
-── warning at line 4, col 5 [E163 · control flow]
+── warning at line 4, col 5 [E163 · unused variable]
 
-  Warning: Variable 'spare' is declared but never used.
+  Variable `spare` is declared but never used.
   ...
 ```
 </Terminal>
@@ -825,7 +822,7 @@ which replaces a `fail_*` file when the mistake sits inside one function:
 
 <Code title="testing_tests_beside_the_2.tr">
 ```turf
-@test(compile_error, E041, "Unknown function")
+@test(compile_error, E041, "function named")
 fn an_undeclared_function_is_rejected(): void {
     undeclared(1);
 }
@@ -847,7 +844,7 @@ other code share into an ordinary function. The outcomes and rules are in the
 After the outcome, `name: value` options say how the test is run. Each comes
 at most once, in any order, and every value is a literal:
 
-<Code title="tests/temperature_options.tr">
+<Code title="testing_options_how_a.tr">
 ```turf
 @test(skip: "waits for the new rounding rules")
 fn rounds_to_tenths(): void {
@@ -925,9 +922,9 @@ Two things go wrong:
   --- tests/helpers.tr (Compile Error, exit 1):
   helpers.tr (1 error)
 
-  ── error [E119 · declaration]
+  ── error [E119 · no main function]
 
-    No entry point found. Please define 'fn main(): int' in your file.
+    I found no entry point. Define `fn main(): int` in your file.
   ```
   </Terminal>
 
@@ -1028,8 +1025,7 @@ $ echo $?
 </Terminal>
 
 A test that imports `temperature` has no access to `src/` when run that way, even
-from the project root, and fails with `Could not find module 'temperature'`
-([E027](/docs/errors/e027/)). The message says why: a project's modules are visible only to commands
+from the project root, and fails with error [E027](/docs/errors/e027/). The message says why: a project's modules are visible only to commands
 that build with the package graph, such as `turf test`, `turf build` and
 `turf run` with no file. For a single test of a project, exclude the others.
 

@@ -164,14 +164,14 @@ fn main(): int {
 ```text
 oops.tr (1 error)
 
-── error at line 3, col 27 [E040 · undeclared variable]
+── error at line 3, col 27 [E040 · unknown name]
 
-  I can't find anything named 'nmae'.
+  I cannot find anything named `nmae`.
 
-  Hint: It may be from the current file: 'name'
+  Hint: Use a name from this file: `name`
 
   3 │     printline("Hello, " + nmae + "!");
-    │                           ^~~~ Here!
+    │                           ^~~~ nothing of this name is in scope
 
   Fix: replace 'nmae' with 'name'
   3 │     printline("Hello, " + name + "!");
@@ -188,7 +188,7 @@ That's a lot of text, but every part has a job. From top to bottom:
     `oops.tr (1 error)`: the file and the number of errors in it.
   </Step>
   <Step title="Where, and what kind">
-    `line 3, col 27` is the spot: line 3, 27 characters along. `E040` is the error's **code**, and `undeclared variable` is the kind of error.
+    `line 3, col 27` is the spot: line 3, 27 characters along. `E040` is the error's **code**, and `unknown name` is its name, a short phrase for the kind of error.
   </Step>
   <Step title="The message">
     What's wrong, in plain words: there is nothing called `nmae`.
@@ -197,7 +197,7 @@ That's a lot of text, but every part has a job. From top to bottom:
     A suggestion for fixing it. Here the compiler noticed that `name` looks very similar, so you probably meant that.
   </Step>
   <Step title="The picture">
-    Your line of code, with `^~~~ Here!` underlining the exact problem.
+    Your line of code, with `^~~~` underlining the exact problem and a short label that says what is wrong with it.
   </Step>
   <Step title="The fix">
     `Fix:` shows the corrected line, with `~~~~` under the part that changed. The compiler prints it only when it knows the one edit that removes this error. It has already made the edit in its own copy of your program and checked that the error is gone and no new one appears, so you can make the same edit. Not every error has a `Fix:`.
@@ -244,12 +244,13 @@ fn main(): int {
 ```text
 semi.tr (1 error)
 
-── error at line 3, col 5 [E102 · syntax error]
+── error at line 3, col 5 [E102 · missing semicolon]
 
-  Expected ';' after statement.
+  I expected a `;` after this statement.
+  Hint: End the statement with `;` right after its last token, as in `x = x + 1;` or `return 0;`.
 
   3 │     return 0;
-    │     ^~~~~~ Here!
+    │     ^~~~~~ a `;` is missing here
 
   Fix: insert ';' at the end of line 2
   2 │     printline("Hello, world!");

@@ -75,9 +75,9 @@ beta
 </Program>
 
 The size is checked against the literal. Too few or too many elements is
-[`E003`](/docs/errors/e003/) ("Array size mismatch!"), an element of the wrong type is [`E004`](/docs/errors/e004/)
-("Array element type mismatch!"), and an array of one size cannot be assigned to
-a variable of another ([`E066`](/docs/errors/e066/), "Type mismatch!"):
+[`E003`](/docs/errors/e003/) (array size mismatch), an element of the wrong type is [`E004`](/docs/errors/e004/) (array
+element type mismatch), and an array of one size cannot be assigned to a
+variable of another ([`E066`](/docs/errors/e066/), type mismatch):
 
 <Diagnostic file="arrays_e003.tr">
 ```turf
@@ -89,15 +89,14 @@ fn main(): int {
 ```text
 arrays_e003.tr (1 error)
 
-── error at line 2, col 9 [E003 · array error]
+── error at line 2, col 9 [E003 · array size mismatch]
 
-  Array size mismatch!
-  Array declared with size 3 but initialized with 2 elements.
+  `a` is declared with 3 elements, and its initializer has 2.
 
-  Hint: Change the declared size to match the initializer list, or add/remove elements so the counts agree.
+  Hint: Change the declared size to 2, or add or remove elements so the counts agree.
 
   2 │     mut a: int[3] = [1, 2];
-    │         ^ Here!
+    │         ^ this array has the wrong number of elements
 
   Run `turf --explain E003` for more details.
 ```
@@ -113,15 +112,14 @@ fn main(): int {
 ```text
 arrays_e004.tr (1 error)
 
-── error at line 2, col 9 [E004 · array error]
+── error at line 2, col 9 [E004 · array element type mismatch]
 
-  Array element type mismatch!
-  Cannot initialize an array of 'int' with a value of type 'string'.
+  I cannot put a `string` in an array of `int`.
 
-  Hint: Every value in the list must be the array's element type.
+  Hint: Give every element the array's element type, converting one with `to` where they differ.
 
   2 │     mut a: int[3] = [1, 2, "three"];
-    │         ^ Here!
+    │         ^ this element has the wrong type
 
   Run `turf --explain E004` for more details.
 ```
@@ -139,16 +137,17 @@ fn main(): int {
 ```text
 arrays_e066.tr (1 error)
 
-── error at line 4, col 7 [E066 · type mismatch]
+── error at line 4, col 9 [E066 · type mismatch]
 
-  Type mismatch!
-  Cannot assign value of type 'int[4]' to variable of type 'int[3]'.
-  Note: declared here (line 2, col 9)
+  I cannot assign an `int[4]` to `a`, which is an `int[3]`.
 
-  Hint: Check that both sides have compatible types.
+  Hint: Make both sides the same type: convert one with `to` (`x to int`), or change a declaration so the types agree.
 
+  2 │     mut a: int[3] = [1, 2, 3];
+    │         - declared here
+  3 │     mut b: int[4] = [1, 2, 3, 4];
   4 │     a = b;
-    │       ^ Here!
+    │         ^ this is an `int[4]`
 
   Run `turf --explain E066` for more details.
 ```
@@ -329,8 +328,8 @@ index is wrong and otherwise at run time. See also
 
 ### Caught at compile time
 
-A constant index out of range does not compile ([`E001`](/docs/errors/e001/), "Array index out of
-bounds!"). The compiler follows constants through locals, so an index held in a
+A constant index out of range does not compile ([`E001`](/docs/errors/e001/), "I cannot use `arr[3]`, because `arr` has
+only 3 elements"). The compiler follows constants through locals, so an index held in a
 variable whose value is known is caught too, and so is one declared in a nested
 block. This also holds for a sized `T[N]` parameter, and for each dimension of a
 multidimensional array.
@@ -339,22 +338,20 @@ multidimensional array.
 ```turf
 fn main(): int {
     mut arr: int[3] = [1, 2, 3];
-    return arr[3];       // E001: 'arr' has 3 elements (indices 0 to 2, or -1 to -3)
+    return arr[3];       // E001: I cannot use `arr[3]`, because `arr` has only 3 elements
 }
 ```
 ```text
 arrays_e001.tr (1 error)
 
-── error at line 3, col 15 [E001 · array error]
+── error at line 3, col 15 [E001 · array bounds]
 
-  Array index out of bounds!
-  You tried to access 'arr[3]', but 'arr' only has 3 elements (indices 0 to 2, or -1 to -3 counting from the end).
-  Note: array declared here (line 2, col 9)
+  I cannot use `arr[3]`, because `arr` has only 3 elements.
 
-  Hint: Array indices start at 0 and go up to size - 1; a negative index counts back from the end (-1 is the last element).
+  Hint: Use an index from 0 to 2, or `-1` to `-3` to count from the end.
 
-  3 │     return arr[3];       // E001: 'arr' has 3 elements (indices 0 to 2, or -1 to -3)
-    │               ^ Here!
+  3 │     return arr[3];       // E001: I cannot use `arr[3]`, because `arr` has only 3 elements
+    │               ^ this index is outside the array
 
   Run `turf --explain E001` for more details.
 ```
@@ -371,15 +368,14 @@ fn main(): int {
 ```text
 arrays_e001_2.tr (1 error)
 
-── error at line 4, col 15 [E001 · array error]
+── error at line 4, col 15 [E001 · array bounds]
 
-  Array index out of bounds!
-  You tried to access 'arr[5]', but 'arr' only has 3 elements (indices 0 to 2, or -1 to -3 counting from the end).
+  I cannot use `arr[5]`, because `arr` has only 3 elements.
 
-  Hint: Array indices start at 0 and go up to size - 1; a negative index counts back from the end (-1 is the last element).
+  Hint: Use an index from 0 to 2, or `-1` to `-3` to count from the end.
 
   4 │     return arr[i];       // E001
-    │               ^ Here!
+    │               ^ this index is outside the array
 
   Run `turf --explain E001` for more details.
 ```
@@ -624,17 +620,19 @@ fn main(): int {
 ```text
 arrays_e141.tr (1 error)
 
-── error at line 7, col 9 [E141 · array error]
+── error at line 7, col 9 [E141 · immutable array passed to a function that changes it]
 
-  Immutable array changed!
-  'a' is immutable, but 'fill' writes to the array it is given as 'arr'.
-  Note: declared immutable here (line 6, col 11)
-  Note: 'fill' changes its parameter 'arr' (line 1, col 4)
+  `a` is immutable, and `fill` writes to the array it takes as `arr`. As an `int[]` parameter, it shares the caller's array, so the change would land in `a`.
 
-  Hint: An unsized parameter ('int[]') shares the caller's array instead of copying it, so the change would land in 'a'. Declare 'a' with 'mut', or copy it into a 'mut' array first and pass the copy.
+  Hint: Declare `a` with `mut`, or copy it into a `mut` array and pass the copy.
 
+  1 │ fn fill(arr: int[]): void {
+    │    - `fill` changes its parameter `arr`
+    ┊
+  6 │     immut a: int[2] = [1, 2];
+    │           - declared immutable here
   7 │     fill(a);
-    │         ^ Here!
+    │         ^ this array is immutable
 
   Run `turf --explain E141` for more details.
 ```
@@ -667,15 +665,14 @@ fn main(): int {
 ```text
 arrays_e140.tr (1 error)
 
-── error at line 1, col 1 [E140 · array error]
+── error at line 1, col 1 [E140 · unsized array where a size is needed]
 
-  Unsized array here!
-  The return type of 'make' can't use the unsized array type 'int[]'.
+  The return type of `make` cannot use the unsized array type `int[]`.
 
-  Hint: A function can't return an unsized array: the caller would get a slice of storage that no longer exists. Return a sized array (e.g. 'int[5]') or a List<T> instead.
+  Hint: Return a sized array, e.g. `int[5]`, or a `List<T>` instead: a returned slice would view storage that no longer exists.
 
   1 │ fn make(): int[] {
-    │ ^~ Here!
+    │ ^~ this array needs a size
 
   Run `turf --explain E140` for more details.
 ```
@@ -747,7 +744,7 @@ bound, and the result must satisfy `0 <= start <= end <= length`. `nums[5..]` on
 five elements and `nums[i..i]` are valid, **empty** slices; `nums[4..2]` is an
 error, not an empty slice.
 
-A range that is provably wrong is [`E143`](/docs/errors/e143/) ("Slice range out of bounds!") at
+A range that is provably wrong is [`E143`](/docs/errors/e143/) ("The slice `[2..5]` of `int[3]` is out of range") at
 compile time: constant bounds on a `T[N]`, or for a `T[]` a constant start after
 a constant end of the same sign. Any other bad range panics at run time with
 `Slice range out of bounds for 'nums'` and the program aborts. Bounds must be
@@ -764,15 +761,14 @@ fn main(): int {
 ```text
 arrays_e143.tr (1 error)
 
-── error at line 3, col 16 [E143 · array error]
+── error at line 3, col 16 [E143 · slice range out of bounds]
 
-  Slice out of range!
-  The slice [2..5] of 'int[3]' is out of range: the end is outside 0..3.
+  The slice `[2..5]` of `int[3]` is out of range: the end is outside 0..3.
 
-  Hint: A slice [start..end] needs 0 <= start <= end <= length; the end is exclusive, so arr[0..length] is the whole array and arr[i..i] is empty. A negative bound counts from the end (arr[-2..] is the last two elements).
+  Hint: Use bounds with 0 <= start <= end <= length: the end is exclusive, so `arr[0..length]` is the whole array, and a negative bound counts from the end (`arr[-2..]` is the last 2 elements).
 
   3 │     immut v = a[2..5];
-    │                ^ Here!
+    │                ^ this range is outside the array
 
   Run `turf --explain E143` for more details.
 ```
@@ -821,16 +817,16 @@ fn main(): int {
 ```text
 arrays_e144.tr (1 error)
 
-── error at line 3, col 9 [E144 · array error]
+── error at line 3, col 9 [E144 · mutable view of an immutable array]
 
-  Mutable view of an immutable array!
-  'v' is a 'mut' view of 'a', which is immutable.
-  Note: declared immutable here (line 2, col 11)
+  `v` is a `mut` view of `a`, which is immutable. A slice shares its array, so writing through `v` would change `a`.
 
-  Hint: A slice shares the array it looks at, so writing through 'v' would change 'a'. Declare 'v' with 'immut' if you only read it, or make 'a' 'mut'.
+  Hint: Declare `v` with `immut` if you only read it, or make `a` `mut`.
 
+  2 │     immut a: int[3] = [1, 2, 3];
+    │           - declared immutable here
   3 │     mut v: int[] = a[1..];
-    │         ^ Here!
+    │         ^ this array is immutable
 
   Run `turf --explain E144` for more details.
 ```
@@ -956,7 +952,7 @@ fn main(): int {
 The loop variable is a copy of the element: assigning to it, or to a field of a
 struct element, does not change the array. Write through the index instead
 (`a[i] = ...`). A `List<T>`, a map, a struct or a scalar cannot be iterated with
-for-each ([`E005`](/docs/errors/e005/), "for-each requires an array or a string!"); iterate a list by index with a
+for-each ([`E005`](/docs/errors/e005/), "I cannot use for-each on the type `list::List<int>`, which is not an array or a string"); iterate a list by index with a
 range `for` and `l[i]`.
 
 ## Arrays of references: `(&T)[N]`
@@ -1069,14 +1065,14 @@ fn main(): int {
 ```text
 arrays_e086.tr (1 error)
 
-── error at line 6, col 5 [E086 · memory error]
+── error at line 6, col 5 [E086 · dangling reference escape]
 
-  A reference into this function's own local storage can't be returned -- it would dangle the moment this function returns.
+  I cannot let a reference into this function's own local storage be returned, because it would dangle when this function returns.
 
-  Hint: heap(value) copies it onto the GC heap first and gives you back a reference that outlives this function; or return/store a reference you received as a parameter instead of a local's.
+  Hint: Copy it onto the GC heap first with `heap(value)`, which gives a reference that outlives this function, or return or store a reference you received as a parameter instead of a local's.
 
   6 │     return &a[0];            // E086: points into this frame
-    │     ^~~~~~ Here!
+    │     ^~~~~~ this reference outlives what it points at
 
   Worth reading in full -- run `turf --explain E086` before you patch this one.
 ```

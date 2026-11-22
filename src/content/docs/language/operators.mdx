@@ -200,16 +200,14 @@ fn main(): int {
 ```text
 operators_e076.tr (1 error)
 
-── error at line 2, col 5 [E076 · arithmetic]
+── error at line 2, col 5 [E076 · integer literal out of range]
 
-  Integer literal is not representable in type 'int'.
-  The literal's value is 9223372036854775808.
-  'int' holds -9223372036854775808 .. 9223372036854775807.
+  The literal 9223372036854775808 does not fit in an `int`, which holds -9223372036854775808 .. 9223372036854775807.
 
-  Hint: 'int' is TurfLang's only general-purpose integer type; there is no wider one. If you need arbitrary precision, use a library type.
+  Hint: Write a smaller number: `int` is the widest integer type.
 
   2 │     mut c: int = 9223372036854775807 + 1;
-    │     ^~~ Here!
+    │     ^~~ this literal does not fit its type
 
   Run `turf --explain E076` for more details.
 ```
@@ -265,7 +263,7 @@ enum. `bool`s can be compared for equality.
 operators](#string-operators). For a **struct**, the comparison operators do
 not exist until you declare them, and each one is declared separately:
 declaring `operator ==` does not give you `!=`, and `operator <` does not give
-you `>`. Using one that is missing is [E124](/docs/errors/e124/) ("Values can't be compared"). Arrays
+you `>`. Using one that is missing is [E124](/docs/errors/e124/) (``I cannot compare two `P` structs with `!=`: a struct has no built-in comparison``). Arrays
 cannot be compared with `==` either; compare elements.
 
 ## Logical: `&& || !`
@@ -355,8 +353,7 @@ fn main(): int {
 </Program>
 
 All bitwise operators, including unary `~`, take `int` operands. A `double`,
-`bool` or `int32` operand is [E057](/docs/errors/e057/) ("Bitwise operator requires integer
-operands"); there is no implicit conversion.
+`bool` or `int32` operand is [E057](/docs/errors/e057/) (``A bitwise operator needs `int` operands, and the left one is a `bool` ``); there is no implicit conversion.
 
 - `>>` is an **arithmetic** shift: it copies the sign bit. `-8 >> 1` is `-4`
   and `-1 >> 1` is `-1`.

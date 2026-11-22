@@ -92,7 +92,7 @@ struct field was visible to any file that imported the module.
 
 **New.** A declaration is visible outside its file only if it is marked `pub`
 (`public` is the same word). Using a private one from another module is error
-**[E088](/docs/errors/e088/)** (`Type 'Point' is private to module 'util'`). A single-file program is
+**[E088](/docs/errors/e088/)** (``I cannot use the type `Point`, which is private to module `util` ``). A single-file program is
 not affected.
 
 A module `util.tr`:
@@ -139,9 +139,9 @@ compile in 1.x. In 2.0 the second file is rejected:
 
 <Terminal title="Compiler output" diagnostic>
 ```text
-── error at line 5, col 5 [E088 · declaration]
+── error at line 5, col 5 [E088 · private symbol access]
 
-  Type 'Point' is private to module 'util'.
+  I cannot use the type `Point`, which is private to module `util`.
 ```
 </Terminal>
 
@@ -174,8 +174,7 @@ or a non-prelude module's functions because `json` imported them itself.
 Writing `import list::List;` also let you spell `list::List<int>`.
 
 **New.** A file may write `m::` only for a module it imports with a plain
-`import m;`. Anything else is error **[E145](/docs/errors/e145/)** (`Module 'list' is not imported in
-this file`), and the hint is the exact line to add. `import list::List;` brings
+`import m;`. Anything else is error **[E145](/docs/errors/e145/)** (``I cannot find an import of module `list` in this file``), and the hint is the exact line to add. `import list::List;` brings
 in the name `List` only, not the qualifier `list::`. The prelude modules (`io`,
 `math`, `sys`, `strings`, `int`, `double`, `bool`, `char`, `array`) need no
 import.
@@ -215,8 +214,7 @@ fn main(): int {
 **Old.** A module of yours named `list.tr` next to your main file silently
 shadowed the standard library's `list`.
 
-**New.** `import list;` with both present is error **[E090](/docs/errors/e090/)** (`Module 'list' is
-ambiguous: 2 different files answer to that name`). The message names both
+**New.** `import list;` with both present is error **[E090](/docs/errors/e090/)** (``I found 2 different files that answer to the module name `list` ``). The message names both
 files.
 
 **Fix.** Rename your module (`my_list.tr`) and import it by the new name. This
@@ -232,9 +230,9 @@ error:
 
 | Word | Error |
 |---|---|
-| `guess`, `defer`, `caller_location`, `try` | **[E108](/docs/errors/e108/)** (`Expected a variable name after 'mutable' or 'immutable'`) |
-| `pub`, `public` | **[E087](/docs/errors/e087/)** (`'pub' is a reserved word and can't be used as a name`) |
-| `_` | **[E092](/docs/errors/e092/)** (`'_' is the wildcard pattern, so it can't be used as a name`) |
+| `guess`, `defer`, `caller_location`, `try` | **[E108](/docs/errors/e108/)** (``I expected a variable name after `mutable` or `immutable` ``) |
+| `pub`, `public` | **[E087](/docs/errors/e087/)** (`` `pub` is a reserved word, so I cannot use it as a name ``) |
+| `_` | **[E092](/docs/errors/e092/)** (`` `_` is the wildcard pattern, so I cannot use it as a name ``) |
 
 The bare `_` could not be lexed as a name before, so no real 1.x program is
 affected by that one. In 2.0 `_` is the wildcard pattern in `compare`, and a name
@@ -250,12 +248,13 @@ fn main(): int {
 ```text
 migrating_to_2_e108.tr (1 error)
 
-── error at line 2, col 9 [E108 · syntax error]
+── error at line 2, col 9 [E108 · expected a name]
 
-  Expected a variable name after 'mutable' or 'immutable'.
+  I expected a variable name after `mutable` or `immutable`.
+  Hint: Write a name there: a letter or `_` followed by letters, digits or `_`, as in `total`.
 
   2 │     mut guess: int = 1;
-    │         ^~~~~ Here!
+    │         ^~~~~ a name is expected here
 
   Run `turf --explain E108` for more details.
 ```
@@ -286,8 +285,8 @@ fn main(): int {
 zeros and was readable straight away.
 
 **New.** A declared variable has no value until you assign one, and reading it
-before every path has assigned it is error **[E008](/docs/errors/e008/)** (`You're using 'c' ... before
-it has a value`). The message names the type and suggests the fix.
+before every path has assigned it is error **[E008](/docs/errors/e008/)** (``I cannot use `c` (type `Config`) before
+it has a value``). The message names the type and suggests the fix.
 
 <Diagnostic file="migrating_to_2_e008.tr">
 ```turf
@@ -307,15 +306,16 @@ fn main(): int {
 ```text
 migrating_to_2_e008.tr (1 error)
 
-── error at line 10, col 19 [E008 · undeclared variable]
+── error at line 10, col 19 [E008 · variable read before it has a value]
 
-  Oops! You're using 'c' (type 'Config') before it has a value.
-  Note: declared here (line 9, col 5)
+  I cannot use `c` (type `Config`) before it has a value.
 
-  Hint: Make sure every path assigns to 'c' before you use it. Or give it an explicit default right away: 'mut c: Config = Config::default();'.
+  Hint: Assign to `c` on every path before it is used. Or give it an explicit default right away: `mut c: Config = Config::default();`.
 
+   9 │     mut c: Config;
+     │     - declared here
   10 │     io::printline(c.port);
-     │                   ^ Here!
+     │                   ^ read here before it has a value
 
   Run `turf --explain E008` for more details.
 ```
@@ -357,8 +357,7 @@ gives the exact replacement.
 `int` (`99999999999999999999` became `9223372036854775807`), and a constant
 expression such as `9223372036854775807 + 1` wrapped.
 
-**New.** Both are error **[E076](/docs/errors/e076/)** (`Integer literal is not representable in type
-'int'`), and the message states the type's range.
+**New.** Both are error **[E076](/docs/errors/e076/)** (``The literal 99999999999999999999 does not fit in an `int`, which holds -9223372036854775808 .. 9223372036854775807``), and the message states the type's range.
 
 <Diagnostic file="migrating_to_2_e076.tr">
 ```turf
@@ -373,16 +372,14 @@ fn main(): int {
 ```text
 migrating_to_2_e076.tr (1 error)
 
-── error at line 4, col 5 [E076 · arithmetic]
+── error at line 4, col 5 [E076 · integer literal out of range]
 
-  Integer literal is not representable in type 'int'.
-  The literal's value is 99999999999999999999.
-  'int' holds -9223372036854775808 .. 9223372036854775807.
+  The literal 99999999999999999999 does not fit in an `int`, which holds -9223372036854775808 .. 9223372036854775807.
 
-  Hint: 'int' is TurfLang's only general-purpose integer type; there is no wider one. If you need arbitrary precision, use a library type.
+  Hint: Write a smaller number: `int` is the widest integer type.
 
   4 │     immut big: int = 99999999999999999999;
-    │     ^~~~~ Here!
+    │     ^~~~~ this literal does not fit its type
 
   Run `turf --explain E076` for more details.
 ```
@@ -419,15 +416,16 @@ fn main(): int {
 ```text
 migrating_to_2_e066.tr (1 error)
 
-── error at line 5, col 5 [E066 · type mismatch]
+── error at line 5, col 20 [E066 · type mismatch]
 
-  Type mismatch!
-  Cannot initialise 'int' variable 'c' with value of type 'char'.
+  I cannot store a `char` in `c`, which is an `int`.
 
-  Hint: Check that both sides have compatible types.
+  Hint: Declare `c` as `char`, or convert the value with `to int`.
 
   5 │     immut c: int = s[1];
-    │     ^~~~~ Here!
+    │              ---   ^~~~ this is a `char`
+    │              │
+    │              `c` is an `int` because of this
 
   Run `turf --explain E066` for more details.
 ```
@@ -488,14 +486,14 @@ fn main(): int {
 ```text
 migrating_to_2_e086.tr (1 error)
 
-── error at line 7, col 5 [E086 · memory error]
+── error at line 7, col 5 [E086 · dangling reference escape]
 
-  A reference into this function's own local storage can't be returned -- it would dangle the moment this function returns.
+  I cannot let a reference into this function's own local storage be returned, because it would dangle when this function returns.
 
-  Hint: heap(value) copies it onto the GC heap first and gives you back a reference that outlives this function; or return/store a reference you received as a parameter instead of a local's.
+  Hint: Copy it onto the GC heap first with `heap(value)`, which gives a reference that outlives this function, or return or store a reference you received as a parameter instead of a local's.
 
   7 │     return &b;
-    │     ^~~~~~ Here!
+    │     ^~~~~~ this reference outlives what it points at
 
   Worth reading in full -- run `turf --explain E086` before you patch this one.
 ```
@@ -538,7 +536,7 @@ hit this was already returning a dangling reference. See
 
 **Old.** `struct Node { next: Node }` compiled, then crashed when used.
 
-**New.** Error **[E069](/docs/errors/e069/)** (`struct 'Node' cannot contain itself by value`), even
+**New.** Error **[E069](/docs/errors/e069/)** (``I cannot let the struct `Node` contain itself by value``), even
 if the struct is never instantiated; the message prints the cycle.
 
 <Diagnostic file="migrating_to_2_e069.tr">
@@ -555,16 +553,16 @@ fn main(): int {
 ```text
 migrating_to_2_e069.tr (1 error)
 
-── error at line 1, col 1 [E069 · declaration]
+── error at line 1, col 1 [E069 · struct layout cycle]
 
-  struct 'Node' cannot contain itself by value.
+  I cannot let the struct `Node` contain itself by value.
   cycle: Node -> Node
-  Note: field 'Node::next' has type 'Node' (line 3, col 5)
+  Note: field `Node::next` has type `Node` (line 3, col 5)
 
-  Hint: Make one of these fields a reference or pointer ('&Node', '&?Node', 'Node*') instead of holding the struct by value -- a struct that contains itself by value has no finite size.
+  Hint: Make one of these fields a reference or pointer (`&Node`, `&?Node`, `Node*`) instead of holding the struct by value, which would give it no finite size.
 
   1 │ struct Node {
-    │ ^~~~~~ Here!
+    │ ^~~~~~ this struct contains itself
 
   Worth reading in full -- run `turf --explain E069` before you patch this one.
 ```
@@ -607,8 +605,7 @@ This is a design choice, so no tool does it. See
 Three separate changes, all about raw pointers (`T*`, `ptr`).
 
 **Raw pointers in function signatures.** In 1.x a function whose parameter is a
-raw pointer could not be written at all; in 2.0 it is error **[E130](/docs/errors/e130/)** (`Raw
-pointer in function signature`), except in an `extern fn` and in a file that
+raw pointer could not be written at all; in 2.0 it is error **[E130](/docs/errors/e130/)** (``The parameter `p` of `first` cannot have the raw pointer type `int*` ``), except in an `extern fn` and in a file that
 begins with `unsafe module;`. That declaration is honored for files under the
 compiler's install root, and elsewhere only when the compile passes
 `--allow-unsafe-modules` (for a dependency in a project, the root manifest's
@@ -630,15 +627,14 @@ fn main(): int {
 ```text
 migrating_to_2_e130.tr (1 error)
 
-── error at line 3, col 1 [E130 · memory error]
+── error at line 3, col 1 [E130 · raw pointer outside unsafe]
 
-  Raw pointer in function signature!
-  Function 'first' cannot use raw pointer type 'int*' for parameter 'p'.
+  The parameter `p` of `first` cannot have the raw pointer type `int*`.
 
-  Hint: Raw pointer types are never allowed in an ordinary function's signature, even inside 'unsafe { }' -- use '&T' instead. Only 'extern fn' bindings and files that begin with 'unsafe module;' may use raw pointers here.
+  Hint: Use a reference, `&T`, instead: only an `extern fn` and a file that begins with `unsafe module;` may have raw pointers in a signature, even inside `unsafe { }`.
 
   3 │ fn first(p: int*): int {
-    │ ^~ Here!
+    │ ^~ this needs `unsafe`
 
   Worth reading in full -- run `turf --explain E130` before you patch this one.
 ```
@@ -653,7 +649,7 @@ outside an `unsafe { }` block (or an `unsafe module;`) is error **[E130](/docs/e
 
 **Indexing a collection's buffer.** 1.x code could reach into a collection with
 `l.data[i]`, unchecked. The buffer is private in 2.0 and the compiler rejects the
-access (**[E068](/docs/errors/e068/)**, `Struct 'list::List' has no field named 'data'`). Use the
+access (**[E068](/docs/errors/e068/)**, ``I cannot find a field named `data` on the struct `list::List` ``). Use the
 checked accessors:
 
 <Program file="migrating_to_2_10_raw_pointers.tr">
@@ -686,7 +682,7 @@ compiler.
 
 **New.** An integer literal is accepted for an `int32` when its value is
 representable. `++`, `--` and compound assignment (`+=` and so on) on an `int32`
-are a clear error, **[E126](/docs/errors/e126/)** (`postfix '++' is not supported on 'int32'`).
+are a clear error, **[E126](/docs/errors/e126/)** (``I cannot use `++` on an `int32`: arithmetic on an `int32` gives an `int` ``).
 
 <Diagnostic file="migrating_to_2_e126.tr">
 ```turf
@@ -699,15 +695,14 @@ fn main(): int {
 ```text
 migrating_to_2_e126.tr (1 error)
 
-── error at line 3, col 6 [E126 · type mismatch]
+── error at line 3, col 6 [E126 · operation not supported here]
 
-  Operation not supported here!
-  postfix '++' is not supported on 'int32' -- int32 is never itself an arithmetic result type.
+  I cannot use `++` on an `int32`: arithmetic on an `int32` gives an `int`.
 
-  Hint: Write 'n = (n + 1) to int32;' explicitly instead.
+  Hint: Write it out: `n = (n + 1) to int32;`.
 
   3 │     n++;
-    │      ^~ Here!
+    │      ^~ this is not supported here
 
   Run `turf --explain E126` for more details.
 ```
@@ -743,10 +738,9 @@ compare, a `matches true:` arm could silently never match, so a compare that
 **New.** Without an `otherwise`:
 
 - a `bool` compare must have both `matches true:` and `matches false:`, or it is
-  error **[E093](/docs/errors/e093/)** (`Non-exhaustive bool comparison`);
+  error **[E093](/docs/errors/e093/)** (``This `compare` on `bool` does not cover every case ``);
 - a compare over the error bound by `recover as err run` must end with
-  `otherwise` or `matches _:`, or it is **[E093](/docs/errors/e093/)** (`Non-exhaustive comparison on
-  '<error>'`), because such a value can be any error a callee returns.
+  `otherwise` or `matches _:`, or it is **[E093](/docs/errors/e093/)** (``This `compare` on `error` does not cover every case ``), because such a value can be any error a callee returns.
 
 <Diagnostic file="migrating_to_2_e093.tr">
 ```turf
@@ -765,16 +759,16 @@ fn main(): int {
 ```text
 migrating_to_2_e093.tr (1 error)
 
-── error at line 5, col 5 [E093 · control flow]
+── error at line 5, col 5 [E093 · non-exhaustive compare]
 
-  Non-exhaustive bool comparison on 'bool'.
-Missing values:
+  This `compare` on `bool` does not cover every case, and it has no `otherwise`.
+  Missing values:
     false
 
-  Hint: Add `matches true:` and `matches false:` arms, or 'otherwise:' to handle the rest. A guarded arm doesn't count: its guard may be false.
+  Hint: Add `matches true:` and `matches false:` arms, or `otherwise:` for the rest. A guarded arm does not count: its guard may be false.
 
   5 │     compare b {
-    │     ^~~~~~~ Here!
+    │     ^~~~~~~ this `compare` does not cover every value
 
   Run `turf --explain E093` for more details.
 ```
@@ -846,10 +840,10 @@ tidied it. Every item here is a compile error in an unmigrated program.
 
 | 1.x | 2.0 | What you see |
 |---|---|---|
-| `c.isDigit()` `isUpper` `isLower` `isAlpha` `isAlphaNumeric` `isPunctuation` `isWhitespace` `toUpper` `toLower` on a `char` | `is_digit` `is_upper` `is_lower` `is_alpha` `is_alphanumeric` `is_punctuation` `is_whitespace` `to_upper` `to_lower` | **[E131](/docs/errors/e131/)** (`No such method`) |
-| `Map.indexOf`, `Set.indexOf` | `index_of` | **[E054](/docs/errors/e054/)** (`has no method named 'indexOf'`), with the new name as the hint |
+| `c.isDigit()` `isUpper` `isLower` `isAlpha` `isAlphaNumeric` `isPunctuation` `isWhitespace` `toUpper` `toLower` on a `char` | `is_digit` `is_upper` `is_lower` `is_alpha` `is_alphanumeric` `is_punctuation` `is_whitespace` `to_upper` `to_lower` | **[E131](/docs/errors/e131/)** (``I cannot call the method `isDigit` on a `char`: only a struct has methods``) |
+| `Map.indexOf`, `Set.indexOf` | `index_of` | **[E054](/docs/errors/e054/)** (``I cannot find a method named `indexOf` on the struct `map::Map` ``), with the new name as the hint |
 | `Map.tryGet` | `try_get` | **[E054](/docs/errors/e054/)** |
-| `import list::list_sort;` and `list_binary_search`, `list_find` | `l.sort(cmp)`, `l.binary_search(x, cmp)`, `l.find(pred)` | **[E030](/docs/errors/e030/)** (`Module 'list' has nothing named 'list_sort'`) |
+| `import list::list_sort;` and `list_binary_search`, `list_find` | `l.sort(cmp)`, `l.binary_search(x, cmp)`, `l.find(pred)` | **[E030](/docs/errors/e030/)** (``I cannot find `list_sort` in the module `list` ``) |
 | `io::write_string(path, s): bool` | `: !void`, fails with `FileError::WriteFailed(path)` | **[E066](/docs/errors/e066/)** / **[E124](/docs/errors/e124/)** |
 | `fs::mkdir`, `fs::remove_file`, `fs::remove_dir`: `bool` | `!void`, fail with `FsError::MkdirFailed` / `RemoveFileFailed` / `RemoveDirFailed` (each carries the path) | **[E124](/docs/errors/e124/)** / **[E066](/docs/errors/e066/)** |
 | `os::set_env(...): bool` | `!void`, fails with `OsError::SetEnvFailed(name)` | type error where the `bool` was used |
@@ -950,8 +944,7 @@ Several small changes to error handling:
 - `try` is a reserved word ([Section 4](#4-new-reserved-words)).
 - `io::FileError` variants now carry the path, and `json::JsonError` variants
   carry the byte offset. Constructing one by hand needs the argument, and naming
-  a payload variant without it is error **[E096](/docs/errors/e096/)** (`declares payload fields ...
-  so it can't be used as a value on its own`). Comparing with `==` is
+  a payload variant without it is error **[E096](/docs/errors/e096/)** (``I cannot use `FileError::NotFound` on its own, because it declares payload fields (path: string)``). Comparing with `==` is
   unchanged: `e == io::FileError::NotFound` compares the variant only.
 - `return f();` is now legal when `f` returns a matching `!T`. It was an error
   before; code that worked around it with a `recover` that re-returned can be
@@ -976,14 +969,14 @@ fn main(): int {
 ```text
 migrating_to_2_e096.tr (1 error)
 
-── error at line 4, col 12 [E096 · declaration]
+── error at line 4, col 12 [E096 · invalid error payload]
 
-  Invalid error payload: 'FileError::NotFound' declares payload fields (path: string) so it can't be used as a value on its own.
+  I cannot use `FileError::NotFound` on its own, because it declares payload fields (path: string).
 
-  Hint: Construct it with its payload: 'FileError::NotFound(...)'. To test which error occurred, compare with '==' or destructure it in a compare: `matches FileError::NotFound(..):`.
+  Hint: Construct it with its payload as `FileError::NotFound(...)`, or test for it in a `compare` with `matches FileError::NotFound(..):`.
 
   4 │     return io::FileError::NotFound;
-    │            ^~ Here!
+    │            ^~ this payload is not valid
 
   Run `turf --explain E096` for more details.
 ```

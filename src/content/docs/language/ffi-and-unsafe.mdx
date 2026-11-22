@@ -129,13 +129,13 @@ fn main(): int {
 ```text
 ffi_and_unsafe_e112.tr (1 error)
 
-── error at line 1, col 20 [E112 · declaration]
+── error at line 1, col 20 [E112 · void used as a type]
 
-  'void' cannot be a parameter's type.
-  Hint: 'void' only makes sense as a function's return type. Give parameter 'x' a real type instead (use 'void*' if you meant an opaque pointer).
+  I cannot give a parameter the type `void`.
+  Hint: Use `void` only as a function's return type. Give the parameter `x` a real type instead, or use `void*` for an opaque pointer.
 
   1 │ extern fn bogus(x: void): void;
-    │                    ^~~~ Here!
+    │                    ^~~~ `void` is not a type a value can have
 
   Run `turf --explain E112` for more details.
 ```
@@ -146,8 +146,8 @@ An unknown type in the signature is [`E042`](/docs/errors/e042/), like anywhere 
 ### Redeclaring a function
 
 Two declarations of the same C function are fine if their signatures are
-identical, and an error ([`E020`](/docs/errors/e020/), "conflicts with an earlier declaration of the
-same name") if they differ in arity, a parameter type or the return type. This
+identical, and an error ([`E020`](/docs/errors/e020/), "I found two `extern fn strlen` declarations with different
+signatures") if they differ in arity, a parameter type or the return type. This
 includes the functions the standard library already declares: `strlen` above
 is also declared by `sys`, with the same signature, so it is accepted;
 declaring `strlen` with a different return type is [`E020`](/docs/errors/e020/).
@@ -164,15 +164,15 @@ fn main(): int {
 ```text
 ffi_and_unsafe_e020.tr (1 error)
 
-── error at line 2, col 1 [E020 · declaration]
+── error at line 2, col 1 [E020 · conflicting extern declaration]
 
-  'extern fn strlen' conflicts with an earlier declaration of the same name.
+  I found two `extern fn strlen` declarations with different signatures.
   Note: first declared here (lib/std/core/sys.tr, line 42, col 1)
 
-  Hint: Two 'extern fn strlen' declarations exist with different signatures (parameter types, return type, or variadic-ness). Only ONE C function can actually be called through this name -- make both declarations match exactly, or give one a different name.
+  Hint: Make both declarations match exactly in parameter types, return type and variadic-ness, or give one a different name. Only one C function can be called through this name.
 
   2 │ extern fn strlen(s: string): int32;
-    │ ^~~~~~ Here!
+    │ ^~~~~~ this declaration conflicts with an earlier one
 
   Run `turf --explain E020` for more details.
 ```
@@ -269,7 +269,7 @@ fn main(): int {
     unsafe {
         mut p: ptr = malloc(8);
         free(p);
-        free(p);          // E017: Double free detected for 'p'
+        free(p);          // E017: I found a second free of `p`
     }
     return 0;
 }
@@ -277,15 +277,16 @@ fn main(): int {
 ```text
 ffi_and_unsafe_e017.tr (1 error)
 
-── error at line 10, col 13 [E017 · memory error]
+── error at line 10, col 13 [E017 · double free]
 
-  Double free detected for 'p'.
-  Note: first freed here (line 9, col 13)
+  I found a second free of `p`.
 
-  Hint: Release a pointer once: free() and every function declared '@ownership(releases: ...)' release what they are given.
+  Hint: Release the pointer only once: `free()` and every function declared `@ownership(releases: ...)` release what they are given.
 
-  10 │         free(p);          // E017: Double free detected for 'p'
-     │             ^ Here!
+   9 │         free(p);
+     │             - first freed here
+  10 │         free(p);          // E017: I found a second free of `p`
+     │             ^ freed a second time here
 
   Worth reading in full -- run `turf --explain E017` before you patch this one.
 ```
@@ -302,7 +303,7 @@ fn main(): int {
     unsafe {
         mut p: int* = malloc(8);
         free(p);
-        p[0] = 1;         // E018: you're using memory from 'p' after it was freed
+        p[0] = 1;         // E018: I cannot use the memory of `p` after it was freed
     }
     return 0;
 }
@@ -310,15 +311,16 @@ fn main(): int {
 ```text
 ffi_and_unsafe_e018.tr (1 error)
 
-── error at line 10, col 10 [E018 · memory error]
+── error at line 10, col 10 [E018 · use after free]
 
-  Oops! You're using memory from 'p' after it was freed.
-  Note: freed here (line 9, col 13)
+  I cannot use the memory of `p` after it was freed.
 
-  Hint: Don't use memory after it has been released (by free() or any function declared '@ownership(releases: ...)'). Consider setting the pointer to null after releasing it.
+  Hint: Stop using `p` after it is released by `free()` or by a function declared `@ownership(releases: ...)`, or set the pointer to `null` after releasing it.
 
-  10 │         p[0] = 1;         // E018: you're using memory from 'p' after it was freed
-     │          ^ Here!
+   9 │         free(p);
+     │             - freed here
+  10 │         p[0] = 1;         // E018: I cannot use the memory of `p` after it was freed
+     │          ^ used here after it was freed
 
   Worth reading in full -- run `turf --explain E018` before you patch this one.
 ```
@@ -414,12 +416,11 @@ there is no `*p`.
 A raw pointer type can be used only where the compiler has been told you
 accept that: inside an `unsafe { }` block ([section 4](#4-unsafe--)), in a
 file that begins `unsafe module;` ([section 5](#5-unsafe-module)), or in an
-`extern fn` signature. Anywhere else it is [`E130`](/docs/errors/e130/) ("Unsafe pointer use!"):
+`extern fn` signature. Anywhere else it is [`E130`](/docs/errors/e130/):
 
 ```text
-Raw pointer type 'ptr' cannot be used outside an 'unsafe' block.
-Hint: Wrap this in 'unsafe { }', or use a safe reference ('&T') instead if you
-don't actually need a possibly-null raw pointer.
+I cannot use the raw pointer type `ptr` outside an `unsafe` block.
+Hint: Wrap this in `unsafe { }`, or use the safe reference `&T` if it is never null.
 ```
 
 Four kinds of use are gated:
@@ -436,15 +437,14 @@ fn main(): int {
 ```text
 ffi_and_unsafe_e130.tr (1 error)
 
-── error at line 4, col 5 [E130 · memory error]
+── error at line 4, col 5 [E130 · raw pointer outside unsafe]
 
-  Unsafe pointer use!
-  Raw pointer type 'ptr' cannot be used outside an 'unsafe' block.
+  I cannot use the raw pointer type `ptr` outside an `unsafe` block.
 
-  Hint: Wrap this in 'unsafe { }', or use a safe reference ('&T') instead if you don't actually need a possibly-null raw pointer.
+  Hint: Wrap this in `unsafe { }`, or use the safe reference `&T` if it is never null.
 
   4 │     mut p: ptr = malloc(8);       // a variable of raw-pointer type
-    │     ^~~ Here!
+    │     ^~~ this needs `unsafe`
 
   Worth reading in full -- run `turf --explain E130` before you patch this one.
 ```
@@ -462,15 +462,14 @@ fn main(): int {
 ```text
 ffi_and_unsafe_e130_2.tr (1 error)
 
-── error at line 4, col 23 [E130 · memory error]
+── error at line 4, col 23 [E130 · raw pointer outside unsafe]
 
-  Unsafe pointer use!
-  Raw pointer type 'int*' cannot be used outside an 'unsafe' block.
+  I cannot use the raw pointer type `int*` outside an `unsafe` block.
 
-  Hint: Wrap this in 'unsafe { }', or use a safe reference ('&int') instead if you don't actually need a possibly-null raw pointer.
+  Hint: Wrap this in `unsafe { }`, or use the safe reference `&int` if it is never null.
 
   4 │     mut raw: int* = r to int*;    // a cast to or from a raw pointer
-    │                       ^~ Here!
+    │                       ^~ this needs `unsafe`
 
   Worth reading in full -- run `turf --explain E130` before you patch this one.
 ```
@@ -490,15 +489,14 @@ fn main(): int {
 ```text
 ffi_and_unsafe_e130_3.tr (1 error)
 
-── error at line 1, col 1 [E130 · memory error]
+── error at line 1, col 1 [E130 · raw pointer outside unsafe]
 
-  Unsafe pointer use!
-  Raw pointer type 'Node*' cannot be used outside an 'unsafe' block.
+  I cannot use the raw pointer type `Node*` outside an `unsafe` block.
 
-  Hint: Wrap this in 'unsafe { }', or use a safe reference ('&Node') instead if you don't actually need a possibly-null raw pointer.
+  Hint: Wrap this in `unsafe { }`, or use the safe reference `&Node` if it is never null.
 
   1 │ struct Node {
-    │ ^~~~~~ Here!
+    │ ^~~~~~ this needs `unsafe`
 
   Worth reading in full -- run `turf --explain E130` before you patch this one.
 ```
@@ -550,7 +548,7 @@ the standard library, and a function in a file that declares
 <Diagnostic file="ffi_and_unsafe_e130_4.tr">
 ```turf
 unsafe {
-    fn takes(p: ptr): int {       // E130: Raw pointer in function signature!
+    fn takes(p: ptr): int {       // E130: the parameter `p` of `takes` cannot have the raw pointer type `ptr`
         return 0;
     }
 }
@@ -560,15 +558,14 @@ fn main(): int { return 0; }
 ```text
 ffi_and_unsafe_e130_4.tr (1 error)
 
-── error at line 2, col 5 [E130 · memory error]
+── error at line 2, col 5 [E130 · raw pointer outside unsafe]
 
-  Raw pointer in function signature!
-  Function 'takes' cannot use raw pointer type 'ptr' for parameter 'p'.
+  The parameter `p` of `takes` cannot have the raw pointer type `ptr`.
 
-  Hint: Raw pointer types are never allowed in an ordinary function's signature, even inside 'unsafe { }' -- use '&T' instead. Only 'extern fn' bindings and files that begin with 'unsafe module;' may use raw pointers here.
+  Hint: Use a reference, `&T`, instead: only an `extern fn` and a file that begins with `unsafe module;` may have raw pointers in a signature, even inside `unsafe { }`.
 
-  2 │     fn takes(p: ptr): int {       // E130: Raw pointer in function signature!
-    │     ^~ Here!
+  2 │     fn takes(p: ptr): int {       // E130: the parameter `p` of `takes` cannot have the raw pointer type `ptr`
+    │     ^~ this needs `unsafe`
 
   Worth reading in full -- run `turf --explain E130` before you patch this one.
 ```
@@ -710,9 +707,8 @@ honored only when someone has agreed to it:
   <Terminal title="Compiler output" diagnostic>
   ```text
   $ turfc pair.tr
-  ── error at line 4, col 1 [E130 · memory error]
-    Unsafe pointer use!
-    Raw pointer type 'Pair*' cannot be used outside an 'unsafe' block.
+  ── error at line 4, col 1 [E130 · raw pointer outside unsafe]
+    I cannot use the raw pointer type `Pair*` outside an `unsafe` block.
   $ turfc pair.tr --allow-unsafe-modules
   ```
   </Terminal>
@@ -803,22 +799,21 @@ type forges an address and is [`E130`](/docs/errors/e130/) outside `unsafe { }`:
 ```turf
 fn main(): int {
     mut x: int = 5;
-    mut q: &int = x to &int;      // E130: Unsafe reference conversion!
+    mut q: &int = x to &int;      // E130: I cannot convert an `int` to the reference `&int` outside an `unsafe` block
     return 0;
 }
 ```
 ```text
 ffi_and_unsafe_e130_5.tr (1 error)
 
-── error at line 3, col 21 [E130 · memory error]
+── error at line 3, col 21 [E130 · raw pointer outside unsafe]
 
-  Unsafe reference conversion!
-  Converting 'int' to the reference '&int' cannot be done outside an 'unsafe' block.
+  I cannot convert an `int` to the reference `&int` outside an `unsafe` block: it may point at nothing.
 
-  Hint: A reference made this way may point at nothing. Wrap the conversion in 'unsafe { }' if the address is known to be valid.
+  Hint: Wrap the conversion in `unsafe { }` if the address is valid.
 
-  3 │     mut q: &int = x to &int;      // E130: Unsafe reference conversion!
-    │                     ^~ Here!
+  3 │     mut q: &int = x to &int;      // E130: I cannot convert an `int` to the reference `&int` outside an `unsafe` block
+    │                     ^~ this needs `unsafe`
 
   Worth reading in full -- run `turf --explain E130` before you patch this one.
 ```
