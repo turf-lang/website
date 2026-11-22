@@ -3,7 +3,7 @@ major: 2
 number: 23
 title: "`function` as a spelling of `fn`"
 description: Accept `function` wherever `fn` starts a declaration in 2.3, as a contextual keyword, and make it a reserved word equal to `fn` in 3.0.
-status: accepted
+status: implemented
 date: 2026-10-25
 authors:
   - Turf Team

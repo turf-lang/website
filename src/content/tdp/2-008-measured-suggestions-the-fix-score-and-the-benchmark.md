@@ -3,7 +3,7 @@ major: 2
 number: 8
 title: "Measured suggestions: the Fix Score and the benchmark"
 description: Replace the binary confidence of model suggestions with a decomposed, calibrated score, and measure the assistant against a larger benchmark with a rules-only baseline.
-status: accepted
+status: implemented
 date: 2026-10-15
 authors:
   - Turf Team

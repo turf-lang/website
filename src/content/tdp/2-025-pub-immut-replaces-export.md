@@ -3,7 +3,7 @@ major: 2
 number: 25
 title: "`pub immut` replaces `export immut`"
 description: A module constant is declared `immut`, private unless marked `pub` or `public`, like every other declaration; `export` warns in 2.3 and is removed in 3.0.
-status: accepted
+status: implemented
 date: 2026-10-25
 authors:
   - Turf Team

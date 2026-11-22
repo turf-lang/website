@@ -3,7 +3,7 @@ major: 2
 number: 24
 title: "`static` before `fn`"
 description: "Write a static method as `pub static fn T.m(...): R`, with `static` in front like its visibility; the old place after the parameter list warns in 2.3 and is removed in 3.0."
-status: accepted
+status: implemented
 date: 2026-10-25
 authors:
   - Turf Team
