@@ -96,14 +96,14 @@ fn main(): int {
 Inside a file, put things in this order, so that a reader always knows where to look:
 
 1. imports,
-2. constants (`export immut`),
+2. constants (`immut`, `pub immut`),
 3. types: `struct`, `enum`, `error` and `machine`, each followed straight away by its own methods,
 4. other functions,
 5. `main`, last.
 
 <DoDont file="tsg_304">
 ```turf
-export immut START: int = 10;
+immut START: int = 10;
 
 struct Counter {
     n: int,
@@ -142,7 +142,7 @@ struct Counter {
     n: int,
 }
 
-export immut START: int = 10;
+immut START: int = 10;
 
 fn make_counter(): Counter {
     mut c: Counter = Counter::default();

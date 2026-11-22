@@ -102,11 +102,11 @@ fn main(): int {
 
 <RuleMeta level="required" />
 
-A top-level constant, declared with `export immut`, is written in capitals with words joined by `_`. The shouting is on purpose: it tells the reader that this value is fixed for the whole program and lives outside the function they are reading. A local `immut` inside a function is an ordinary variable and stays `snake_case`.
+A top-level constant, declared with a top-level `immut` (`pub immut` when other modules use it), is written in capitals with words joined by `_`. The shouting is on purpose: it tells the reader that this value is fixed for the whole program and lives outside the function they are reading. A local `immut` inside a function is an ordinary variable and stays `snake_case`.
 
 <DoDont file="tsg_203">
 ```turf
-export immut MAX_RETRIES: int = 3;
+immut MAX_RETRIES: int = 3;
 
 fn main(): int {
     immut attempts: int = 2;
@@ -115,7 +115,7 @@ fn main(): int {
 }
 ```
 ```turf
-export immut maxRetries: int = 3;
+immut maxRetries: int = 3;
 
 fn main(): int {
     immut ATTEMPTS: int = 2;
