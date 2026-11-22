@@ -1,73 +1,602 @@
 ---
 tag: "v2.3.0"
 title: "Diagnostics you can trust"
-description: "The next release is about messages and checks you can rely on: every error and warning reworded to one guide, labelled spans, a snapshot test for every code, new warnings that find real mistakes, and the old spellings that 3.0 will retire, each with a checked fix."
+description: "Every error and warning reworded to one guide, labelled spans, a snapshot test for every code, new warnings that find real mistakes, the spellings that 3.0 will retire warning now with a checked fix, @test options, a measured --smart and turf upgrade."
 highlights:
   - "Every error and warning reworded to one wording guide, with labelled spans that say why the compiler expected a type."
   - "New warnings for unused code, recursion with no way out, raw-pointer method calls and memory that is never freed. Warnings only; none of them stops a build."
   - "The spellings 3.0 will retire (`1.5.floor()`, `export immut`, `static` after the receiver) warn now, each with a `Fix:` that writes the new form."
   - "`@test` options: skip, timeout, levels, stdout, tag and serial."
+  - "`turf upgrade` applies the checked fixes for the spellings that move."
   - "A larger, measured `--smart` benchmark, and the website's error pages generated from the compiler's own registry."
 ---
 
-<Callout tone="note" title="Not released yet">
-This page is a preview. It describes what the 2.3.0 line is planned to carry, in the order the maintainers expect to build it. Nothing here has shipped. Items can move to a later release, and this page is rewritten with the real notes when 2.3.0 ships.
-</Callout>
+Turf 2.3.0 changes nothing you have already written. Every program that
+compiled with 2.2 compiles and behaves the same, and the 2.0 test suite and
+the output of each of its programs are still checked on every change. Some
+programs that 2.2 rejected now compile: `pub immut` constants, and a `&?T`
+variable that the compiler can prove is not null, passed where a `&T` is
+expected. Those two programs are listed with their reasons in
+`tests/compat/2.0/RELAXED.txt`.
 
-Version 2.2.0 gave every warning a code and a level you can set. Version 2.3.0 is where the compiler starts to use that: it gets more to say, and says it more clearly. Every new warning in this release arrives at a level you can turn down, and `lint-set = "2.2"` keeps a project's build exactly as it is.
+Two things can show up in a build you did not touch:
 
-## Messages that explain
+- Messages and hints read differently. Every message and hint was reworded to
+  one style guide, and a heading shows the name of its code, as in
+  `[E068 · unknown struct field]`. The codes do not change, and neither does
+  the `--diagnostics=json` format for a tool that already reads it (the
+  schema only gained fields).
+- Three new warnings, E195, E196 and E197, are on by default. They report an
+  empty loop body, function body or `recover` block. A warning does not stop
+  a build, and `--lint-set 2.2` or `[lints] lint-set = "2.2"` turns them off
+  with every other warning added since 2.2. Every other new warning starts at
+  `allow` and does nothing until you turn it on.
 
-This is [TDP-2-028](/tdp/2-028/), first half.
+The theme of this release is diagnostics you can trust, and a first round of
+analysis that finds more mistakes before the program runs.
 
-- **A wording guide.** One page that says how a message is written: first person, one idea to a sentence, the types named instead of "value", no exclamation marks, and every hint something the reader can do. Headings print the code's registered name.
-- **Every message rewritten to it.** Every error and every warning, and every hint.
-- **A snapshot test for every code.** Changing a message becomes a visible change in a review, not an accident.
-- **Labelled spans.** "`s` is a `string` because of this", pointing at the line that made it one.
-- **More fixes.** The compiler writes the `Fix:` itself for a call with the wrong number of arguments and for a missing return type, when it is sure.
+## Language
 
-## Warnings that find real mistakes
+### Spellings that read better
 
-This is [TDP-2-007](/tdp/2-007/). They are warnings only. Each one stays a warning for at least two minor releases before 3.0 can consider making it an error, and 2.3 to 2.11 gives them that time.
+These are the 2.3 spellings. The old ones still compile to the same program,
+and each has an `allow`-by-default warning with a checked `Fix:`.
 
-- **Recursion with no way out:** mutual recursion where no path reaches a base case, and a recursive base case that can never be reached.
-- **Unused code:** a private function, an import, or a `pub` item in a binary root that nothing uses.
-- **Raw pointers:** a method call through a raw-pointer receiver outside `unsafe`, and more compile-time checks inside `unsafe` blocks.
-- **Loops and memory:** better detection of loops that cannot end, pointer nullability that follows a value across fields, arguments and returns, and manual-heap memory that is never freed.
-- **Precision:** an opt-in warning when an `int` becomes a `double` and loses digits.
+```turf
+import io;
 
-## Spellings that move, with a fix
+pub immut LIMIT: int = 3;
 
-These warn now so that [3.0](/tdp/2-020/) can change them without surprising anyone. Each warning carries a checked `Fix:` that writes the new form, and none of them stops a program from compiling.
+struct Counter {
+    n: int
+}
 
-- **A decimal literal as a receiver.** `1.5.floor()` warns, and the fix writes `(1.5).floor()` ([TDP-2-022](/tdp/2-022/)).
-- **`function`.** It is accepted as another spelling of `fn`, in the places where it cannot be mistaken for a name ([TDP-2-023](/tdp/2-023/)).
-- **`static` in front.** `static fn T.m()` is the spelling, and the old place warns ([TDP-2-024](/tdp/2-024/)).
-- **`pub immut`.** Module constants are written `pub immut`, and `export immut` warns ([TDP-2-025](/tdp/2-025/)).
-- **Generic constructions.** A generic struct that takes its type arguments from the context warns, with a fix that writes them where it is built: `List<int>::default()`.
+pub static fn Counter.limit(): int {
+    return LIMIT;
+}
+
+function half(x: double): double {
+    return x / 2.0;
+}
+
+fn main(): int {
+    printline((1.5).half());
+    printline(Counter::limit());
+    return 0;
+}
+```
+
+```text
+0.75
+3
+```
+
+- A decimal literal that is the receiver of a call goes in parentheses:
+  `(1.5).floor()`. `1.5.floor()` still works and is E174. `1.twice()` and
+  `(1.5).f()` need no change.
+- `function` is another spelling of `fn`, where a declaration starts. It is
+  an ordinary name everywhere else, so `immut function: int` and a field
+  called `function` still work. `func`, `def` and `fun` at the start of a
+  declaration are E014, with a `Fix:` that writes `fn`.
+- `static` goes in front of `fn`: `pub static fn Counter.limit()`. The old
+  place, after the parameter list, is E175 with a `Fix:` that moves the word.
+  Writing it in both places is E103, and `static pub fn` is E087. `turf migrate pub`
+  puts `pub` before `static`.
+- A top-level `immut` is a constant of its module. It is private to that
+  module unless you write `pub immut` (or `public immut`). Another module that
+  uses a private one gets E088, qualified or imported by name. `export immut`
+  still works and is E176, with a `Fix:` that writes `pub`. A top-level `mut`
+  is E087, with an `immut` fix.
+- A generic construction that takes its type arguments from the context, as in
+  `mut l: List<int> = List::default();`, is E177. The `Fix:` writes the
+  arguments the compiler worked out: `List<int>::default()`.
+
+### Generic calls that failed to compile
+
+`fn<A, B> pick(x: B, y: A): A` called as `pick(1, "s")` did not compile in
+2.2, because the compiler paired the type arguments in the order the
+parameters appeared instead of the order in `<A, B>`. It now compiles.
+
+```turf
+import io;
+
+fn<A, B> pick(x: B, y: A): A {
+    return y;
+}
+
+fn main(): int {
+    printline(pick(1, "s"));
+    return 0;
+}
+```
+
+```text
+s
+```
+
+A generic struct's constructor whose parameters never mention `T`, such as
+`fn<T> Box.new(k: int)`, called as `Box<string>::new(42)`, was an internal
+compiler error. It now builds the instance you named.
+
+## Warnings
+
+### New warnings that start at `allow`
+
+Turn one on with `--warn E178`, `--deny E178`, or the `[lints]` table. A new
+warning never fails a build until you ask. Each has its own page, and
+`turfc --explain E178` prints it.
+
+| Code | It reports |
+|---|---|
+| E174 to E177 | the spellings above |
+| E178 | a private function or method that nothing calls or names |
+| E179 | an import that nothing in its file uses; the `Fix:` removes the line |
+| E180 | a `pub` function in a program's root file that nothing calls |
+| E181 | an `int` converted to a `double` where it may lie outside plus or minus 2^53, so the conversion can round |
+| E182 | functions that call each other on every path, so none can return |
+| E183 | a recursive function's base case that the value ranges prove is never reached |
+| E184 | a `while` or `do while` whose test nothing in the loop changes |
+| E185 | a loop whose every way out is a test that is never true |
+| E186 | a loop whose every way out comes after `sys::panic`, `sys::abort` or `sys::exit` |
+| E187 | manual-heap memory that nothing frees and nothing passes on |
+| E188 | a raw pointer that may be null being dereferenced |
+| E189 | freeing the address of a variable |
+| E190 | a write through a pointer into an `immut` array |
+| E191 | a raw pointer indexed with an index that has no known bound |
+| E192 | an integer converted to a pointer |
+| E193 | an `unsafe` block that holds nothing that needs it |
+| E194 | an `unsafe` block of more than 40 statements |
+
+E182 to E186 are warnings and never errors, since whether a loop ends cannot
+be decided in general. The compiler reports only what it can prove from the
+code in front of it, so a loop with a call in its test is left alone. The
+`unsafe` checks (E188 to E194) and E187 are for code that uses raw pointers
+and `mem::alloc`. Garbage-collected memory is never reported by E187.
+
+```turf
+import io;
+
+fn wait(n: int): int {
+    mut s: int = 0;
+    while n > 0 {
+        s += 1;
+    }
+    return s;
+}
+
+fn old_helper(x: int): int {
+    return x * 2;
+}
+
+fn main(): int {
+    printline(wait(0));
+    return 0;
+}
+```
+
+With `--warn E184 --warn E178`, the compiler reports both:
+
+```text
+── warning at line 5, col 5 [E184 · loop whose test never changes]
+
+  This loop's test reads `n`, which nothing in the loop changes, and the test is its only way out: once the loop starts, it never ends.
+
+  Hint: Change `n` inside the loop, or leave it with `break` or `return`.
+
+  5 │     while n > 0 {
+    │     ^~~~~ nothing changes this test
+
+── warning at line 11, col 4 [E178 · unused private function]
+
+  Nothing calls or names the function `old_helper`.
+
+  Hint: Remove `old_helper`, or call it where it was meant to be used. Mark it `pub` if another module is meant to call it.
+
+  11 │ fn old_helper(x: int): int {
+     │    ^~~~~~~~~~ nothing calls this function
+```
+
+The first lines of each message are shown here, and the real output also ends
+each warning with a line that names `--explain`.
+
+### Warnings that are on by default
+
+E195, E196 and E197 warn at `warn`, because an empty body is nearly always a
+mistake. A body that holds a comment is deliberate and is not reported. A
+`while` whose condition calls a function, a `@test` function and a function
+that returns a value (E009 reports that one) are not reported either.
+
+```turf
+import io;
+
+fn main(): int {
+    for i in 0..3 {
+    }
+    printline(1);
+    return 0;
+}
+```
+
+```text
+── warning at line 4, col 5 [E195 · empty loop body]
+
+  The body of this `for` loop is empty.
+
+  Hint: Write what the loop should do, or remove it. If it is meant to do nothing, put a comment in the body saying why.
+
+  4 │     for i in 0..3 {
+    │     ^~~ this loop's body is empty
+```
+
+### A warning can carry a `Fix:`
+
+A warning can now carry a checked `Fix:` as an error does. The check is the
+same: the warning must go away, and the edit must add no error. E174, E175,
+E176, E177 and E179 have fixes.
+
+### Nullable references across fields, arguments and returns
+
+A `&?T` variable or field path that a test or an assignment has proven
+non-null can now be used as a `&T`: as a call argument, a return value or a
+stored value. `h.next != null` narrows the path `h.next`. The compiler forgets
+what it proved at each call, at a write to that field or to the variable it
+starts from, and at a few other places where it cannot follow. A use it cannot
+prove is still E081 or E082, as before. Nothing that compiled before changes.
+
+## Diagnostics
+
+### Labelled spans
+
+An error points at its code with a label that says what is wrong there, and
+may point at a second place with a label of its own. The wrong-argument-count
+error E044 below shows both: the function's declaration is marked as the
+candidate, and the call is marked as the one with the wrong number of
+arguments. The spans now cover the whole expression instead of its first
+character. In `--diagnostics=json` the primary label is the new `label` field
+(schema 1.1), and the related locations carry theirs.
+
+### Compiler fixes for a wrong argument count and a missing return type
+
+Two errors now have a `Fix:` of the compiler's own, chosen among alternatives
+that were each compiled to see whether they work. The fix is shown only when
+exactly one alternative passes.
+
+```turf
+import io;
+
+fn describe(count: int, finished: bool): int {
+    if (finished) {
+        return count;
+    }
+    return 0;
+}
+
+fn main(): int {
+    printline(describe(3, true, 7));
+    return 0;
+}
+```
+
+```text
+── error at line 11, col 23 [E044 · wrong number of arguments]
+
+  I found no overload of `describe` that takes 3 arguments.
+  The overloads are:
+    describe(int count, bool finished) -> int
+
+  Hint: Call `describe` the way one of the overloads above is declared, for example `describe(int count, bool finished) -> int`.
+
+   3 │ fn describe(count: int, finished: bool): int {
+     │    - candidate
+     ┊
+  11 │     printline(describe(3, true, 7));
+     │                       ^ this call has the wrong number of arguments
+
+  Fix: remove the argument '7'
+  11 │     printline(describe(3, true));
+     │                               ^
+```
+
+- E044: a call with one argument too many loses the one argument whose removal
+  makes the rest fit. A call with one too few passes the variable named like
+  the missing parameter.
+- E106: a function that returns a value but names no return type gets the type
+  that its body and its callers compile with. `fn twice(x: int) {` gets
+  `: int`.
+
+Compiling the alternatives has a cost. An E106 fix can use up to six of the ten
+checks that one compile is allowed.
+
+### Mismatch hints name both sides
+
+The hint for a mismatch in a declaration says the type to declare and the value
+to write. `mut a: int = true;` is E066 with the hint "Declare `a` as `bool`, or
+give it an `int` value". `mut codes: char[3] = [10, 20, 30];` is E004 with
+"Declare `codes` as `int[3]`, or convert each value with `to char`". A `to` is
+offered only where a conversion exists.
+
+### The wording guide
+
+`docs/development/DIAGNOSTICS_STYLE.md` is the guide every message and hint
+follows: first person, one idea per sentence, the types named and never "value",
+and a hint that is something the reader can do. The vague category names that a
+heading used to show are now the name of the kind of mistake, so E066 reads
+`[E066 · type mismatch]`. A duplicate function is reported before code
+generation starts.
+
+### Checks that do not need code generation
+
+The flow checks (missing `return`, use before assignment, double free, and the
+rest) now run before code generation as a phase of their own, and `--check`
+generates no code at all. The reported error codes are the same for every
+program in the test suite. Two compiler tests whose error comes from code
+generation (E122 and E147) now also show the unused-variable warning E163,
+since the flow checks no longer stop when code generation does.
 
 ## Tests
 
-- **`@test` options.** `skip:`, `timeout:`, `levels:`, `stdout:`, `tag:` and `serial` ([TDP-2-026](/tdp/2-026/)).
-- **The compiler's own tests** that are shaped like a function move to `@test` expectations.
+### `@test` options
 
-## `--smart`
+A `@test` can say how it is run, after its outcome. The options go in any
+order, once each, and every value is a literal.
 
-This is the measured half of [TDP-2-008](/tdp/2-008/). Rule-engine coverage grows beyond the 18 codes 2.1.0 started with, and the benchmark behind `--smart` becomes something you can measure it by.
+```turf
+import io;
+import test;
 
-- A benchmark of several hundred cases with a held-out split, scored with a confidence interval and a rules-only baseline.
-- A Fix Score built from facts the compiler can check instead of a yes or no.
-- A check on what a suggested fix does: the capabilities it adds, what it deletes, the API it changes and the warnings it causes.
-- Checks on the model itself: qualification, determinism, drift, resource limits and prompt injection.
-- Richer context in the prompt: struct declarations, the signatures being called, parameter types.
+fn to_kelvin(c: double): double {
+    return c + 273.15;
+}
 
-## Tools and speed
+fn main(): int {
+    printline(to_kelvin(0.0));
+    return 0;
+}
 
-- **Error pages from the registry.** The website's error pages are generated from the code registry that ships in the release archive, so a page and a code cannot disagree.
-- **Versioned schemas.** Every machine-read format has a schema and fixtures: `--diagnostics=json`, `--version --json` and the package graph.
-- **Fewer run-time checks.** The compiler proves more overflow checks unnecessary, from ranges and values carried around a loop. Checked arithmetic stays the default; a check is removed only when it is proven.
+@test(skip: "waits for the new rounding rules")
+fn rounds_to_tenths(): void {
+    test::assert(to_kelvin(0.05) == 273.2, "0.05 C rounds to 273.2 K");
+}
+
+@test(timeout: 2000, levels: all, tag: "slow")
+fn converts_many_readings(): void {
+    mut total: double = 0.0;
+    for i in 0..1000 {
+        total += to_kelvin(i to double);
+    }
+    test::assert(total > 0.0, "positive");
+}
+
+@test(stdout: "273.15\n", tag: ["io", "fast"])
+fn prints_freezing_in_kelvin(): void {
+    printline(to_kelvin(0.0));
+}
+```
+
+```text
+273.15
+```
+
+A normal build leaves the tests out, so the program prints only what `main`
+prints.
+
+| Option | Meaning |
+|---|---|
+| `skip: "reason"` | The test is compiled and checked but not run. `turf test` reports it as `SKIPPED (reason)`, counted apart from the passes. |
+| `timeout: 2000` | The test fails with `TIMEOUT` after that many milliseconds. Its process is killed and the file's other tests still run. |
+| `levels: all` or `[O0, O2]` | The file is built at each level and the test runs at each, reported as `name [-O2]`. |
+| `stdout: "..."` | What the test prints to stdout must be exactly this. |
+| `tag: "slow"` or a list | Names the test for `--tag` and `--skip-tag`. |
+| `serial` | The test never runs beside another. |
+
+`turf test --tag slow` runs only the tests with that tag, and `turf test
+--skip-tag slow` runs the others. `turfc --test` takes the same two flags.
+`timeout:` and `stdout:` need a test that runs, so a `compile_error` test
+cannot have them. A misspelt option, one given twice or a value of the wrong
+kind is E146, and its page lists the options.
+
+### The compiler's own tests
+
+363 of the compiler's own tests that were a file each, 296 that must be
+rejected and 67 that must panic, are now `@test(compile_error)` and
+`@test(panic)` functions grouped into files by topic. The expectations went
+from 1,797 to 1,828 and the number of `fail_*` files from 890 to 527. A
+diagnostic snapshot, the text and the JSON for one program per code, is now
+checked for every code, and a change to a message shows up as a diff to
+review.
+
+## Performance
+
+### Fewer overflow and bounds checks
+
+The compiler tracks the range of values each `int` variable can hold, and
+removes an overflow or bounds check where the range proves it cannot fire.
+This covers loop counters, indices of a range `for`, results of `%`, `&` and
+`>>`, and values that a test has narrowed. Everywhere else the check stays,
+and a program prints the same output and exits with the same status as before.
+
+Over the 764 programs of the compiler's tests, showcase and examples, the
+compiler removed 46,943 overflow checks and 352 bounds checks, across 117,079
+compiled functions. A program compiles the standard library functions it uses,
+so those count once per program. Building each program with and without the
+removal, on those programs and 1,096 generated ones, found none with a
+different exit status or output.
+
+The two loop benchmarks, `particles` and `structs`, run as fast as before
+(0.026 s and 0.520 s at the minimum, in both builds). Their checked `+` adds
+an array element, whose value no range bounds. `math::wrapping_*` stays the
+answer there. `docs/development/BENCHMARKS.md` has the table.
+
+### An overflow check removed by mistake
+
+While this was built, the fuzzer found that `-9223372036854775808 + v`, with
+`v` known to be negative, lost its overflow check and wrapped. It is fixed
+before the release: the check stays, and the program panics.
+
+```turf
+import io;
+
+fn main(): int {
+    mut v: int = -9;
+    printline(-9223372036854775808 + v);
+    return 0;
+}
+```
+
+```text
+panic: runtime check: Integer overflow (k.tr:5)
+```
+
+The file name in the panic is the one you compile. No release had this
+mistake.
+
+## `--smart`, measured
+
+`--smart` asks a local language model for a fix when the compiler has none. No
+model is shipped with Turf, and nothing here changes that. The work in this
+release is to measure `--smart` and to check what it suggests.
+
+- **A benchmark corpus.** 576 cases taken from the tests, `showcase/` and
+  `examples/`, with a few hard negatives. 446 are for tuning and 130 are held
+  out, split by the hash of the source path, and CI checks that the held-out
+  cases do not leak into tuning. `scripts/slm/slm_benchmark/` scores a run by
+  its utility with a bootstrap interval, against a baseline that uses the
+  compiler's rules alone, with calibration and the cost per path. One record
+  per run is kept under `bench/results/smart/`. The records in this release
+  are the rules-only baseline, because the model path has not been run on a
+  GPU yet.
+- **Fix Score.** Every fix that passes its check is also scored on what the
+  edit does, whether it is the compiler's own `Fix:` or the model's
+  suggestion. A fix is `proven` (the compiler's) or `verified` (the model's)
+  when nothing about it is flagged, and `plausible` when it deletes something,
+  changes a declaration, reaches further (`unsafe`, `extern`, a raw pointer,
+  `os`, `fs`, `http`), adds a warning, rewrites a lot or is one of several.
+  A flagged fix is shown with a `Check before applying:` line that says what to
+  look at. The reference lists each fact.
+- **No fix while the parser recovers.** A compiler fix is not offered for an
+  error that follows a syntax error the parser had to recover from, since the
+  tokens after it are a guess.
+- **A deeper sandbox.** The sandbox re-checks a suggestion through the flow
+  analyses as well as parsing and types. An opt-in depth builds the result with
+  a child compiler. A fix that adds a warning or removes code is flagged.
+- **`--smart=thorough`** asks for two more answers once one passes. When they
+  settle on different programs, the fix is shown as `plausible` with `2
+  different fixes pass these checks`. It takes about three times as long.
+- **Richer prompts.** The model is given the parameters of the enclosing
+  function, the structs a mismatch is about and the called function's
+  signature, written in Turf syntax. Operator mismatches carry the known types.
+- **The explanation comes after the fix.** The model writes no explanation
+  while it looks for a fix. Once a fix passes, one more request explains it
+  from the error and the whole edit, so the explanation describes the edit that
+  is shown, even when the fix took several attempts. The model's reasoning for
+  the fix is never shown or cached.
+- **Qualifying a model.** `scripts/slm/qualify_model.sh` measures a model on the
+  benchmark against published thresholds, and `docs/slm/qualified_models.tsv`
+  lists the models that pass. No model is on that list yet. A model that is not
+  on it runs anyway, with one note. `TURF_SLM_MODEL=<file.gguf>` picks the file.
+- **Limits.** A run has a wall-clock budget (180 seconds, or
+  `TURF_SLM_BUDGET_SECONDS`) and a token cap, and both fail closed. A cache
+  entry is tied to the llama.cpp revision and the model's SHA-256. A check
+  that the model gives the same answer twice, an output conformance check on
+  every run, a memory check and replay cases for prompt injection are part of
+  the checks.
+
+## Tools
+
+### The diagnostic registry as JSON
+
+`turfc --registry-json` prints every diagnostic code with its class name, title,
+category, severity, default lint level, the release that added it, and the same
+explanation that `--explain` shows. The release archive carries it as
+`share/turf/diagnostic-registry.json`. A website or an editor can build its
+error pages from it.
+
+### Versioned schemas
+
+Each machine-read format now has a schema, a version field, a producer and
+fixtures, listed in `docs/reference/schemas/README.md`. The package graph that
+`turfc --package-graph` reads and that `turf build`, `turf test` and `turf
+graph` write has one, and so does the report of `turf graph --unsafe`. The
+versioning rule is that a minor version adds and a major version changes or
+removes. CI checks the producers against the schemas.
+
+- Diagnostics JSON is now 1.2. Version 1.1 added `label`, and 1.2 added the
+  fix's `tier` and `flags`.
+- The driver interface is now 1.15. 1.13 added `turfc --test --tag` and
+  `--skip-tag`, 1.14 added `--registry-json`, and 1.15 added `--smart=thorough`.
+  `turfc --version --json` lists the matching features (`test-tags`,
+  `registry-json`, `smart-thorough`).
+
+### `turf upgrade`
+
+`turf upgrade` moves an install made by either installer to the latest release,
+`--version v2.3.0` for a given one and `--check` to only see whether there is
+one. It keeps the plain or smart build you have. It downloads that release's own
+installer and checks it against the release's `checksums.txt`, which now also
+covers `install.sh` and `install.ps1`. Turf never looks for a release unless
+you ask. It works only to releases from 2.3.0 on, since earlier ones have no
+checksum for their installers. A Homebrew or Scoop install is updated with
+`brew upgrade turf` or `scoop update turf`.
+
+## Bug fixes
+
+These were found by the fuzzer. Each case was a compiler hang, a crash or a
+wrong message, and none was a wrong program that compiled.
+
+- A generic struct used with `void`, such as `Box<void>` for `struct Box<T> {
+  v: T }`, made the compiler hang on the field of type `void`. It is now E112, at the line that used it, naming the
+  field.
+- `fn<T> w(x: T)` called as `w(v())` with a `void` function, or as `w(continue)`,
+  made the compiler hang on a parameter of type `void`. It is now E112 at the
+  call.
+- `fn<T> f(a: T): int { return a.inner.get(); }` was an internal error ("I could
+  not work out the type of the expression"). The call is left to each
+  instantiation, and a type without the field `inner` is E068.
+- A generic function that has an unknown name in its body reported E040 and then
+  a second message that called it a compiler bug. It reports E040 only.
+- `@deprecated` without its argument, on a function whose body also had an
+  error, crashed the compiler. It now reports the program's own errors.
+- `defer p = return p;`, and a `return`, `break` or `continue` anywhere inside
+  a deferred statement, in a call argument or on the right of an assignment,
+  crashed the compiler with a stack overflow. It is E083, as it already was
+  for a statement of its own.
+- A constructor of a generic struct whose parameters never mention `T`, and a
+  generic function called with its type parameters in another order than they
+  were declared, are in the Language section above.
+
+## Documentation
+
+- New error pages: E174 to E197.
+- The pages of E044, E106, E146, E004 and E066 describe the new fixes, the `@test` options
+  and the two-sided hints.
+- The testing guide covers the `@test` options. The reference covers
+  `--registry-json`, the tier and flags of a fix, `turf upgrade` and the
+  schemas.
+- The standard library, `showcase/`, the examples and the documentation use
+  `static fn`, `pub immut` and written type arguments. The public surface of the standard library is the same
+  before and after: 347 items.
+- Pointers and references: a method call through a raw-pointer receiver outside
+  `unsafe` is E130, as it has been since 2.0.0.
 
 ## For contributors
 
-- The compiler's global symbol table goes away, so the front end holds no state in globals.
-- Flow analysis moves out of code generation into a table of facts that code generation reads.
+- The symbol table belongs to a compilation, not the process. The driver and
+  each in-process analysis own one and make it current with a
+  `SymbolTableScope`.
+- A per-compilation `AnalysisFacts` table holds what the semantic passes
+  record about a node, such as which checks are proven safe, keyed by node id
+  instead of by flags on the tree. The generated code is identical over 1,638
+  programs.
+- A warning registered with `AllowByDefault` is reported only once its code is
+  named by a flag or `[lints]`. A test file can set lint levels with a
+  `// LINT: --warn E174` comment. A plain test now pins and applies the `Fix:`
+  lines it prints, as a `fail_*` test does.
+- `scripts/check/diagnostic_snapshots.py` compares the text and the JSON of one
+  program per code with the files in `tests/snapshots/diagnostics/`, and
+  `--write` regenerates them after a change you meant to make.
+- The compatibility check for the 2.0 suite compares error codes, not message
+  text.
+- `scripts/dev/fuzz/elision_diff.py` builds each program with and without the
+  range-based removal of checks and requires the same exit status and output.
+  `TURF_NO_ELISION=1` turns the removal off, and `TURF_ELISION_STATS=1` prints
+  each function's proofs.
