@@ -1,0 +1,54 @@
+---
+tag: "v2.4.0"
+title: "Closures and generics"
+description: "The next release adds functions you can write inline and pass around, closures that capture variables, generic inference that reads the arguments you already wrote, and diagnostics that show the related code, recognize common mistakes and report every independent error in one run."
+highlights:
+  - "Anonymous functions, `fn(x: int): int { return x * 2; }`, and named functions as values."
+  - "Closures that capture variables and can outlive the function that made them."
+  - "`Box::new(42)` is a `Box<int>` without writing the type, and `List::from([1, 2, 3])` is a `List<int>`."
+  - "Notes that print the related code, and messages that recognize `let`, a missing `mut` or `=` where `==` was meant."
+  - "Every independent error in one run, with `--error-limit`."
+---
+
+<Callout tone="note" title="Not released yet">
+This page is a preview. It describes what the 2.4.0 line is planned to carry, from milestone 2.4.0 ([#367](https://github.com/turf-lang/turf-lang/issues/367) to [#372](https://github.com/turf-lang/turf-lang/issues/372)). Nothing here has shipped. Items can move to a later release, and this page is rewritten with the real notes when 2.4.0 ships.
+</Callout>
+
+Version 2.4.0 changes nothing you have already written. Everything in it is additive: it accepts programs that 2.3 rejects, and rejects none that 2.3 accepts.
+
+## Closures
+
+This is [TDP-2-009](/tdp/2-009/), phases 1 and 2.
+
+- **Anonymous functions.** `fn(x: int): int { return x * 2; }` is an expression. One that uses nothing from around it is as thin as a function pointer, so function values in `extern` struct fields keep their size.
+- **Functions as values.** A named function can be stored, `mut f = square;`, and called through the variable.
+- **Arrays of function values.** `(fn(int): int)[2]` is an array of two functions. `fn(int): int[2]` still means a function that returns an array.
+- **Captures.** A lambda that uses a local variable captures it, and can be returned and called after the function that made it has returned. Values are captured by value and heap objects by reference, as assignment already behaves. Safe code still cannot keep a stack address that could dangle.
+
+```turf
+fn make_adder(n: int): fn(int): int {
+    return fn(x: int): int { return x + n; };
+}
+```
+
+`List.map`, `filter` and a closure-based `http` router follow in 2.5.0, with lambda parameter types read from where the lambda is used.
+
+## Generic inference
+
+This is [TDP-2-010](/tdp/2-010/).
+
+- **Type arguments from a constructor's arguments.** `mut b = Box::new(42);` is a `Box<int>`, and `Pair::new("a", 1)` is a `Pair<string, int>`. A declared type still wins when there is one. `List::default()` has no argument to read and keeps its `List<int>::default()` spelling.
+- **Type parameters only in the return type.** `fn<T> make(): T` is accepted. A call states the type through what it is assigned to or a type argument: `mut a: int = make();` and `make::<int>()`.
+- **`List::from` and `Set::from`.** `mut l = List::from([1, 2, 3]);` is a `List<int>`.
+
+## Diagnostics
+
+This is the second half of [TDP-2-028](/tdp/2-028/).
+
+- **Notes that show the related code.** "`P` is declared here" prints the line it means, instead of a line and column inside the message.
+- **Messages that recognize the intent.** A declaration without `mut` or `immut`, `let` or `var` from another language, `=` where a condition needs `==`, an unclosed bracket reported where it opened, and a type written before its name each get a message that says what was probably meant, and a `Fix:` when one edit is right.
+- **Every independent error in one run.** A file with three unrelated mistakes reports three errors, not one. A mistake is reported once, without the errors that follow from it. `--error-limit` caps the output, 20 by default.
+
+## For contributors
+
+- The results of resolution and type checking move into a semantic model kept apart from the syntax tree, with one type-inference engine. It is what lets the compiler keep going after an error.
