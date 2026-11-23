@@ -3,7 +3,7 @@ major: 2
 number: 22
 title: Methods on number literals
 description: Keep `1.twice()` working and document it; in 3.0, a decimal literal must be parenthesized before a method call, `(1.5).floor()`.
-status: accepted
+status: implemented
 date: 2026-10-25
 authors:
   - Turf Team

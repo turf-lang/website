@@ -135,6 +135,14 @@ If you ever report a bug, paste the output of `turf version` into the report. It
 
 If `turf version` printed its versions, you're ready: in the next guide you'll write your first program and run it.
 
+## Upgrade later
+
+To move to a newer Turf, run:
+
+<Command text="turf upgrade" />
+
+It goes to the latest release and keeps the plain or smart build you have. `turf upgrade --check` only says whether there is a newer release, and `turf upgrade --version v2.3.0` goes to the release you name. It downloads that release's own installer and checks it against the release's `checksums.txt` before running it, and it never looks for a release unless you ask. It works to releases from 2.3.0 on. If you installed Turf with Homebrew or Scoop, update it that way (`brew upgrade turf` or `scoop update turf`); `turf upgrade` tells you so.
+
 ## If something goes wrong
 
 ### “turf: command not found”

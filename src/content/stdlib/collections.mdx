@@ -77,15 +77,16 @@ fn main(): int {
 ```text
 collections-e008.tr (1 error)
 
-── error at line 5, col 5 [E008 · undeclared variable]
+── error at line 5, col 5 [E008 · variable read before it has a value]
 
-  Oops! You're using 'l' (type 'list::List<int>') before it has a value.
-  Note: declared here (line 4, col 5)
+  I cannot use `l` (type `list::List<int>`) before it has a value.
 
-  Hint: Make sure every path assigns to 'l' before you use it.
+  Hint: Assign to `l` on every path before it is used.
 
+  4 │     mut l: List<int>;
+    │     - declared here
   5 │     l.push(1);
-    │     ^ Here!
+    │     ^ read here before it has a value
 
   Run `turf --explain E008` for more details.
 ```
@@ -188,16 +189,17 @@ fn main(): int {
 ```text
 collections-e060.tr (1 error)
 
-── error at line 5, col 6 [E060 · declaration]
+── error at line 5, col 6 [E060 · immutable assignment]
 
-  Oops! You can't change the value of 'l' because it's immutable.
-  Note: declared immutable here (line 4, col 5)
-  Note: 'list::List.push' changes it through a slice of one of its arrays (line 57, col 16)
+  I cannot change `l`: it is immutable.
+  Note: `list::List.push` changes it through a slice of one of its arrays (line 57, col 16)
 
-  Hint: If you need to change its value later, declare it with 'mutable' instead of 'immutable'.
+  Hint: Declare it `mut` instead of `immut` to change it later.
 
+  4 │     immut l: List<int> = List::default();
+    │     - declared immutable here
   5 │     l.push(1);
-    │      ^ Here!
+    │      ^ this is immutable
 
   Fix: replace 'immut' with 'mut'
   4 │     mut l: List<int> = List::default();
@@ -358,14 +360,14 @@ fn main(): int {
 ```text
 collections-e098.tr (1 error)
 
-── error at line 8, col 12 [E098 · type mismatch]
+── error at line 8, col 12 [E098 · write to a temporary]
 
-  Cannot assign to part of the value an 'operator[]' read returned: it is a copy, so the write would be lost.
+  I cannot assign to part of what an `operator[]` read returned: it is a copy, so the write would be lost.
 
-  Hint: 'x[i]' returns the element by value, so this would only change a copy. Read the element into a variable, change that, and store it back: `mut e: T = x[i]; e.field = v; x[i] = e;`. Writing THROUGH a pointer or reference element, or into a nested list (`grid[i][j] = v`), is fine.
+  Hint: Read the element into a variable, change that, and store it back: `mut e: T = x[i]; e.field = v; x[i] = e;`. `x[i]` returns the element by value, so a write would change only a copy. Writing through a pointer or reference element, or into a nested list (`grid[i][j] = v`), is fine.
 
   8 │     l[0].n = 5;
-    │            ^ Here!
+    │            ^ this is a temporary value
 
   Run `turf --explain E098` for more details.
 ```
@@ -385,15 +387,14 @@ fn main(): int {
 ```text
 collections-e126.tr (1 error)
 
-── error at line 6, col 12 [E126 · type mismatch]
+── error at line 6, col 12 [E126 · operation not supported here]
 
-  Operation not supported here!
-  Compound assignment through 'operator[]' is not supported -- write 'x[i] = x[i] + int' explicitly instead.
+  I cannot use `+=` through `operator[]`.
 
-  Hint: Write the operation out in full instead, e.g. `x = x + 1;`.
+  Hint: Write it out: `x[i] = x[i] + y;`.
 
   6 │     m["a"] += 1;
-    │            ^~ Here!
+    │            ^~ this is not supported here
 
   Run `turf --explain E126` for more details.
 ```
@@ -430,15 +431,14 @@ fn main(): int {
 ```text
 collections-e005.tr (1 error)
 
-── error at line 6, col 5 [E005 · array error]
+── error at line 6, col 5 [E005 · for loop over a non-array]
 
-  for-each requires an array or a string!
-  You tried to iterate over a value of type 'list::List<int>'.
+  I cannot use for-each on the type `list::List<int>`, which is not an array or a string.
 
-  Hint: for-each only works on Turf's built-in fixed-size array type (T[N]). Lists, maps, structs, and scalars aren't supported yet.
+  Hint: Loop over an array (`T[N]` or a `T[]` parameter) or a string, walk a `List` by index (`for i in 0..l.length()`), or loop over a `Map` through `keys()`.
 
   6 │     for x in l {
-    │     ^~~ Here!
+    │     ^~~ this is not an array
 
   Run `turf --explain E005` for more details.
 ```

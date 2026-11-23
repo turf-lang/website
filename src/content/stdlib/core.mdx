@@ -110,7 +110,7 @@ true
 | `floor(x: double): double` | largest whole number not above `x` |
 | `ceil(x: double): double` | smallest whole number not below `x` |
 
-`round` is half-away-from-zero, not banker's rounding: `2.5.round()` is `3.0`
+`round` is half-away-from-zero, not banker's rounding: `(2.5).round()` is `3.0`
 and `(-2.5).round()` is `-3.0`.
 
 `round`, `floor` and `ceil` are exact for every `double`, including one beyond
@@ -127,9 +127,9 @@ fn main(): int {
     printline(x.round());        // -3
     printline(x.floor());        // -3
     printline(x.ceil());         // -2
-    printline(4.0.is_integer()); // true
-    printline(4.5.is_integer()); // false
-    printline(2.7.floor());      // 2
+    printline((4.0).is_integer()); // true
+    printline((4.5).is_integer()); // false
+    printline((2.7).floor());      // 2
     return 0;
 }
 ```

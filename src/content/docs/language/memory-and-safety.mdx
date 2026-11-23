@@ -173,7 +173,7 @@ properties that matter when you cross into C:
 `heap(expr)` copies the value of `expr` onto the GC heap and gives you a `&T`
 to the copy. It is a built-in, needs no import and no `unsafe`. `T` is any type
 with a size: a struct, a fixed array or a primitive. `heap` of a `void`
-expression is [`E067`](/docs/errors/e067/) ("Cannot heap-allocate 'void'").
+expression is [`E067`](/docs/errors/e067/) ("`heap(...)` has nothing to copy onto the heap: its argument is `void`").
 
 A reference from `&local` points into a stack frame that ends when the function
 returns; a reference from `heap(local)` points at a copy that lives as long as
@@ -253,7 +253,7 @@ counts as non-null on that path; using it where it might be null is [`E081`](/do
 struct Node { val: int, next: &?Node }
 
 fn first_val(n: &?Node): int {
-    return n.val;       // E081: Possible null dereference: 'n' might be 'null' here
+    return n.val;       // E081: I cannot access the field `val` of `n`, which might be `null` here
 }
 
 fn main(): int {
@@ -263,15 +263,16 @@ fn main(): int {
 ```text
 memory_and_safety_e081.tr (1 error)
 
-── error at line 4, col 13 [E081 · memory error]
+── error at line 4, col 13 [E081 · possible null dereference]
 
-  Possible null dereference: 'n' might be 'null' here, but you're accessing its 'val' field.
-  Note: declared here (line 3, col 14)
+  I cannot access the field `val` of `n`, which might be `null` here.
 
-  Hint: Add a null check first, e.g. 'if (n != null) { ... }', and access '.val' only inside it.
+  Hint: Add a null check first, for example `if (n != null) { ... }`, and access `.val` only inside it.
 
-  4 │     return n.val;       // E081: Possible null dereference: 'n' might be 'null' here
-    │             ^ Here!
+  3 │ fn first_val(n: &?Node): int {
+    │              - declared here
+  4 │     return n.val;       // E081: I cannot access the field `val` of `n`, which might be `null` here
+    │             ^ this may be `null`
 
   Run `turf --explain E081` for more details.
 ```
@@ -285,7 +286,7 @@ compiler has seen the null test; elsewhere it is [`E082`](/docs/errors/e082/):
 struct Node { val: int, next: &?Node }
 
 fn force(n: &?Node): &Node {
-    return n to &Node;  // E082: Cannot cast 'n' to a non-null reference here -- it might be 'null'
+    return n to &Node;  // E082: I cannot cast `n` to a non-null reference here, because it might be `null`
 }
 
 fn main(): int {
@@ -295,18 +296,58 @@ fn main(): int {
 ```text
 memory_and_safety_e082.tr (1 error)
 
-── error at line 4, col 14 [E082 · type mismatch]
+── error at line 4, col 14 [E082 · unnarrowed nullable-to-safe-reference cast]
 
-  Cannot cast 'n' to a non-null reference here -- it might be 'null'.
+  I cannot cast `n` to a non-null reference here, because it might be `null`.
 
-  Hint: Narrow it first with a direct null check, e.g. 'if (n != null) { ... n to &T ... }', so the cast only runs where it's known to be safe.
+  Hint: Narrow it first with a direct null check, for example `if (n != null) { ... n to &T ... }`, so the cast runs only where it is known to be safe.
 
-  4 │     return n to &Node;  // E082: Cannot cast 'n' to a non-null reference here -- it might be 'null'
-    │              ^~ Here!
+  4 │     return n to &Node;  // E082: I cannot cast `n` to a non-null reference here, because it might be `null`
+    │              ^~ this may be `null`, and nothing has checked it
 
   Run `turf --explain E082` for more details.
 ```
 </Diagnostic>
+
+Where the null test has been seen, the cast is not needed either: a `&?T`
+variable, or a field reached from one (`h.next`, `h.next.next`), is passed,
+returned or stored as a `&T` as it is. A test on a field narrows that field
+the same way a test on a variable does, and a field just given a `&T` counts
+as non-null:
+
+<Code title="memory_and_safety_3_references_t.tr">
+```turf
+struct Node { val: int, next: &?Node }
+
+fn get(n: &Node): int {
+    return n.val;
+}
+
+fn second(h: &Node): &Node {
+    if h.next != null {
+        return h.next;              // a checked field is a &Node
+    }
+    return h;
+}
+
+fn sum(h: &Node): int {
+    if h.next != null && h.next.next != null {
+        return h.next.next.val + get(h.next.next);
+    }
+    return 0;
+}
+```
+</Code>
+
+A test on a field holds until something may change the field: any function or
+method call (it may write any field it can reach, so `get(h.next)` above comes
+after `h.next.next.val`, not before), an assignment to a field of the same
+name anywhere (`o.next = null` may write the very node `h` refers to), an
+assignment to the variable the path starts from, or a write to a whole struct
+or an array element. After that, or where it was never tested, using it as a
+`&T` is [`E082`](/docs/errors/e082/), and reading through it is [`E081`](/docs/errors/e081/). Inside a `defer`, whose
+statement runs at the end of the scope, no earlier test counts. To keep a
+checked value across a call, give it a name: `immut n: &Node = h.next;`.
 
 A `&T` converts to a `&?T` by itself. A reference never turns into the value
 it refers to by itself: `r to T` copies the value out, and the copy is
@@ -315,7 +356,7 @@ initializer, an assignment, an argument or a `return`, and for a method's
 `self` too (`return self to Point;`). A `&?T` is copied out only where the
 null test has been seen, like `to &T`:
 
-<Program file="memory_and_safety_3_references_t.tr">
+<Program file="memory_and_safety_3_references_t_2.tr">
 ```turf
 struct Point { x: int, y: int }
 
@@ -367,7 +408,7 @@ A **dangling** reference is one that points at something that no longer exists, 
 A local variable lives until its function returns, then its stack slot is
 reused. A `&T` into it would then point at something else. TurfLang refuses
 the common ways of letting such a reference leave the function: it is
-[`E086`](/docs/errors/e086/), "A reference into this function's own local storage can't be ..."
+[`E086`](/docs/errors/e086/), "I cannot let a reference into this function's own local storage be ..."
 
 <Diagnostic file="memory_and_safety_e086.tr">
 ```turf
@@ -376,7 +417,7 @@ struct Counter { n: int }
 fn make(): &Counter {
     mut c: Counter = Counter::default();
     c.n = 1;
-    return &c;          // E086: ... can't be returned
+    return &c;          // E086: I cannot let it be returned
 }
 
 fn main(): int {
@@ -386,14 +427,14 @@ fn main(): int {
 ```text
 memory_and_safety_e086.tr (1 error)
 
-── error at line 6, col 5 [E086 · memory error]
+── error at line 6, col 5 [E086 · dangling reference escape]
 
-  A reference into this function's own local storage can't be returned -- it would dangle the moment this function returns.
+  I cannot let a reference into this function's own local storage be returned, because it would dangle when this function returns.
 
-  Hint: heap(value) copies it onto the GC heap first and gives you back a reference that outlives this function; or return/store a reference you received as a parameter instead of a local's.
+  Hint: Copy it onto the GC heap first with `heap(value)`, which gives a reference that outlives this function, or return or store a reference you received as a parameter instead of a local's.
 
-  6 │     return &c;          // E086: ... can't be returned
-    │     ^~~~~~ Here!
+  6 │     return &c;          // E086: I cannot let it be returned
+    │     ^~~~~~ this reference outlives what it points at
 
   Worth reading in full -- run `turf --explain E086` before you patch this one.
 ```
@@ -452,7 +493,7 @@ struct Node { val: int, next: &?Node }
 fn link(head: &Node): void {
     mut tmp: Node = Node::default();
     tmp.val = 7;
-    head.next = &tmp;   // E086: can't be stored into a field that outlives this function
+    head.next = &tmp;   // E086: I cannot let it be stored into a field that outlives this function
 }
 
 fn main(): int {
@@ -462,14 +503,14 @@ fn main(): int {
 ```text
 memory_and_safety_e086_2.tr (1 error)
 
-── error at line 6, col 15 [E086 · memory error]
+── error at line 6, col 15 [E086 · dangling reference escape]
 
-  A reference into this function's own local storage can't be stored into a field that outlives this function -- it would dangle the moment this function returns.
+  I cannot let a reference into this function's own local storage be stored into a field that outlives this function, because it would dangle when this function returns.
 
-  Hint: heap(value) copies it onto the GC heap first and gives you back a reference that outlives this function; or return/store a reference you received as a parameter instead of a local's.
+  Hint: Copy it onto the GC heap first with `heap(value)`, which gives a reference that outlives this function, or return or store a reference you received as a parameter instead of a local's.
 
-  6 │     head.next = &tmp;   // E086: can't be stored into a field that outlives this function
-    │               ^ Here!
+  6 │     head.next = &tmp;   // E086: I cannot let it be stored into a field that outlives this function
+    │               ^ this reference outlives what it points at
 
   Worth reading in full -- run `turf --explain E086` before you patch this one.
 ```
@@ -483,7 +524,7 @@ struct Item { v: int }
 
 fn fill(into: list::List<&Item>): void {
     mut it: Item = Item::default();
-    into.push(&it);     // E086: can't be pushed into a collection
+    into.push(&it);     // E086: I cannot let it be pushed into a collection
 }
 
 fn main(): int {
@@ -493,14 +534,14 @@ fn main(): int {
 ```text
 memory_and_safety_e086_3.tr (1 error)
 
-── error at line 7, col 9 [E086 · memory error]
+── error at line 7, col 9 [E086 · dangling reference escape]
 
-  A reference into this function's own local storage can't be pushed into a collection -- it would dangle the moment this function returns.
+  I cannot let a reference into this function's own local storage be pushed into a collection, because it would dangle when this function returns.
 
-  Hint: heap(value) copies it onto the GC heap first and gives you back a reference that outlives this function; or return/store a reference you received as a parameter instead of a local's.
+  Hint: Copy it onto the GC heap first with `heap(value)`, which gives a reference that outlives this function, or return or store a reference you received as a parameter instead of a local's.
 
-  7 │     into.push(&it);     // E086: can't be pushed into a collection
-    │         ^ Here!
+  7 │     into.push(&it);     // E086: I cannot let it be pushed into a collection
+    │         ^ this reference outlives what it points at
 
   Worth reading in full -- run `turf --explain E086` before you patch this one.
 ```
@@ -515,7 +556,7 @@ fn wrap(): Holder {
     mut it: Item = Item::default();
     mut h: Holder = Holder::default();
     h.item = &it;
-    return h;           // E086: can't be returned inside a struct or array value
+    return h;           // E086: I cannot let it be returned inside a struct or array value
 }
 
 fn main(): int {
@@ -525,14 +566,14 @@ fn main(): int {
 ```text
 memory_and_safety_e086_4.tr (1 error)
 
-── error at line 8, col 5 [E086 · memory error]
+── error at line 8, col 5 [E086 · dangling reference escape]
 
-  A reference into this function's own local storage can't be returned inside a struct or array value -- it would dangle the moment this function returns.
+  I cannot let a reference into this function's own local storage be returned inside a struct or array, because it would dangle when this function returns.
 
-  Hint: heap(value) copies it onto the GC heap first and gives you back a reference that outlives this function; or return/store a reference you received as a parameter instead of a local's.
+  Hint: Copy it onto the GC heap first with `heap(value)`, which gives a reference that outlives this function, or return or store a reference you received as a parameter instead of a local's.
 
-  8 │     return h;           // E086: can't be returned inside a struct or array value
-    │     ^~~~~~ Here!
+  8 │     return h;           // E086: I cannot let it be returned inside a struct or array value
+    │     ^~~~~~ this reference outlives what it points at
 
   Worth reading in full -- run `turf --explain E086` before you patch this one.
 ```
@@ -596,23 +637,21 @@ runs at run time:
 ```turf
 fn main(): int {
     mut a: int[3] = [1, 2, 3];
-    printline(a[3]);        // E001: Array index out of bounds!
+    printline(a[3]);        // E001: I cannot use `a[3]`, because `a` has only 3 elements
     return 0;
 }
 ```
 ```text
 memory_and_safety_e001.tr (1 error)
 
-── error at line 3, col 16 [E001 · array error]
+── error at line 3, col 16 [E001 · array bounds]
 
-  Array index out of bounds!
-  You tried to access 'a[3]', but 'a' only has 3 elements (indices 0 to 2, or -1 to -3 counting from the end).
-  Note: array declared here (line 2, col 9)
+  I cannot use `a[3]`, because `a` has only 3 elements.
 
-  Hint: Array indices start at 0 and go up to size - 1; a negative index counts back from the end (-1 is the last element).
+  Hint: Use an index from 0 to 2, or `-1` to `-3` to count from the end.
 
-  3 │     printline(a[3]);        // E001: Array index out of bounds!
-    │                ^ Here!
+  3 │     printline(a[3]);        // E001: I cannot use `a[3]`, because `a` has only 3 elements
+    │                ^ this index is outside the array
 
   Run `turf --explain E001` for more details.
 ```
@@ -834,15 +873,14 @@ fn main(): int {
 ```text
 memory_and_safety_e130.tr (1 error)
 
-── error at line 6, col 17 [E130 · memory error]
+── error at line 6, col 17 [E130 · raw pointer outside unsafe]
 
-  Unsafe pointer use!
-  Raw pointer type 'void*' cannot be used outside an 'unsafe' block.
+  I cannot use the raw pointer type `void*` outside an `unsafe` block.
 
-  Hint: Wrap this in 'unsafe { }', or use a safe reference ('&void') instead if you don't actually need a possibly-null raw pointer.
+  Hint: Wrap this in `unsafe { }`: an untyped pointer has no safe reference to use instead.
 
   6 │     mem::free(s to void*);      // E130
-    │                 ^~ Here!
+    │                 ^~ this needs `unsafe`
 
   Worth reading in full -- run `turf --explain E130` before you patch this one.
 ```

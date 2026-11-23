@@ -85,7 +85,7 @@ fn main(): int {
 ```
 </Program>
 
-- Braces around each branch body are **mandatory**. There is no brace-less `if`; forgetting the `{` is error [E107](/docs/errors/e107/) (`Expected '{' after if-condition`), and the hint points you at `give` / `otherwise` for the single-expression case.
+- Braces around each branch body are **mandatory**. There is no brace-less `if`; forgetting the `{` is error [E107](/docs/errors/e107/) (`` I expected a `{` after the `if` condition ``), and the hint points you at `give` / `otherwise` for the single-expression case.
 - `elseif` (one word) chains further conditions. `else if` is accepted as well, but `elseif` is the spelling to use.
 - `else` is optional. An empty branch is legal (`if cond {} else { ... }`).
 - Branches are evaluated top to bottom; the first true condition wins and the rest are not evaluated.
@@ -102,12 +102,13 @@ fn main(): int {
 ```text
 control_flow_e107.tr (1 error)
 
-── error at line 3, col 15 [E107 · syntax error]
+── error at line 3, col 15 [E107 · missing opening brace or parenthesis]
 
-  Expected '{' after if-condition. Use 'give ... otherwise ...' for single-expression ternary.
+  I expected a `{` after the `if` condition. To choose between two expressions, use `give ... otherwise ...`.
+  Hint: Open the block with `{`, or the list with `(`, at the spot the arrow points to.
 
   3 │     if n == 0 n = 1;
-    │               ^ Here!
+    │               ^ an opening brace or parenthesis is missing here
 
   Run `turf --explain E107` for more details.
 ```
@@ -225,9 +226,9 @@ fn main(): int {
 
 A post-test loop: the body always runs at least once, and the condition is checked after each pass. Parentheses around the condition are optional.
 
-- The body must be braced. `do x -= 1; while x > 0;` is error [E107](/docs/errors/e107/) (`Expected '{' to open the do-block body`).
-- The `while` after the closing brace is required (error [E110](/docs/errors/e110/), `Expected 'while' after do-block`).
-- A `do` / `while` is the one loop that ends in a **`;`** after its condition, since it does not close with a `}`. A missing one is error [E102](/docs/errors/e102/) (`Expected ';' after do-while loop`); a second, stray `;` is error [E103](/docs/errors/e103/) (`Unexpected ';'`).
+- The body must be braced. `do x -= 1; while x > 0;` is error [E107](/docs/errors/e107/) (`` I expected a `{` to open the body of this `do` loop ``).
+- The `while` after the closing brace is required (error [E110](/docs/errors/e110/), `` I expected `while` after the body of this `do` loop ``).
+- A `do` / `while` is the one loop that ends in a **`;`** after its condition, since it does not close with a `}`. A missing one is error [E102](/docs/errors/e102/) (`` I expected a `;` after this `do ... while` loop ``); a second, stray `;` is error [E103](/docs/errors/e103/) (`Unexpected ';'`).
 - The condition is outside the body's scope: a variable declared inside the body is not visible to it.
 
 <Diagnostic file="control_flow_e040.tr">
@@ -242,14 +243,14 @@ fn main(): int {
 ```text
 control_flow_e040.tr (1 error)
 
-── error at line 4, col 13 [E040 · undeclared variable]
+── error at line 4, col 13 [E040 · unknown name]
 
-  I can't find anything named 'finished'.
+  I cannot find anything named `finished`.
 
-  Hint: Did you forget to create this variable? You have to create it before you can use it, like this: `mut finished: int = 5;`
+  Hint: Declare it before you use it, for example `mut finished: int = 5;`.
 
   4 │     } while finished;
-    │             ^~~~~~~~ Here!
+    │             ^~~~~~~~ nothing of this name is in scope
 
   Run `turf --explain E040` for more details.
 ```
@@ -355,7 +356,7 @@ fn main(): int {
 ```
 </Program>
 
-The default step counts up, so `for i in 5..1 { ... }` never reaches its end and runs forever, as does any `step` that moves away from the end. When both bounds are constants and the step is the default or a literal `i++`, `i--`, `i += k` or `i -= k`, the compiler warns ("This loop never reaches its end"); otherwise it cannot tell.
+The default step counts up, so `for i in 5..1 { ... }` never reaches its end and runs forever, as does any `step` that moves away from the end. When both bounds are constants and the step is the default or a literal `i++`, `i--`, `i += k` or `i -= k`, the compiler warns ("This loop never reaches its end: 5..1 counts down, but the step counts up."); otherwise it cannot tell.
 
 ### The loop variable and the bounds
 
@@ -370,7 +371,7 @@ The default step counts up, so `for i in 5..1 { ... }` never reaches its end and
 A `step` need not mention the loop variable, but one that never changes it, in a body that does not change it either, is almost certainly a mistake. The compiler warns:
 
 ```text
-Warning: The loop variable 'i' is never changed by this loop's 'step' or its body, so it will loop forever: 'i' starts below the end value and never changes.
+The loop variable `i` is never changed by this loop's `step` or its body, so the loop runs forever, because `i` starts below the end value and never changes.
 ```
 
 If a different variable controls when the loop ends, use `while`.
@@ -391,7 +392,7 @@ fn main(): int {
 ```
 </Code>
 
-The `(index, value)` pair form belongs to [for-each](#for-for-each-form); on a range it is error [E120](/docs/errors/e120/) (`The '(index, value)' form isn't supported for a range-based for-loop`).
+The `(index, value)` pair form belongs to [for-each](#for-for-each-form); on a range it is error [E120](/docs/errors/e120/) (`` I cannot use the `(index, value)` form in a range-based `for` loop ``).
 
 <Diagnostic file="control_flow_e120.tr">
 ```turf
@@ -404,13 +405,13 @@ fn main(): int {
 ```text
 control_flow_e120.tr (1 error)
 
-── error at line 2, col 5 [E120 · control flow]
+── error at line 2, col 5 [E120 · unsupported loop form]
 
-  The '(index, value)' form isn't supported for a range-based for-loop.
-  Hint: Range-based for only binds a single scalar variable: for i in 0..10 step i += 1 { }
+  I cannot use the `(index, value)` form in a range-based `for` loop.
+  Hint: Bind a single variable in a range-based `for` loop: `for i in 0..10 step i += 1 { }`.
 
   2 │     for (index, value) in 0..10 {
-    │     ^~~ Here!
+    │     ^~~ this loop form is not supported
 
   Run `turf --explain E120` for more details.
 ```
@@ -545,7 +546,7 @@ fn main(): int {
 - Each iteration reads the byte as it is then, so a byte the body changes before the loop reaches it is seen changed. If the body writes a `'\0'` that the loop then reaches, the string has become shorter than the loop's position, and the read panics with `String index out of bounds`, as `s[i]` would.
 - The bytes are bytes: a string holding UTF-8 text gives one `char` per byte, not per character, exactly like `s[i]` and `s.length()`.
 
-Arrays and strings are the only things for-each takes. A scalar, a struct, and the collection types `List`, `Map` and `Set` are rejected with error [E005](/docs/errors/e005/) (`for-each requires an array or a string!`). To walk a collection, loop over its indices:
+Arrays and strings are the only things for-each takes. A scalar, a struct, and the collection types `List`, `Map` and `Set` are rejected with error [E005](/docs/errors/e005/) (`` I cannot use for-each on the type `int`, which is not an array or a string. ``). To walk a collection, loop over its indices:
 
 <Program file="control_flow_for_for_each_4.tr">
 ```turf
@@ -584,15 +585,14 @@ fn main(): int {
 ```text
 control_flow_e005.tr (1 error)
 
-── error at line 5, col 5 [E005 · array error]
+── error at line 5, col 5 [E005 · for loop over a non-array]
 
-  for-each requires an array!
-  You tried to iterate over a value of type 'list::List<int>'.
+  I cannot use for-each on the type `list::List<int>`, which is not an array or a string.
 
-  Hint: for-each only works on Turf's built-in fixed-size array type (T[N]). Lists, maps, structs, and scalars aren't supported yet.
+  Hint: Loop over an array (`T[N]` or a `T[]` parameter) or a string, walk a `List` by index (`for i in 0..l.length()`), or loop over a `Map` through `keys()`.
 
   5 │     for value in l {
-    │     ^~~ Here!
+    │     ^~~ this is not an array
 
   Run `turf --explain E005` for more details.
 ```
@@ -610,7 +610,7 @@ Both are bare keywords. There are no labels, so neither can name an outer loop.
 
 - `break` leaves the innermost enclosing loop.
 - `continue` jumps to that loop's next iteration. In a range `for` the `step` clause runs first.
-- Either one outside any loop is error [E007](/docs/errors/e007/) (`'break' used outside of a loop`, `'continue' used outside of a loop`).
+- Either one outside any loop is error [E007](/docs/errors/e007/) (`` I cannot use `break` outside of a loop ``, `` I cannot use `continue` outside of a loop ``).
 - They work the same way in `while`, `do` / `while`, range `for` and for-each, in any nesting, and inside a [`compare`](#compare--matches) arm (where they act on the loop around the `compare`).
 
 <Program file="control_flow_break_and_continue.tr">
@@ -659,15 +659,14 @@ fn main(): int {
 ```text
 control_flow_e007.tr (1 error)
 
-── error at line 2, col 5 [E007 · control flow]
+── error at line 2, col 5 [E007 · break, continue or return out of place]
 
-  Control flow error!
-  'break' used outside of a loop.
+  I cannot use `break` outside of a loop.
 
-  Hint: Make sure 'break' and 'continue' are inside a loop, and 'return' is inside a function.
+  Hint: Move `break` and `continue` inside a loop, and `return` inside a function.
 
   2 │     break;
-    │     ^~~~~ Here!
+    │     ^~~~~ this is not inside a loop or a function
 
   Run `turf --explain E007` for more details.
 ```
@@ -827,7 +826,7 @@ fn main(): int {
 
 A deferred statement is a single statement: a call, an assignment, a loop. A loop or other statement that ends in a `}` takes a `;` after it. A block (`defer { ... }`) or a declaration (`defer mut q: int = 3;`) is a syntax error.
 
-A deferred statement **cannot jump out of itself**. `return`, `break` and `continue` aimed at something outside the `defer` are error [E083](/docs/errors/e083/) (`A deferred statement can't 'return'`), and `try` is error [E095](/docs/errors/e095/), because a defer runs while the function is already leaving and has nowhere to go:
+A deferred statement **cannot jump out of itself**. `return`, `break` and `continue` aimed at something outside the `defer` are error [E083](/docs/errors/e083/) (`` I cannot let a deferred statement `return` ``), and `try` is error [E095](/docs/errors/e095/), because a defer runs while the function is already leaving and has nowhere to go:
 
 <Diagnostic file="control_flow_e083.tr">
 ```turf
@@ -839,14 +838,14 @@ fn main(): int {
 ```text
 control_flow_e083.tr (1 error)
 
-── error at line 2, col 11 [E083 · control flow]
+── error at line 2, col 11 [E083 · control flow inside defer]
 
-  A deferred statement can't 'return'!
+  I cannot let a deferred statement `return`.
 
-  Hint: 'return' inside a 'defer' would jump out of the enclosing function or loop, not just the deferred statement -- move it out of the 'defer'.
+  Hint: Move the `return` out of the `defer`: it would jump out of the enclosing function or loop, not just the deferred statement.
 
   2 │     defer return 5;
-    │           ^~~~~~ Here!
+    │           ^~~~~~ this leaves a `defer`
 
   Run `turf --explain E083` for more details.
 ```
@@ -987,13 +986,13 @@ many
 
 - The subject and each `matches` value accept optional parentheses: `compare (x)`, `matches (1):`.
 - **Stacked headers.** Several `matches` headers in a row, with no statements between them, share the body that follows (`matches 1:` and `matches 2:` above). The body runs when any of them matches. It is not "fall through into the next arm": each arm is separate.
-- Every `matches` arm ends in `done`; leaving it out is error [E058](/docs/errors/e058/) (`Expected 'done' after matches arm body`). An arm needs at least one statement.
+- Every `matches` arm ends in `done`; leaving it out is error [E058](/docs/errors/e058/) (`` I expected `done` after the body of this `matches` arm ``). An arm needs at least one statement.
 - `otherwise` must be the last arm and may appear only once; a second one, or one that is not last, is error [E058](/docs/errors/e058/). It ends at the closing `}` of the `compare`, so it takes no `done`.
 - Any statement may appear in an arm, including `return`, `break` and `continue` (the last two act on the loop around the `compare`).
-- A subject can be an `int`, `char`, `string`, `bool`, an `enum` or [`machine`](/docs/language/state-machines/), a struct, or an error value. A pattern whose type does not fit the subject is error [E059](/docs/errors/e059/) (`Subject has type 'string' but a matches arm has type 'int'`).
+- A subject can be an `int`, `char`, `string`, `bool`, an `enum` or [`machine`](/docs/language/state-machines/), a struct, or an error value. A pattern whose type does not fit the subject is error [E059](/docs/errors/e059/) (`` I cannot match a `string` subject against an `int` arm. ``).
 - If no arm matches and there is no `otherwise`, the `compare` does nothing, except where the subject must be covered ([Exhaustiveness](#exhaustiveness)).
 - A `compare` with no arms and no `otherwise` compiles and warns that it is a no-op.
-- Matching a value that was already matched earlier in the same `compare` is error [E133](/docs/errors/e133/) (`Duplicate pattern`): the second arm could never run.
+- Matching a value that was already matched earlier in the same `compare` is error [E133](/docs/errors/e133/) (`` An earlier arm of this `compare` already matches this pattern, so this arm never runs. ``): the second arm could never run.
 
 <Diagnostic file="control_flow_e133.tr">
 ```turf
@@ -1013,15 +1012,14 @@ fn main(): int {
 ```text
 control_flow_e133.tr (1 error)
 
-── error at line 7, col 9 [E133 · control flow]
+── error at line 7, col 9 [E133 · duplicate matches pattern]
 
-  Duplicate pattern!
-  Duplicate 'matches' pattern: this value is already handled by an earlier arm in this compare block, so this arm can never run.
+  An earlier arm of this `compare` already matches this pattern, so this arm never runs.
 
   Hint: Remove the duplicate arm, or combine it with the earlier one by stacking (`matches A:` then `matches B:` sharing one body).
 
   7 │         matches 1:
-    │         ^~~~~~~ Here!
+    │         ^~~~~~~ this pattern is already matched
 
   Run `turf --explain E133` for more details.
 ```
@@ -1186,7 +1184,7 @@ Rules for struct patterns:
 
 - **A bare name always binds.** Inside a destructuring pattern, `Point { x: limit }` binds the field to a new name `limit`; it does not compare with an existing variable `limit`. To compare a field with a variable or any other expression, bind it and use a guard: `matches Point { x, .. } if x == limit:`.
 - **`double` literals are not patterns** (exact float equality is rarely what is meant; error [E092](/docs/errors/e092/)). Bind the field and test it in a guard.
-- **Every field is listed, or the pattern ends in `..`.** `Point { x }` on a two-field struct is error [E092](/docs/errors/e092/) (`this pattern doesn't mention the field 'y' of 'P'`), so adding a field to a struct later cannot silently change what an existing pattern means.
+- **Every field is listed, or the pattern ends in `..`.** `Point { x }` on a two-field struct is error [E092](/docs/errors/e092/) (`` This pattern does not mention the field `y` of `P`. ``), so adding a field to a struct later cannot silently change what an existing pattern means.
 - **Fields are read as `p.field` reads them**, so another module's non-`pub` field cannot be named (error [E088](/docs/errors/e088/)); write `..` to ignore it.
 - **What can be matched:** a struct value, a `&T` reference, and `self` inside a method. A `&?T` (which may be null) and a raw `T*` are refused ([E092](/docs/errors/e092/)); test a `&?T` for null first.
 - A field named twice, an unknown field, a literal of the wrong type, and a struct pattern for a different struct than the subject are all [E092](/docs/errors/e092/) (or [E068](/docs/errors/e068/) for an unknown field), each with a message that names the field.
@@ -1223,7 +1221,7 @@ fn main(): int {
 ```
 </Program>
 
-Assigning to a binding is error [E060](/docs/errors/e060/) (`You can't change the value of 'x' because it's immutable`).
+Assigning to a binding is error [E060](/docs/errors/e060/) (`` I cannot change `x`: it is immutable ``).
 
 #### Guards
 
@@ -1278,9 +1276,9 @@ Without an `otherwise`:
 
 | Subject | Requirement | Otherwise |
 |---|---|---|
-| `enum` or `machine` | every variant has an **unguarded** header | error [E093](/docs/errors/e093/) (`Non-exhaustive enum comparison`), listing the missing variants |
-| `bool` | both `true` and `false` have an unguarded header | error [E093](/docs/errors/e093/) (`Non-exhaustive bool comparison`) |
-| a declared `error` type | every variant has an unguarded variant pattern whose fields all match anything | error [E093](/docs/errors/e093/) (`Non-exhaustive error comparison`) |
+| `enum` or `machine` | every variant has an **unguarded** header | error [E093](/docs/errors/e093/) (`` This `compare` on `Color` does not cover every case ``), listing the missing variants |
+| `bool` | both `true` and `false` have an unguarded header | error [E093](/docs/errors/e093/) (`` This `compare` on `bool` does not cover every case ``) |
+| a declared `error` type | every variant has an unguarded variant pattern whose fields all match anything | error [E093](/docs/errors/e093/) (`` This `compare` on `E` does not cover every case ``) |
 | an error value from `recover as err run` | cannot be covered by variants; always needs `otherwise` or an unguarded `_` | error [E093](/docs/errors/e093/) |
 | `int`, `char`, `string`, or a struct with a refutable pattern | not required; if nothing matches, the `compare` does nothing | none |
 
@@ -1307,16 +1305,16 @@ fn main(): int {
 ```text
 control_flow_e093.tr (1 error)
 
-── error at line 6, col 5 [E093 · control flow]
+── error at line 6, col 5 [E093 · non-exhaustive compare]
 
-  Non-exhaustive enum comparison on 'Color'.
-Missing variants:
+  This `compare` on `Color` does not cover every case, and it has no `otherwise`.
+  Missing variants:
     Color::Blue
 
-  Hint: Add an arm for each missing variant, or 'otherwise:' (or `matches _:`) to handle the rest. A guarded arm doesn't count: its guard may be false.
+  Hint: Add an arm for each missing variant, or `otherwise:` (or `matches _:`) for the rest. A guarded arm does not count: its guard may be false.
 
   6 │     compare c {
-    │     ^~~~~~~ Here!
+    │     ^~~~~~~ this `compare` does not cover every value
 
   Run `turf --explain E093` for more details.
 ```
@@ -1356,7 +1354,7 @@ blue
 
 ### Unreachable arms
 
-An arm, or the `otherwise`, that follows an unguarded header which already matches everything (`_`, or a struct pattern whose fields all bind or ignore) can never run. This is the warning [E094](/docs/errors/e094/) (`This arm can never run`, or `The 'otherwise' arm can never run`). The program still compiles; delete the arm or move it above the catch-all. A duplicate *value* pattern is the error [E133](/docs/errors/e133/) described above.
+An arm, or the `otherwise`, that follows an unguarded header which already matches everything (`_`, or a struct pattern whose fields all bind or ignore) can never run. This is the warning [E094](/docs/errors/e094/) (`` This arm can never run, because an earlier arm without a guard already matches every case. ``, or the same with `` The `otherwise` arm `` first). The program still compiles; delete the arm or move it above the catch-all. A duplicate *value* pattern is the error [E133](/docs/errors/e133/) described above.
 
 <Program file="control_flow_unreachable_arms.tr">
 ```turf

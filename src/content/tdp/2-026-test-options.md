@@ -3,7 +3,7 @@ major: 2
 number: 26
 title: Test options
 description: "Let a `@test` say how it is run: `skip:`, `timeout:`, `levels:`, `stdout:`, `tag:` and `serial`."
-status: accepted
+status: implemented
 date: 2026-10-25
 authors:
   - Turf Team

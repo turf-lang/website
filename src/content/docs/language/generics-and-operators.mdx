@@ -267,13 +267,18 @@ fn main(): int {
 
 The receiver still matches exactly once `T` is known: `n.pick::<string>("s")`
 is [E056](/docs/errors/e056/), since the `int` receiver is not a `string`. The receiver counts as
-argument 1, so `n.pick("s")` is [E056](/docs/errors/e056/) "Conflicting type arguments", as
+argument 1, so `n.pick("s")` is [E056](/docs/errors/e056/) (`T` in `pick` is an `int` from argument 1 and a `string` from argument 2), as
 `pick(n, "s")` is.
 
 **A generic struct takes its type arguments from the type it is stored into,
 or from `Name<Args>::` written where it is built.** The first way is retired in
 3.0 (roadmap B-17): from then on the type arguments are written where the value
-is built, and `turf migrate 3.0` writes them in. `Box::default()` and
+is built, and `turf migrate 3.0` writes them in. Warning [E177](/docs/errors/e177/) marks each
+construction that still takes them from the context; it starts at `allow`
+(`--warn E177` or `[lints] E177 = "warn"` turns it on), and its `Fix:` writes
+the arguments in exactly as they were resolved. A constructor whose own
+arguments fix every type argument (`Box::new(5)` for `fn<T> Box.new(v: T)`)
+takes nothing from the context and does not warn. `Box::default()` and
 `Box::new(...)` read them from the declared type of the variable, parameter,
 field, return type or element they are assigned to:
 
@@ -326,7 +331,7 @@ stores `1.0`, and with `Box<int32>` declared an untyped literal such as
 the conversion (`Box::new(2.5 to int)`).
 
 When nothing supplies the type, there is nothing to infer from. `mut l =
-List::default();` is rejected with [E129](/docs/errors/e129/) (Nothing to infer! Cannot infer the
+List::default();` is rejected with [E129](/docs/errors/e129/) (I cannot infer the
 type arguments of a generic type):
 
 <Diagnostic file="generics_and_operators_e129.tr">
@@ -341,15 +346,14 @@ fn main(): int {
 ```text
 generics_and_operators_e129.tr (1 error)
 
-── error at line 4, col 5 [E129 · declaration]
+── error at line 4, col 5 [E129 · nothing to infer a type from]
 
-  Nothing to infer!
-  Cannot infer the type arguments of a generic type.
+  I cannot infer the type arguments of a generic type.
 
-  Hint: 'guess' has nothing to infer the type argument from here -- annotate it explicitly instead, e.g. 'mut l: List<int> = ...;'.
+  Hint: Write the type argument where it is built, e.g. `List<int>::default()`, or on the variable, e.g. `mut l: List<int> = ...;`: `guess` has nothing to infer it from here.
 
   4 │     mut l = List::default();
-    │     ^~~ Here!
+    │     ^~~ nothing here gives a type
 
   Run `turf --explain E129` for more details.
 ```
@@ -539,15 +543,14 @@ fn main(): int {
 ```text
 generics_and_operators_e129_2.tr (1 error)
 
-── error at line 10, col 17 [E129 · declaration]
+── error at line 10, col 17 [E129 · nothing to infer a type from]
 
-  Nothing to infer!
-  Can't tell the size 'N' of the array 'fill' returns: no argument has it, and nothing says what type the result is.
+  I cannot tell the size `N` of the array `fill` returns: no argument has it, and nothing says what type the result is.
 
-  Hint: Store the result where its type is written, e.g. 'mut a: int[8] = fill(...);'.
+  Hint: Store the result where its type is written, e.g. `mut a: int[8] = fill(...);`.
 
   10 │     mut d = fill(0);       // E129: `guess` gives no size
-     │                 ^ Here!
+     │                 ^ nothing here gives a type
 
   Run `turf --explain E129` for more details.
 ```
@@ -586,21 +589,20 @@ fn main(): int {
 ```text
 generics_and_operators_e150.tr (1 error)
 
-── error at line 1, col 16 [E150 · declaration]
+── error at line 1, col 16 [E150 · size parameter used where it can't be]
 
-  A struct's type parameters are types: 'N:' declares a size parameter, which only a function can have.
-  Hint: give the struct a fixed-size array field (e.g. 'items: T[8]'), or a List<T>.
+  The type parameters of a struct are types, and `N:` declares a size parameter, which only a function can have.
+  Hint: Give the struct a fixed-size array field such as `items: T[8]`, or a `List<T>`.
 
   1 │ struct Buffer<N: size> {
-    │                ^ Here!
+    │                ^ a size parameter cannot be used here
 
   Run `turf --explain E150` for more details.
 ```
 </Diagnostic>
 
 To change a number derived from `N`, copy it first: `mut n: int = N;`. A name
-inside `[ ]` that is not a declared size parameter is [E123](/docs/errors/e123/) (`'M' is not a
-size`).
+inside `[ ]` that is not a declared size parameter is [E123](/docs/errors/e123/) (``I cannot use `M` as an array size, which must be a positive whole number or a size parameter``).
 
 The standard library builds on this: the [`arrays` module](/stdlib/arrays/)
 has `fill`, `generate`, `reversed` and `map`.
@@ -613,7 +615,7 @@ generic types.
 
 A method on a generic struct repeats the struct's type parameters after `fn`:
 `fn<T> Box.get()` for `struct Box<T>`, `fn<K, V> Map.put(...)` for
-`struct Map<K, V>`. Leaving them off is [E138](/docs/errors/e138/) (Missing type parameters!), because
+`struct Map<K, V>`. Leaving them off is [E138](/docs/errors/e138/) (`Box` is generic, so its method `get` must declare the type parameters too), because
 `self`'s layout depends on the type arguments:
 
 <Diagnostic file="generics_and_operators_e138.tr">
@@ -633,15 +635,18 @@ fn main(): int {
 ```text
 generics_and_operators_e138.tr (1 error)
 
-── error at line 5, col 8 [E138 · declaration]
+── error at line 5, col 8 [E138 · missing type arguments]
 
-  Missing type parameters!
-  'Box' is generic, so its method 'broken' must declare its type parameters too.
+  `Box` is generic, so its method `broken` must declare the type parameters too.
 
-  Hint: Declare it as 'fn<T> Box.broken(...)' -- the same parameters as 'struct Box<T>'.
+  Hint: Declare it as `fn<T> Box.broken(...)`, with the same parameters as `struct Box<T>`.
 
   5 │ fn Box.broken(): int {
-    │        ^~~~~~ Here!
+    │        ^~~~~~ type arguments are missing here
+
+  Fix: insert '<T>' after 'fn'
+  5 │ fn<T> Box.broken(): int {
+    │   ~~~
 
   Run `turf --explain E138` for more details.
 ```
@@ -807,15 +812,19 @@ fn main(): int {
 ```text
 generics_and_operators_e124.tr (1 error)
 
-── error at line 15, col 19 [E124 · type mismatch]
+── error at line 15, col 19 [E124 · values can't be compared]
 
-  Oops! Something doesn't add up:
-  In this instantiation: Cannot compare 'Point' with 'Point' using '<'.
-  Note: the error itself, inside 'largest<Point>' (line 6, col 11)
-  Note: in generic declaration 'largest' (line 5, col 7)
+  In this instantiation: I cannot compare a `Point` with a `Point` using `<`.
 
+  Hint: Compare two operands of the same type, converting one with `to` where they differ.
+
+   5 │ fn<T> largest(a: T, b: T): T {
+     │       ------- in the generic declaration `largest`
+   6 │     if (a < b) {
+     │           - the error itself, inside `largest<Point>`
+     ┊
   15 │     return largest(p, q).x;     // E124: Point has no `<`
-     │                   ^ Here!
+     │                   ^ these values cannot be compared
 
   Run `turf --explain E124` for more details.
 ```
@@ -857,18 +866,19 @@ fn main(): int {
 ```text
 generics_and_operators_e124_2.tr (1 error)
 
-── error at line 12, col 6 [E124 · type mismatch]
+── error at line 12, col 6 [E124 · values can't be compared]
 
-  Oops! Something doesn't add up:
-  In this instantiation: Cannot compare struct values with '=='. (Structs have no built-in comparison: compare the fields you care about (e.g. `a.x == b.x`), or declare `operator ==` for the type.)
-  Note: 'Set<Big>.add' requires 'Set<Big>.contains' here (lib/std/collections/set.tr, line 156, col 13)
-  Note: 'Set<Big>.contains' requires 'Set<Big>.index_of' here (lib/std/collections/set.tr, line 152, col 16)
-  Note: 'Set<Big>.index_of' requires 'Set<Big>.bucket_find' here (lib/std/collections/set.tr, line 144, col 31)
-  Note: the error itself, inside 'Set<Big>.bucket_find' (lib/std/collections/set.tr, line 70, col 40)
-  Note: in generic declaration 'set::Set.bucket_find' (lib/std/collections/set.tr, line 59, col 11)
+  In this instantiation: I cannot compare two `Big` structs with `==`: a struct has no built-in comparison.
+  Note: `Set<Big>.add` needs `Set<Big>.contains` here (lib/std/collections/set.tr, line 156, col 13)
+  Note: `Set<Big>.contains` needs `Set<Big>.index_of` here (lib/std/collections/set.tr, line 152, col 16)
+  Note: `Set<Big>.index_of` needs `Set<Big>.bucket_find` here (lib/std/collections/set.tr, line 144, col 31)
+  Note: the error itself, inside `Set<Big>.bucket_find` (lib/std/collections/set.tr, line 70, col 40)
+  Note: in the generic declaration `set::Set.bucket_find` (lib/std/collections/set.tr, line 59, col 11)
+
+  Hint: Compare the fields you care about, e.g. `a.x == b.x`, or declare `operator ==` for the type.
 
   12 │     s.add(b);
-     │      ^ Here!
+     │      ^ these values cannot be compared
 
   Run `turf --explain E124` for more details.
 ```
@@ -880,7 +890,7 @@ to two `Big`s. The fix here is to declare `operator ==(a: Big, b: Big): bool`
 (see [Operator overloading](#operator-overloading)).
 
 The same reporting applies to a call that finds no overload for the concrete
-type (`No overload of 'len' matches argument types (int).`) or an operation
+type (``No overload of `len` takes the argument types (int).``) or an operation
 such as indexing that the type does not support.
 
 Three further limits protect the compiler from a generic that never finishes:
@@ -912,15 +922,15 @@ fn main(): int {
 ```text
 generics_and_operators_e079.tr (1 error)
 
-── error at line 7, col 16 [E079 · declaration]
+── error at line 7, col 16 [E079 · generic instantiation limit exceeded]
 
-  generic instantiation depth exceeded (65 deep).
+  I stopped a chain of generic instantiations at 65 deep.
   chain: wrap<int> -> wrap<&int> -> wrap<&&int> -> wrap<&&&int> -> wrap<&&&&int> -> ... 56 more ... -> wrap<&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&... -> wrap<&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&... -> wrap<&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&... -> wrap<&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&...
 
-  Hint: A generic function or struct that requests a new instantiation of itself every time it runs never bottoms out. If this is intentional (e.g. a type-level Peano count), it's past what this compiler will monomorphize -- restructure it to stop growing the type at some concrete depth.
+  Hint: Make the generic stop requesting a larger instantiation of itself at some concrete depth. A chain that never bottoms out, even an intentional one such as a type-level count, is past what I will instantiate.
 
   7 │     return wrap(&v);
-    │                ^ Here!
+    │                ^ instantiated too many times from here
 
   Run `turf --explain E079` for more details.
 ```
@@ -1087,14 +1097,14 @@ fn main(): int {
 ```text
 generics_and_operators_e028.tr (1 error)
 
-── error at line 1, col 1 [E028 · declaration]
+── error at line 1, col 1 [E028 · operator overload for two built-in types]
 
-  'operator +(int, int)' is not allowed.
+  I cannot accept `operator +(int, int)`, because both operand types are built in.
 
-  Hint: Both operand types are already built in -- overloading an operator between two builtin types would make ordinary arithmetic ambiguous. Operator overloads only make sense when at least one operand is a struct or 'string'.
+  Hint: Make at least one operand a struct or a `string`: overloading an operator between two built-in types would make ordinary arithmetic ambiguous.
 
   1 │ operator +(a: int, b: int): int {
-    │ ^ Here!
+    │ ^ both operands of this operator are built-in types
 
   Run `turf --explain E028` for more details.
 ```
@@ -1200,15 +1210,14 @@ fn main(): int {
 ```text
 generics_and_operators_e057.tr (1 error)
 
-── error at line 12, col 21 [E057 · arithmetic]
+── error at line 12, col 21 [E057 · operator applied to the wrong kind of value]
 
-  Operator applied to the wrong kind of value!
-  Type mismatch: cannot apply '+' to 'Vec2' and 'double'.
+  I cannot use `+` on a `Vec2` and a `double`.
 
-  Hint: '+' isn't a builtin operation on a struct -- declare 'operator +(Vec2, double): ReturnType { ... }', or check that an existing overload's parameter types match EXACTLY (operator resolution never widens int to double the way an ordinary function call does).
+  Hint: Declare `operator +(a: Vec2, b: double): T { ... }`, or make the operands match an existing overload's parameter types exactly: an operator never converts an `int` to a `double`.
 
   12 │     mut w: Vec2 = v + 1.0;
-     │                     ^ Here!
+     │                     ^ this operator does not apply to these operands
 
   Run `turf --explain E057` for more details.
 ```
@@ -1340,9 +1349,9 @@ assigned back" to `a`); if no operator matches, it is [E057](/docs/errors/e057/)
 
 `operator []` makes `x[i]` readable and `operator []=` makes `x[i] = v` writable.
 They are independent: declare only `[]` and the type is read-only; declare only
-`[]=` and it is write-only (a read is then [E126](/docs/errors/e126/), Cannot index a value of type
-...). A use with an index or value type that matches no overload is [E056](/docs/errors/e056/) (No
-'operator[]' overload matches ...). The operator picked is the one whose
+`[]=` and it is write-only (a read is then [E126](/docs/errors/e126/), I cannot index a `Grid`).
+A use with an index or value type that matches no overload is [E056](/docs/errors/e056/) (No
+`operator[]` matches `Grid[string]`). The operator picked is the one whose
 parameter types match exactly, so a type can have several, for instance one
 indexed by `int` and one by `string`.
 
@@ -1427,14 +1436,14 @@ fn main(): int {
 ```text
 generics_and_operators_e098.tr (1 error)
 
-── error at line 12, col 13 [E098 · type mismatch]
+── error at line 12, col 13 [E098 · write to a temporary]
 
-  Cannot assign to part of the value an 'operator[]' read returned: it is a copy, so the write would be lost.
+  I cannot assign to part of what an `operator[]` read returned: it is a copy, so the write would be lost.
 
-  Hint: 'x[i]' returns the element by value, so this would only change a copy. Read the element into a variable, change that, and store it back: `mut e: T = x[i]; e.field = v; x[i] = e;`. Writing THROUGH a pointer or reference element, or into a nested list (`grid[i][j] = v`), is fine.
+  Hint: Read the element into a variable, change that, and store it back: `mut e: T = x[i]; e.field = v; x[i] = e;`. `x[i]` returns the element by value, so a write would change only a copy. Writing through a pointer or reference element, or into a nested list (`grid[i][j] = v`), is fine.
 
   12 │     bs[0].a = 50;
-     │             ^ Here!
+     │             ^ this is a temporary value
 
   Run `turf --explain E098` for more details.
 ```
@@ -1509,15 +1518,14 @@ fn main(): int {
 ```text
 generics_and_operators_e126.tr (1 error)
 
-── error at line 15, col 10 [E126 · type mismatch]
+── error at line 15, col 10 [E126 · operation not supported here]
 
-  Operation not supported here!
-  Compound assignment through 'operator[]' is not supported -- write 'x[i] = x[i] + int' explicitly instead.
+  I cannot use `+=` through `operator[]`.
 
-  Hint: Write the operation out in full instead, e.g. `x = x + 1;`.
+  Hint: Write it out: `x[i] = x[i] + y;`.
 
   15 │     c[0] += 1;
-     │          ^~ Here!
+     │          ^~ this is not supported here
 
   Run `turf --explain E126` for more details.
 ```
@@ -1624,14 +1632,14 @@ fn main(): int {
 ```text
 generics_and_operators_e097.tr (1 error)
 
-── error at line 1, col 1 [E097 · declaration]
+── error at line 1, col 1 [E097 · invalid generic operator]
 
-  'operator +' is generic but none of its operands is a type declared in this file.
+  `operator +` is generic, but none of its operands is a type declared in this file.
 
-  Hint: A bare type parameter matches every type, so the operator would apply to types this module does not own. Make an operand a struct or enum declared here, e.g. 'List<T>' in the module that declares List.
+  Hint: Make an operand a struct or enum declared here, such as `List<T>` in the module that declares `List`.
 
   1 │ operator<T> +(a: T, b: T): T {
-    │ ^ Here!
+    │ ^ this generic operator is not valid
 
   Run `turf --explain E097` for more details.
 ```
@@ -1663,14 +1671,14 @@ fn main(): int {
 ```text
 generics_and_operators_e080.tr (1 error)
 
-── error at line 3, col 1 [E080 · declaration]
+── error at line 3, col 1 [E080 · operator orphan rule violation]
 
-  'operator +' does not own any of its operand types.
+  `operator +` does not own any of its operand types.
 
-  Hint: 'list::List' is declared in module 'list', not in the main file -- at least one operand of an operator declaration must be a struct or enum declared in the same module/file as the operator itself, so an operator's meaning never depends on import order.
+  Hint: Declare the operator in module `list`, where `list::List` is declared, or make an operand a struct or enum declared in the main file. An operator then never depends on import order.
 
   3 │ operator<T> +(a: List<T>, b: List<T>): List<T> {
-    │ ^ Here!
+    │ ^ neither the operator nor its types are declared here
 
   Run `turf --explain E080` for more details.
 ```

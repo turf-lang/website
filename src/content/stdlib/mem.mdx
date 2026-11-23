@@ -89,15 +89,16 @@ fn main(): int {
 ```text
 mem-e017.tr (1 error)
 
-── error at line 7, col 18 [E017 · memory error]
+── error at line 7, col 18 [E017 · double free]
 
-  Double free detected for 'p'.
-  Note: first freed here (line 6, col 18)
+  I found a second free of `p`.
 
-  Hint: Release a pointer once: free() and every function declared '@ownership(releases: ...)' release what they are given.
+  Hint: Release the pointer only once: `free()` and every function declared `@ownership(releases: ...)` release what they are given.
 
+  6 │         mem::free(p);
+    │                  - first freed here
   7 │         mem::free(p);
-    │                  ^ Here!
+    │                  ^ freed a second time here
 
   Worth reading in full -- run `turf --explain E017` before you patch this one.
 ```
@@ -119,15 +120,16 @@ fn main(): int {
 ```text
 mem-e018.tr (1 error)
 
-── error at line 7, col 12 [E018 · memory error]
+── error at line 7, col 12 [E018 · use after free]
 
-  Oops! You're using memory from 'buf' after it was freed.
-  Note: freed here (line 6, col 18)
+  I cannot use the memory of `buf` after it was freed.
 
-  Hint: Don't use memory after it has been released (by free() or any function declared '@ownership(releases: ...)'). Consider setting the pointer to null after releasing it.
+  Hint: Stop using `buf` after it is released by `free()` or by a function declared `@ownership(releases: ...)`, or set the pointer to `null` after releasing it.
 
+  6 │         mem::free(buf);
+    │                  - freed here
   7 │         buf[0] = 5;
-    │            ^ Here!
+    │            ^ used here after it was freed
 
   Worth reading in full -- run `turf --explain E018` before you patch this one.
 ```

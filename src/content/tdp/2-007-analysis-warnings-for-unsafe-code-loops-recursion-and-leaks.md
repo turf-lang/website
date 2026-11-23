@@ -3,7 +3,7 @@ major: 2
 number: 7
 title: Analysis warnings for unsafe code, loops, recursion and leaks
 description: Add a family of warnings that find mistakes in unsafe code, infinite loops, infinite recursion, manual-heap leaks, precision loss, dead code and raw-receiver calls, without rejecting any program that compiles today.
-status: accepted
+status: implemented
 date: 2026-10-15
 updated: 2026-10-16
 authors:

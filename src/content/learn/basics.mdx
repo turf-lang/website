@@ -90,19 +90,21 @@ fn main(): int {
 ```text
 apples.tr (1 error)
 
-── error at line 3, col 12 [E060 · declaration]
+── error at line 3, col 12 [E060 · immutable assignment]
 
-  Oops! You can't change the value of 'apples' because it's immutable.
-  Note: declared immutable here (line 2, col 5)
+  I cannot change `apples`: it is immutable.
 
-  Hint: If you need to change its value later, declare it with 'mutable' instead of 'immutable'.
+  Hint: Declare it `mut` instead of `immut` to change it later.
 
+  2 │     immut apples = 3;
+    │     - declared immutable here
   3 │     apples = 4;
-    │            ^ Here!
+    │            ^ this is immutable
 
   Fix: replace 'immut' with 'mut'
   2 │     mut apples = 3;
     │     ~~~
+  Check before applying: it adds warning E163.
 
   Run `turf --explain E060` for more details.
 ```
@@ -199,16 +201,16 @@ fn main(): int {
 ```text
 mismatch.tr (1 error)
 
-── error at line 3, col 7 [E066 · type mismatch]
+── error at line 3, col 9 [E066 · type mismatch]
 
-  Type mismatch!
-  Cannot assign value of type 'double' to variable of type 'int'.
-  Note: 'x' was inferred as 'int' here (line 2, col 5)
+  I cannot assign a `double` to `x`, which is an `int`.
 
-  Hint: Check that both sides have compatible types.
+  Hint: Make both sides the same type: convert one with `to` (`x to int`), or change a declaration so the types agree.
 
+  2 │     mut x = 5;
+    │     - 'x' was inferred as 'int' here
   3 │     x = 5.5;
-    │       ^ Here!
+    │         ^~~ this is a `double`
 
   Run `turf --explain E066` for more details.
 ```
@@ -323,15 +325,14 @@ fn main(): int {
 ```text
 age.tr (1 error)
 
-── error at line 3, col 23 [E057 · arithmetic]
+── error at line 3, col 23 [E057 · operator applied to the wrong kind of value]
 
-  Operator applied to the wrong kind of value!
-  Type mismatch: cannot apply '+' to 'string' and 'int'.
+  I cannot use `+` on a `string` and an `int`.
 
-  Hint: String '+' is provided by an 'operator +' overload in lib/std/strings.tr -- make sure 'strings' is imported. To concatenate a non-string, convert it first with `<expr> to string`.
+  Hint: Convert the operand that is not a `string` first, e.g. `n to string`: `+` on strings comes from the `strings` module, which works on two `string`s.
 
   3 │     printline("I am " + age + " years old");
-    │                       ^ Here!
+    │                       ^ this operator does not apply to these operands
 
   Run `turf --explain E057` for more details.
 ```
@@ -728,16 +729,14 @@ fn main(): int {
 ```text
 nope.tr (1 error)
 
-── error at line 3, col 19 [E001 · array error]
+── error at line 3, col 19 [E001 · array bounds]
 
-  Array index out of bounds!
-  You tried to access 'pets[3]', but 'pets' only has 3 elements (indices 0 to 2, or -1 to -3 counting from the end).
-  Note: array declared here (line 2, col 11)
+  I cannot use `pets[3]`, because `pets` has only 3 elements.
 
-  Hint: Array indices start at 0 and go up to size - 1; a negative index counts back from the end (-1 is the last element).
+  Hint: Use an index from 0 to 2, or `-1` to `-3` to count from the end.
 
   3 │     printline(pets[3]);
-    │                   ^ Here!
+    │                   ^ this index is outside the array
 
   Run `turf --explain E001` for more details.
 ```
